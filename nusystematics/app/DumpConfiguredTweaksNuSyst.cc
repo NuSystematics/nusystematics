@@ -25,6 +25,7 @@
 #include "Framework/EventGen/EventRecord.h"
 #include "Framework/GHEP/GHepParticle.h"
 #include "Framework/GHEP/GHepUtils.h"
+#include "Framework/GHEP/GHepRecord.h"
 #include "Framework/Messenger/Messenger.h"
 #include "Framework/Ntuple/NtpMCEventRecord.h"
 
@@ -62,23 +63,8 @@ struct TweakSummaryTree {
     delete f;
   }
 
-  int nu_pdg;
-  double e_nu_GeV;
-  int tgt_A;
-  int tgt_Z;
-  bool is_cc;
-  bool is_qe;
-  bool is_mec;
-  int mec_topology;
-  bool is_res;
-  int res_channel;
-  bool is_dis;
-  double W_GeV;
-  double Q2_GeV2;
-  double q0_GeV;
-  double q3_GeV;
-  double EAvail_GeV;
-
+  // TH: Add variables for for output weight tree
+  //bool cc;
   std::vector<int> ntweaks;
   std::vector<std::vector<double>> tweak_branches;
   std::vector<double> paramCVResponses;
@@ -89,24 +75,11 @@ struct TweakSummaryTree {
   std::vector<double> meta_tweak_values;
 
   void AddBranches(ParamHeaderHelper const &phh) {
-    t->Branch("nu_pdg", &nu_pdg, "nu_pdg/I");
-    t->Branch("e_nu_GeV", &e_nu_GeV, "e_nu_GeV/D");
-    t->Branch("tgt_A", &tgt_A, "tgt_A/I");
-    t->Branch("tgt_Z", &tgt_Z, "tgt_Z/I");
-    t->Branch("is_cc", &is_cc, "is_cc/O");
-    t->Branch("is_qe", &is_qe, "is_qe/O");
-    t->Branch("is_mec", &is_mec, "is_mec/O");
-    t->Branch("mec_topology", &mec_topology, "mec_topology/I");
-    t->Branch("is_res", &is_res, "is_res/O");
-    t->Branch("res_channel", &res_channel, "res_channel/I");
-    t->Branch("is_dis", &is_dis, "is_dis/O");
-    t->Branch("W_GeV", &W_GeV, "W_GeV/D");
-    t->Branch("Q2_GeV2", &Q2_GeV2, "Q2_GeV2/D");
-    t->Branch("q0_GeV", &q0_GeV, "q0_GeV/D");
-    t->Branch("q3_GeV", &q3_GeV, "q3_GeV/D");
-    t->Branch("EAvail_GeV", &EAvail_GeV, "EAvail_GeV/D");
-
-    size_t vector_idx = 0;
+    
+	// TH: Add branches for output weights tree
+    //t->Branch("Mode", &Mode, "Mode/I");
+    
+	size_t vector_idx = 0;
     for (paramId_t pid : phh.GetParameters()) { // Need to size vectors first so
                                                 // that realloc doesn't upset
                                                 // the TBranches
@@ -437,37 +410,16 @@ int main(int argc, char const *argv[]) {
   for (size_t ev_it = 0; ev_it < NToRead; ++ev_it) {
     gevs->GetEntry(ev_it);
     genie::EventRecord const &GenieGHep = *GenieNtpl->event;
-
-    genie::Target const &tgt = GenieGHep.Summary()->InitState().Tgt();
-    genie::GHepParticle *FSLep = GenieGHep.FinalStatePrimaryLepton();
-    genie::GHepParticle *ISLep = GenieGHep.Probe();
-    TLorentzVector FSLepP4 = *FSLep->P4();
-    TLorentzVector ISLepP4 = *ISLep->P4();
-    TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
-
-    tst.nu_pdg = ISLep->Pdg();
-    tst.e_nu_GeV = ISLepP4.E();
-    tst.tgt_A = tgt.A();
-    tst.tgt_Z = tgt.Z();
-    tst.is_cc = GenieGHep.Summary()->ProcInfo().IsWeakCC();
-    tst.is_qe = GenieGHep.Summary()->ProcInfo().IsQuasiElastic();
-    tst.is_mec = GenieGHep.Summary()->ProcInfo().IsMEC();
-    tst.mec_topology = -1;
-    if (tst.is_mec) {
-      tst.mec_topology = e2i(GetQELikeTarget(GenieGHep));
-    }
-    tst.is_res = GenieGHep.Summary()->ProcInfo().IsResonant();
-    tst.res_channel = 0;
-    if (tst.is_res) {
-      tst.res_channel = SPPChannelFromGHep(GenieGHep);
-    }
-    tst.is_dis = GenieGHep.Summary()->ProcInfo().IsDeepInelastic();
-    tst.W_GeV = GenieGHep.Summary()->Kine().W(true);
-    tst.Q2_GeV2 = -emTransfer.Mag2();
-    tst.q0_GeV = emTransfer[3];
-    tst.q3_GeV = emTransfer.Vect().Mag();
-
-    tst.EAvail_GeV = GetErecoil_MINERvA_LowRecoil(GenieGHep);
+  
+	// TH: add in select number of variable calculations here
+    //genie::Target const &tgt = GenieGHep.Summary()->InitState().Tgt();
+    //genie::GHepParticle *FSLep = GenieGHep.FinalStatePrimaryLepton();
+    //genie::GHepParticle *ISLep = GenieGHep.Probe();
+    //TLorentzVector FSLepP4 = *FSLep->P4();
+    //TLorentzVector ISLepP4 = *ISLep->P4();
+    //TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
+	
+    //tst.Mode = GenieGHep.EventGenerationMode();
 
     if (!(ev_it % NToShout)) {
       std::cout << (ev_it ? "\r" : "") << "Event #" << ev_it << "/" << NToRead
