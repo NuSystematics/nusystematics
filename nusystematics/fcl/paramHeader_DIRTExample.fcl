@@ -1,0 +1,38 @@
+generated_systematic_provider_configuration: {
+	DIRT_DEV_v1: {
+		AltModelA: {
+			centralParamValue: 0
+			paramVariations: [
+			0,
+			0.5,
+			1,
+		]
+		prettyName: "AltModelA"
+		systParamId: 0
+	}
+		AltModelB: {
+			centralParamValue: 0
+			paramVariations: [
+			0,
+			0.5,
+			1,
+		]
+		prettyName: "AltModelB"
+		systParamId: 1
+	}
+	instance_name: "v1"
+	parameter_headers: [
+		"AltModelA",
+		"AltModelB",
+	]
+	tool_options: {
+		OPT_STRING: "option_test"
+		OPT_BOOL: true
+		fill_valid_tree: false
+	}
+	tool_type: "DIRTExample"
+	}
+	syst_providers: [
+		"DIRT_DEV_v1",
+	]
+}
