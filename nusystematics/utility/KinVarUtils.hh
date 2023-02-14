@@ -80,6 +80,17 @@ inline double GetMassFromPDG(int PDG) {
     return 0;
 }
 
+inline double Getq0(genie::EventRecord const &ev){
+  genie::GHepParticle *FSLep = ev.FinalStatePrimaryLepton();
+  genie::GHepParticle *ISLep = ev.Probe();
+  TLorentzVector FSLepP4 = *FSLep->P4();
+  TLorentzVector ISLepP4 = *ISLep->P4();
+  TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
+  double q0 = emTransfer[3];
+
+  return q0;
+}
+
 // TH: Adapted from NUISANCE
 inline TVector3 GetPmiss(genie::EventRecord const &ev, bool preFSI) {
   // pmiss_vect is the vector difference between the neutrino momentum and the sum of final state particles momenta
@@ -143,19 +154,18 @@ inline double GetEmiss(genie::EventRecord const &ev, bool preFSI){
   bindingEnergies.insert(std::pair(1000822080, 44.0)); //Pb208 
 
   int n_tgt_nucleons = ev.Summary()->InitState().Tgt().A();
-  int n_rem_nucleons = -1;
   int tgt_pdg = ev.Summary()->InitState().Tgt().Pdg();
   int n_int_nucleons = 1;
   // For 2p2h subract 2 nucleons
   if (ev.Summary()->ProcInfo().IsMEC()){
-    if (pdg::IsNeutrino(ev.Summary()->InitState().ProbePdg()) || pdg::IsAntiNeutrino(ev.Summary()->InitState().ProbePdg())){
+    if (genie::pdg::IsNeutrino(ev.Summary()->InitState().ProbePdg()) || genie::pdg::IsAntiNeutrino(ev.Summary()->InitState().ProbePdg())){
       n_int_nucleons = 2;
     }
   }
 
   double M_tgt = -999;
   double M_rem = -999;
-  double mass_nucleon = (GetMassFromPDG(2212) + GetMassFromPDG(2112) * 0.5 * 1000;
+  double mass_nucleon = (GetMassFromPDG(2212) + GetMassFromPDG(2112)) * 0.5 * 1000;
   if (tgt_pdg == 1000010010){
     M_tgt = mass_nucleon;
     M_rem = 0;
@@ -167,7 +177,7 @@ inline double GetEmiss(genie::EventRecord const &ev, bool preFSI){
   double Trem = sqrt(pmiss*pmiss + M_rem*M_rem) - M_rem;
   // TH: check with Laura if below is correct 
   double Ehad = GetErecoil_MINERvA_LowRecoil(ev);
-  double q0_true = (nu->fP - lep->fP).E() 
+  double q0_true = Getq0(ev);
 
   Emiss = 0.001 * (q0_true - Ehad - Trem);
 
