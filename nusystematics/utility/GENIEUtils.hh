@@ -96,73 +96,6 @@ inline bool IsPrimary(genie::GHepParticle *p){
   return false;
 }
 
-// *****************************
-// TH: Taken out of MaCh3 Structs.h
-// Get the mass of a particle from the PDG in GeV
-inline double GetMassFromPDG(int PDG) {
-
-    switch (abs(PDG)) {
-      
-    case 11:
-      return 0.511E-3;
-      break;
-    case 13:
-      return 105.658E-3;
-      break;
-    case 15:
-      return 1.77682;
-      break;
-    case 22:
-      return 0.;
-      break;
-    case 211:
-      return 139.57E-3;
-      break;
-    case 111:
-      return 134.98E-3;
-      break;
-    case 2112:
-      return 939.565E-3;
-      break;
-    case 2212:
-      return 938.27E-3;
-      break;
-    //Oxygen nucleus
-    case 1000080160:
-      return 14.89926;
-      break;
-	//eta
-	case 221:
-	  return 547.862E-3;
-	  break;
-	  //K^0 (s or l)
-	case 311:
-	case 130:
-	case 310:
-	  return 497.611E-3;
-	  break;
-	case 321:
-	  return 493.677E-3;
-	  break;
-	// Lamda baryon
-	case 3122:
-	  return 1115.683E-3;
-	  break;
-    case 12:
-    case 14:
-    case 16:
-      return 0.0;
-      break;
-    default:
-      std::cerr << "Haven't got a saved mass for PDG " << PDG << std::endl;
-      std::cerr << "Please implement me! " << __FILE__ << ":" << __LINE__ << std::endl;
-      throw;
-    } // End switch
-    
-    std::cerr << "Warning, didn't catch a saved mass" << std::endl;
-    return 0;
-}
-
 inline QELikeTarget_t GetQELikeTarget(genie::EventRecord const &ev) {
 
   if (ev.Summary()->ProcInfo().IsQuasiElastic() &&
@@ -332,85 +265,6 @@ inline bool ChannelsAreEquivalent(NRPiChan_t ch, NRPiChan_t event_ch,
   return true;
 }
 
-inline double GetErecoil_MINERvA_LowRecoil(genie::EventRecord const &ev) {
-  // Get total energy of hadronic system.
-  double Erecoil = 0.0;
-
-  TIter event_iter(&ev);
-  genie::GHepParticle *p = 0;
-
-  while ((p = dynamic_cast<genie::GHepParticle *>(event_iter.Next()))) {
-    if (p->Status() != genie::kIStStableFinalState) {
-      continue;
-    }
-    switch (p->Pdg()) {
-    case 2212:
-    case 211:
-    case -211: {
-      Erecoil += p->KinE();
-      break;
-    }
-    case 111:
-    case 11:
-    case -11:
-    case -22: {
-      Erecoil += p->E();
-      break;
-    }
-    default: {}
-    }
-  }
-  // For nue CC scattering, we would have counted the E of the charged lepton,
-  // subtract it off here
-  if (ev.Summary()->ProcInfo().IsWeakCC() && (abs(ev.Probe()->Pdg()) == 12)) {
-    Erecoil -= ev.FinalStatePrimaryLepton()->P4()->E();
-  }
-
-  return Erecoil;
-}
-
-// TH: Adapted from NUISANCE
-inline TVector3 GetPmiss(genie::EventRecord const &ev, bool preFSI) {
-  // pmiss_vect is the vector difference between the neutrino momentum and the sum of final state particles momenta
-  // initialize to neutrino momentum
-  genie::GHepParticle *ISLep = ev.Probe();
-  TLorentzVector ISLepP4 = *ISLep->P4();
-  TVector3 pmiss_vect = ISLepP4.Vect();
-  // Get sum of momenta for all final state particles
-  TVector3 Sum_of_momenta(0, 0, 0);
-
-  TIter event_iter(&ev);
-  genie::GHepParticle *p = 0;
-  TVector3 dummy(0,0,0);
-
-    while ((p = dynamic_cast<genie::GHepParticle *>(event_iter.Next()))) {
-
-    if (preFSI){
-      if (!IsPrimary(p)){
-        continue;
-      }
-    }
-    else {
-      if (p->Status() != genie::kIStStableFinalState){
-        continue;
-      }
-    }
-    // skip nuclear remnant
-    if (p->Pdg() > 10000){
-      continue;
-    }
-
-    dummy.SetXYZ(p->Px(), p->Py(), p->Pz());
-    Sum_of_momenta += dummy;
-
-    dummy.SetXYZ(0,0,0);
-  }
-
-  pmiss_vect -= Sum_of_momenta;
-
-  return pmiss_vect;
-}
-
 inline simb_mode_copy GetSimbMode(genie::EventRecord const &ev) {
 
   simb_mode_copy mode = simb_mode_copy::kUnknownInteraction;
@@ -484,6 +338,43 @@ inline std::string DumpGENIEEv(genie::EventRecord const &ev) {
   }
   ss << std::endl;
   return ss.str();
+}
+
+inline double GetErecoil_MINERvA_LowRecoil(genie::EventRecord const &ev) {
+  // Get total energy of hadronic system.
+  double Erecoil = 0.0;
+
+  TIter event_iter(&ev);
+  genie::GHepParticle *p = 0;
+
+  while ((p = dynamic_cast<genie::GHepParticle *>(event_iter.Next()))) {
+    if (p->Status() != genie::kIStStableFinalState) {
+      continue;
+    }
+    switch (p->Pdg()) {
+    case 2212:
+    case 211:
+    case -211: {
+      Erecoil += p->KinE();
+      break;
+    }
+    case 111:
+    case 11:
+    case -11:
+    case -22: {
+      Erecoil += p->E();
+      break;
+    }
+    default: {}
+    }
+  }
+  // For nue CC scattering, we would have counted the E of the charged lepton,
+  // subtract it off here
+  if (ev.Summary()->ProcInfo().IsWeakCC() && (abs(ev.Probe()->Pdg()) == 12)) {
+    Erecoil -= ev.FinalStatePrimaryLepton()->P4()->E();
+  }
+
+  return Erecoil;
 }
 
 // Copy of https://github.com/NuSoftHEP/nugen/blob/6bcd82d9310bd0480df9a8ed03bfc8d8a2c80eff/nugen/EventGeneratorBase/GENIE/GENIE2ART.cxx#L98-L126

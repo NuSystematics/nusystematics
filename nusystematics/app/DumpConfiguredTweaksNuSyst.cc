@@ -9,6 +9,7 @@
 
 #include "nusystematics/utility/GENIEUtils.hh"
 #include "nusystematics/utility/enumclass2int.hh"
+#include "nusystematics/utility/KinVarUtils.hh"
 
 #ifdef NO_ART
 #include "nusystematics/artless/response_helper.hh"
