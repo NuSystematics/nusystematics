@@ -65,7 +65,8 @@ struct TweakSummaryTree {
   }
 
   // TH: Add variables for for output weight tree
-  //bool cc;
+  int Mode;
+  double Emiss, Emiss_preFSI, pmiss, pmiss_preFSI;
   std::vector<int> ntweaks;
   std::vector<std::vector<double>> tweak_branches;
   std::vector<double> paramCVResponses;
@@ -78,7 +79,11 @@ struct TweakSummaryTree {
   void AddBranches(ParamHeaderHelper const &phh) {
     
 	// TH: Add branches for output weights tree
-    //t->Branch("Mode", &Mode, "Mode/I");
+  t->Branch("Mode", &Mode, "Mode/I");
+  t->Branch("Emiss", &Emiss, "Emiss/D");
+  t->Branch("Emiss_preFSI", &Emiss_preFSI, "Emiss_preFSI/D");
+  t->Branch("pmiss", &pmiss, "pmiss/D");
+  t->Branch("pmiss_preFSI", &pmiss_preFSI, "pmiss_preFSI/D");
     
 	size_t vector_idx = 0;
     for (paramId_t pid : phh.GetParameters()) { // Need to size vectors first so
@@ -411,6 +416,12 @@ int main(int argc, char const *argv[]) {
   for (size_t ev_it = 0; ev_it < NToRead; ++ev_it) {
     gevs->GetEntry(ev_it);
     genie::EventRecord const &GenieGHep = *GenieNtpl->event;
+
+    tst.Mode = genie::utils::ghep::NeutReactionCode(&GenieGHep);
+    tst.Emiss = GetEmiss(GenieGHep, false);
+    tst.Emiss_preFSI = GetEmiss(GenieGHep, true);
+    tst.pmiss = GetPmiss(GenieGHep, false);
+    tst.pmiss_preFSI = GetPmiss(GenieGHep, true);
   
 	// TH: add in select number of variable calculations here
     //genie::Target const &tgt = GenieGHep.Summary()->InitState().Tgt();
@@ -419,7 +430,6 @@ int main(int argc, char const *argv[]) {
     //TLorentzVector FSLepP4 = *FSLep->P4();
     //TLorentzVector ISLepP4 = *ISLep->P4();
     //TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
-	
     //tst.Mode = GenieGHep.EventGenerationMode();
 
     if (!(ev_it % NToShout)) {
@@ -429,6 +439,8 @@ int main(int argc, char const *argv[]) {
     }
 
     tst.Clear();
+
+
 #ifndef NO_ART
     event_unit_response_w_cv_t resp;
     for (auto &sp : syst_providers) {
@@ -439,6 +451,7 @@ int main(int argc, char const *argv[]) {
     event_unit_response_w_cv_t resp =
         phh.GetEventVariationAndCVResponse(GenieGHep);
 #endif
+
     tst.Add(resp);
     tst.Fill();
   }

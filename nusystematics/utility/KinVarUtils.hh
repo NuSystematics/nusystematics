@@ -1,3 +1,6 @@
+#ifndef nusystematics_UTILITY_KINVARUTILS_SEEN
+#define nusystematics_UTILITY_KINVARUTILS_SEEN
+
 #include "nusystematics/utility/exceptions.hh"
 #include "nusystematics/utility/simbUtility.hh"
 
@@ -92,7 +95,7 @@ inline double Getq0(genie::EventRecord const &ev){
 }
 
 // TH: Adapted from NUISANCE
-inline TVector3 GetPmiss(genie::EventRecord const &ev, bool preFSI) {
+inline double GetPmiss(genie::EventRecord const &ev, bool preFSI) {
   // pmiss_vect is the vector difference between the neutrino momentum and the sum of final state particles momenta
   // initialize to neutrino momentum
   genie::GHepParticle *ISLep = ev.Probe();
@@ -105,22 +108,25 @@ inline TVector3 GetPmiss(genie::EventRecord const &ev, bool preFSI) {
   genie::GHepParticle *p = 0;
   TVector3 dummy(0,0,0);
 
-    while ((p = dynamic_cast<genie::GHepParticle *>(event_iter.Next()))) {
+  // TH: NUISANCE loop starts with i = 3
+  for (int i = 3; i < ev.GetEntries(); i++){
+    
+    p = ev.Particle(i);
 
     if (preFSI){
-      if (!IsPrimary(p)){
+      // TH: code from IsPrimary function in NUISANCE used to pick out primaries
+      if (IsPrimary(ev, p) == false)
         continue;
-      }
     }
-    else {
-      if (p->Status() != genie::kIStStableFinalState){
+    else { // post-FSI loop
+      // TH: Only select final state particles
+      if (p->Status() != genie::kIStStableFinalState)
         continue;
-      }
     }
+      
     // skip nuclear remnant
-    if (p->Pdg() > 10000){
+    if (abs(p->Pdg()) > 10000)
       continue;
-    }
 
     dummy.SetXYZ(p->Px(), p->Py(), p->Pz());
     Sum_of_momenta += dummy;
@@ -130,15 +136,17 @@ inline TVector3 GetPmiss(genie::EventRecord const &ev, bool preFSI) {
 
   pmiss_vect -= Sum_of_momenta;
 
-  return pmiss_vect;
+  double pmiss = pmiss_vect.Mag();
+
+  return pmiss;
 }
 
 // TH: Adapted from NUISANCE
 inline double GetEmiss(genie::EventRecord const &ev, bool preFSI){
   double Emiss = -999;
   double pmiss;
-  if (preFSI) pmiss = GetPmiss(ev, true).Mag();
-  else pmiss = GetPmiss(ev, false).Mag();
+  if (preFSI) pmiss = GetPmiss(ev, true);
+  else pmiss = GetPmiss(ev, false);
 
   std::map<int, double> bindingEnergies;
 
@@ -179,30 +187,12 @@ inline double GetEmiss(genie::EventRecord const &ev, bool preFSI){
   double Ehad = GetErecoil_MINERvA_LowRecoil(ev);
   double q0_true = Getq0(ev);
 
-  Emiss = 0.001 * (q0_true - Ehad - Trem);
+  Emiss = q0_true - Ehad - Trem;
 
   return Emiss;
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 } // namespace nusyst
+
+#endif

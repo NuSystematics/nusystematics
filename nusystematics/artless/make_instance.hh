@@ -13,6 +13,7 @@
 #include "nusystematics/systproviders/MiscInteractionSysts_tool.hh"
 #include "nusystematics/systproviders/NOvAStyleNonResPionNorm_tool.hh"
 #include "nusystematics/systproviders/DIRTExample_tool.hh"
+#include "nusystematics/systproviders/DIRT2_Emiss_tool.hh"
 
 #include "fhiclcpp/ParameterSet.h"
 
@@ -45,7 +46,9 @@ make_instance(fhicl::ParameterSet const &paramset) {
   } else if (tool_type == "FSILikeEAvailSmearing") {
     return std::make_unique<FSILikeEAvailSmearing>(paramset);
   } else if (tool_type == "DIRTExample") {
-     return std::make_unique<DIRTExample>(paramset);
+    return std::make_unique<DIRTExample>(paramset);
+  } else if (tool_type == "DIRT2_Emiss") {
+    return std::make_unique<DIRT2_Emiss>(paramset);
   } else {
     throw unknown_nusyst_systprovider()
         << "[ERROR]: Unknown tool type: " << std::quoted(tool_type);

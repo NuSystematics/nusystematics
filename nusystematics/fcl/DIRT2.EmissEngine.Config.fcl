@@ -1,0 +1,28 @@
+generated_systematic_provider_configuration: {
+	EmissRWEngine: {
+		CorrTailRW: {
+			centralParamValue: 1
+			paramVariations: [
+			0.25,
+            0.5,
+			2,
+			4,
+		]
+		prettyName: "CorrTailRW"
+		systParamId: 0
+	}
+	instance_name: "v1"
+	parameter_headers: [
+		"CorrTailRW",
+	]
+	tool_options: {
+		OPT_STRING: "option_test"
+		OPT_BOOL: true
+		fill_valid_tree: false
+	}
+	tool_type: "DIRT2_Emiss"
+	}
+	syst_providers: [
+		"EmissRWEngine"
+	]
+}
