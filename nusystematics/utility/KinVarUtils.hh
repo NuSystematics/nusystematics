@@ -150,16 +150,17 @@ inline double GetEmiss(genie::EventRecord const &ev, bool preFSI){
 
   std::map<int, double> bindingEnergies;
 
-  bindingEnergies.insert(std::pair(1000030060, 17.0)); //Li6   
-  bindingEnergies.insert(std::pair(1000060120, 25.0)); //C12   
-  bindingEnergies.insert(std::pair(1000080160, 27.0)); //O16   
-  bindingEnergies.insert(std::pair(1000120240, 32.0)); //Mg24  
-  bindingEnergies.insert(std::pair(1000180400, 29.5)); //Ar40  
-  bindingEnergies.insert(std::pair(1000200400, 28.0)); //Ca40  
-  bindingEnergies.insert(std::pair(1000220480, 30.0)); //Ti48    
-  bindingEnergies.insert(std::pair(1000260560, 36.0)); //Fe56  
-  bindingEnergies.insert(std::pair(1000280580, 36.0)); //Ni58  
-  bindingEnergies.insert(std::pair(1000822080, 44.0)); //Pb208 
+  // TH: in GeV
+  bindingEnergies.insert(std::pair(1000030060, 0.001 * 17.0)); //Li6   
+  bindingEnergies.insert(std::pair(1000060120, 0.001 * 25.0)); //C12   
+  bindingEnergies.insert(std::pair(1000080160, 0.001 * 27.0)); //O16   
+  bindingEnergies.insert(std::pair(1000120240, 0.001 * 32.0)); //Mg24  
+  bindingEnergies.insert(std::pair(1000180400, 0.001 * 29.5)); //Ar40  
+  bindingEnergies.insert(std::pair(1000200400, 0.001 * 28.0)); //Ca40  
+  bindingEnergies.insert(std::pair(1000220480, 0.001 * 30.0)); //Ti48    
+  bindingEnergies.insert(std::pair(1000260560, 0.001 * 36.0)); //Fe56  
+  bindingEnergies.insert(std::pair(1000280580, 0.001 * 36.0)); //Ni58  
+  bindingEnergies.insert(std::pair(1000822080, 0.001 * 44.0)); //Pb208 
 
   int n_tgt_nucleons = ev.Summary()->InitState().Tgt().A();
   int tgt_pdg = ev.Summary()->InitState().Tgt().Pdg();
@@ -173,7 +174,7 @@ inline double GetEmiss(genie::EventRecord const &ev, bool preFSI){
 
   double M_tgt = -999;
   double M_rem = -999;
-  double mass_nucleon = (GetMassFromPDG(2212) + GetMassFromPDG(2112)) * 0.5 * 1000;
+  double mass_nucleon = (GetMassFromPDG(2212) + GetMassFromPDG(2112)) * 0.5;
   if (tgt_pdg == 1000010010){
     M_tgt = mass_nucleon;
     M_rem = 0;
@@ -183,8 +184,41 @@ inline double GetEmiss(genie::EventRecord const &ev, bool preFSI){
   }
 
   double Trem = sqrt(pmiss*pmiss + M_rem*M_rem) - M_rem;
-  // TH: check with Laura if below is correct 
-  double Ehad = GetErecoil_MINERvA_LowRecoil(ev);
+  double Ehad = 0;
+
+  genie::GHepParticle *p = 0;
+
+  // TH: code adapted from FitUtils.cxx in NUISANCE
+  for (int i = 3; i < ev.GetEntries(); i++){
+    
+    p = ev.Particle(i);
+
+    if (preFSI){
+      // Check for primary vertex if calculting pre-FSI
+      if (IsPrimary(ev, p) == false)
+        continue;
+    }
+    else { // post-FSI loop
+      // TH: Only select final state particles
+      if (p->Status() != genie::kIStStableFinalState)
+        continue;
+    }
+      
+    // skip nuclear remnant
+    if (abs(p->Pdg()) > 10000)
+      continue;
+    // skip lepton
+    if ( abs( ev.Particle(i)->Pdg() ) == abs(ev.Particle(0)->Pdg()) - 1 )
+      continue;
+
+    // add kinetic energy of proton of neutron
+    if (p->Pdg() == 2112 || p->Pdg() == 2212){
+      Ehad += p->KinE();
+    } else { // add total energy of other particles
+      Ehad += p->E();
+    }
+  }
+
   double q0_true = Getq0(ev);
 
   Emiss = q0_true - Ehad - Trem;
