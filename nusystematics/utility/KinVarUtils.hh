@@ -95,7 +95,7 @@ inline double Getq0(genie::EventRecord const &ev){
 }
 
 // TH: Adapted from NUISANCE
-inline double GetPmiss(genie::EventRecord const &ev, bool preFSI) {
+inline TVector3 GetPmiss(genie::EventRecord const &ev, bool preFSI) {
   // pmiss_vect is the vector difference between the neutrino momentum and the sum of final state particles momenta
   // initialize to neutrino momentum
   genie::GHepParticle *ISLep = ev.Probe();
@@ -136,17 +136,15 @@ inline double GetPmiss(genie::EventRecord const &ev, bool preFSI) {
 
   pmiss_vect -= Sum_of_momenta;
 
-  double pmiss = pmiss_vect.Mag();
-
-  return pmiss;
+  return pmiss_vect;
 }
 
 // TH: Adapted from NUISANCE
-inline double GetEmiss(genie::EventRecord const &ev, bool preFSI){
+inline float GetEmiss(genie::EventRecord const &ev, bool preFSI){
   double Emiss = -999;
   double pmiss;
-  if (preFSI) pmiss = GetPmiss(ev, true);
-  else pmiss = GetPmiss(ev, false);
+  if (preFSI) pmiss = GetPmiss(ev, true).Mag();
+  else pmiss = GetPmiss(ev, false).Mag();
 
   std::map<int, double> bindingEnergies;
 
