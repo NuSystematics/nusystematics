@@ -1,19 +1,46 @@
 generated_systematic_provider_configuration: {
 	EmissRWEngine: {
-		CorrTailRW: {
+		Emiss_CorrTailRW: {
 			centralParamValue: 1
 			paramVariations: [
-			0.25,
-            0.5,
-			2,
-			4,
-		]
-		prettyName: "CorrTailRW"
-		systParamId: 0
-	}
+				0.25,
+            	0.5,
+				1,
+				2,
+				4,
+			]
+			prettyName: "Emiss_CorrTailRW"
+			systParamId: 0
+		}
+		Emiss_LinearRW: {
+			centralParamValue: 0
+			paramVariations: [
+				-30,
+				-10,
+				0,
+				10,
+				30,
+			]
+			prettyName: "Emiss_LinearRW"
+			systParamId: 1
+		}
+		Emiss_TrigRW: {
+			centralParamValue: 0
+			paramVariations: [
+				0,
+				0.5,
+				1,
+				1.5,
+				2,
+			]
+			prettyName: "Emiss_TrigRW"
+			systParamId: 2
+		}
 	instance_name: "v1"
 	parameter_headers: [
-		"CorrTailRW",
+		"Emiss_CorrTailRW",
+		"Emiss_LinearRW",
+		"Emiss_TrigRW"
 	]
 	tool_options: {
 		OPT_STRING: "option_test"

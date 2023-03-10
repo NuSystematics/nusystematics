@@ -36,7 +36,9 @@ private:
 
   fhicl::ParameterSet tool_options;
 
-  size_t pidx_CorrTailRW;
+  size_t pidx_Emiss_CorrTailRW;
+  size_t pidx_Emiss_LinearRW;
+  size_t pidx_Emiss_TrigRW;
 
   void InitValidTree();
 

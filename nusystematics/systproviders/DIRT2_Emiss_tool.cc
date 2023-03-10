@@ -18,7 +18,9 @@ using namespace fhicl;
 
 DIRT2_Emiss::DIRT2_Emiss(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-      pidx_CorrTailRW(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_CorrTailRW(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_LinearRW(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_TrigRW(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
 #ifndef NO_ART
@@ -31,7 +33,7 @@ SystMetaData DIRT2_Emiss::BuildSystMetaData(ParameterSet const &cfg,
   SystMetaData smd;
 
   for (std::string const &pname :
-       {"CorrTailRW"}) {
+       {"Emiss_CorrTailRW", "Emiss_LinearRW", "Emiss_TrigRW"}) {
     systtools::SystParamHeader phdr;
     if (ParseFHiCLSimpleToolConfigurationParameter(cfg, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
@@ -62,9 +64,19 @@ bool DIRT2_Emiss::SetupResponseCalculator(
 
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  if (HasParam(md, "CorrTailRW")) {
-    pidx_CorrTailRW =
-        GetParamIndex(md, "CorrTailRW");
+  if (HasParam(md, "Emiss_CorrTailRW")) {
+    pidx_Emiss_CorrTailRW =
+        GetParamIndex(md, "Emiss_CorrTailRW");
+  }
+
+  if (HasParam(md, "Emiss_LinearRW")) {
+    pidx_Emiss_LinearRW =
+        GetParamIndex(md, "Emiss_LinearRW");
+  }
+
+  if (HasParam(md, "Emiss_TrigRW")) {
+    pidx_Emiss_TrigRW =
+        GetParamIndex(md, "Emiss_TrigRW");
   }
 
   fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
@@ -85,21 +97,39 @@ DIRT2_Emiss::GetEventResponse(genie::EventRecord const &ev) {
   TLorentzVector ISLepP4 = *ISLep->P4();
   TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
 
-  // TH: get pre-FSI Emiss from event
-  double Emiss = GetEmiss(ev, true);
-
+  // TH: get Ermv directly from GENIE event record
+  double Emiss_preFSI;
+  genie::GHepParticle *nucleon = ev.HitNucleon();
+  if (nucleon == NULL){
+    Emiss_preFSI = -999;
+  }
+  else {
+    Emiss_preFSI = nucleon->RemovalEnergy();
+  }  
+  
   // now make the output
   systtools::event_unit_response_t resp;
-
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  if (pidx_CorrTailRW != systtools::kParamUnhandled<size_t>) {
-
-    resp.push_back( {md[pidx_CorrTailRW].systParamId, {}} );
-    for (double var : md[pidx_CorrTailRW].paramVariations) {
-      resp.back().responses.push_back( GetCorrTailRW( Emiss, var) );
+  if (pidx_Emiss_CorrTailRW != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_CorrTailRW].systParamId, {}} );
+    for (double var : md[pidx_Emiss_CorrTailRW].paramVariations) {
+      resp.back().responses.push_back( GetEmissCorrTailRW( Emiss_preFSI, var) );
     }
+  }
 
+  if (pidx_Emiss_LinearRW != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_LinearRW].systParamId, {}} );
+    for (double var : md[pidx_Emiss_LinearRW].paramVariations) {
+      resp.back().responses.push_back( GetEmissLinearRW( Emiss_preFSI, var) );
+    }
+  }
+
+  if (pidx_Emiss_TrigRW != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_TrigRW].systParamId, {}} );
+    for (double var : md[pidx_Emiss_TrigRW].paramVariations) {
+      resp.back().responses.push_back( GetEmissTrigRW( Emiss_preFSI, var) );
+    }
   }
 
   if (fill_valid_tree) {
