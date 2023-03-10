@@ -66,7 +66,7 @@ struct TweakSummaryTree {
 
   // TH: Add variables for for output weight tree
   int Mode;
-  float Emiss, Emiss_preFSI;
+  float Emiss, Emiss_preFSI, pmiss, pmiss_preFSI;
   double Emiss_GENIE;
   std::vector<int> ntweaks;
   std::vector<std::vector<double>> tweak_branches;
@@ -84,6 +84,8 @@ struct TweakSummaryTree {
   t->Branch("Emiss", &Emiss, "Emiss/F");
   t->Branch("Emiss_preFSI", &Emiss_preFSI, "Emiss_preFSI/F");
   t->Branch("Emiss_GENIE", &Emiss_GENIE, "Emiss_GENIE/D");
+  t->Branch("pmiss", &pmiss, "pmiss/F");
+  t->Branch("pmiss_preFSI", &pmiss_preFSI, "pmiss/F");
     
 	size_t vector_idx = 0;
     for (paramId_t pid : phh.GetParameters()) { // Need to size vectors first so
@@ -420,6 +422,8 @@ int main(int argc, char const *argv[]) {
     tst.Mode = genie::utils::ghep::NeutReactionCode(&GenieGHep);
     tst.Emiss = GetEmiss(GenieGHep, false);
     tst.Emiss_preFSI = GetEmiss(GenieGHep, true);
+	tst.pmiss = GetPmiss(GenieGHep, false);
+	tst.pmiss_preFSI = GetPmiss(GenieGHep, true);
 
     if (GenieGHep.HitNucleon() == NULL){
       tst.Emiss_GENIE = -999;
