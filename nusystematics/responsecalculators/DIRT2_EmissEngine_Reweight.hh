@@ -39,9 +39,9 @@ namespace nusyst {
     }
   }
 
-  inline double GetEmissTrigRW(double Emiss_preFSI, double parameter_value){
+  inline double GetEmissShiftPeakRW(double Emiss_preFSI, double parameter_value){
     // TH: dial to move the peak of the removal energy distribution
-	//     Do this by weighting down the peak at 10 MeV and weighting up a higher energy region using a cosine weight distribution 
+	  //     Do this by weighting down the peak at 10 MeV and weighting up a higher energy region using a cosine weight distribution 
     if (Emiss_preFSI > 0.01 && Emiss_preFSI < 0.025){
 	  double weight = 1 + parameter_value * TMath::Cos( 0.1 * TMath::Pi() * (Emiss_preFSI/0.001));
       if (weight > 0.2){
