@@ -422,8 +422,8 @@ int main(int argc, char const *argv[]) {
     tst.Mode = genie::utils::ghep::NeutReactionCode(&GenieGHep);
     tst.Emiss = GetEmiss(GenieGHep, false);
     tst.Emiss_preFSI = GetEmiss(GenieGHep, true);
-	  tst.pmiss = GetPmiss(GenieGHep, false);
-	  tst.pmiss_preFSI = GetPmiss(GenieGHep, true);
+    tst.pmiss = GetPmiss(GenieGHep, false);
+    tst.pmiss_preFSI = GetPmiss(GenieGHep, true);
 
     if (GenieGHep.HitNucleon() == NULL){
       tst.Emiss_GENIE = -999;
@@ -447,14 +447,14 @@ int main(int argc, char const *argv[]) {
           resp, sp->GetEventVariationAndCVResponse(GenieGHep));
     }
 #else
-	  event_unit_response_w_cv_t resp = phh.GetEventVariationAndCVResponse(GenieGHep);
+    event_unit_response_w_cv_t resp = phh.GetEventVariationAndCVResponse(GenieGHep);
 #endif
 
     tst.Add(resp);
     tst.Fill();
-
-	  // TH: Very important to clear this object to avoid memory issues!
-	  GenieNtpl->Clear();
+    
+    // TH: Very important to clear this object to avoid memory issues!
+    GenieNtpl->Clear();
 
   }
   std::cout << std::endl;
