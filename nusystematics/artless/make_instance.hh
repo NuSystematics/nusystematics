@@ -45,9 +45,9 @@ make_instance(fhicl::ParameterSet const &paramset) {
     return std::make_unique<EbLepMomShift>(paramset);
   } else if (tool_type == "FSILikeEAvailSmearing") {
     return std::make_unique<FSILikeEAvailSmearing>(paramset);
-  } else if (tool_type == "DIRTExample") {
-    return std::make_unique<DIRTExample>(paramset);
   } else if (tool_type == "DIRT2_Emiss") {
+    return std::make_unique<DIRT2_Emiss>(paramset);
+  } else if (tool_type == "DIRT2_RPA") {
     return std::make_unique<DIRT2_Emiss>(paramset);
   } else {
     throw unknown_nusyst_systprovider()

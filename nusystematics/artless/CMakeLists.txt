@@ -125,8 +125,8 @@ SET(RC_HDRFILES
   ${CMAKE_SOURCE_DIR}/nusystematics/responsecalculators/MINERvA2p2hq0q3.hh
   ${CMAKE_SOURCE_DIR}/nusystematics/responsecalculators/MINERvAq0q3Weighting_data.hh
   ${CMAKE_SOURCE_DIR}/nusystematics/responsecalculators/MINERvARPAq0q3_ReWeight.hh
-  ${CMAKE_SOURCE_DIR}/nusystematics/responsecalculators/DIRTExample_Reweight.hh
-  ${CMAKE_SOURCE_DIR}/nusystematics/responsecalculators/DIRT2_EmissEngine_Reweight.hh)
+  ${CMAKE_SOURCE_DIR}/nusystematics/responsecalculators/DIRT2_EmissEngine_Reweight.hh
+  ${CMAKE_SOURCE_DIR}/nusystematics/responsecalculators/DIRT2_RPAEngine_Reweight.hh)
 
 
 INSTALL(FILES ${RC_HDRFILES} DESTINATION include/nusystematics/responsecalculators)
@@ -144,8 +144,8 @@ SET(SP_IMPLFILES
   ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/MINERvAE2p2h_tool.cc
   ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/EbLepMomShift_tool.cc
   ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/FSILikeEAvailSmearing_tool.cc
-  ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/DIRTExample_tool.cc
   ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/DIRT2_Emiss_tool.cc
+  ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/DIRT2_RPA_tool.cc
 )
 
 SET(SP_HDRFILES
@@ -159,8 +159,8 @@ SET(SP_HDRFILES
   ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/MINERvAE2p2h_tool.hh
   ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/EbLepMomShift_tool.hh
   ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/FSILikeEAvailSmearing_tool.hh
-  ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/DIRTExample_tool.hh
   ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/DIRT2_Emiss_tool.hh
+  ${CMAKE_SOURCE_DIR}/nusystematics/systproviders/DIRT2_RPA_tool.hh
 )
 
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)

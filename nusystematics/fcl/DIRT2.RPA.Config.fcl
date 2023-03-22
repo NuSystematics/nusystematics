@@ -1,0 +1,27 @@
+generated_systematic_provider_configuration: {
+	RPA_Engine: {
+		RPA_dummy: {
+			centralParamValue: 1
+			paramVariations: [
+				0.5,
+                1.,
+                1.5,
+			]
+			prettyName: "RPA_dummy"
+			systParamId: 0
+		}
+	instance_name: "v1"
+	parameter_headers: [
+		"RPA_dummy",
+	]
+	tool_options: {
+		OPT_STRING: "option_test"
+		OPT_BOOL: true
+		fill_valid_tree: false
+	}
+	tool_type: "DIRT2_RPA"
+	}
+	syst_providers: [
+		"RPA_Engine"
+	]
+}
