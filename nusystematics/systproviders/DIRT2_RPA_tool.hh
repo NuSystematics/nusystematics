@@ -36,8 +36,12 @@ private:
 
   fhicl::ParameterSet tool_options;
 
-  size_t pidx_RPA_dummy;
-  
+  size_t pidx_RPA_LowETransfer_0;
+  size_t pidx_RPA_LowETransfer_1;
+  size_t pidx_RPA_LowETransfer_2;
+  size_t pidx_RPA_LowETransfer_3;
+  size_t pidx_RPA_HighETransfer_0;
+
   void InitValidTree();
 
   bool fill_valid_tree;

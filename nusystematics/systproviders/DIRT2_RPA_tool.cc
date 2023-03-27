@@ -18,7 +18,11 @@ using namespace fhicl;
 
 DIRT2_RPA::DIRT2_RPA(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-      pidx_RPA_dummy(systtools::kParamUnhandled<size_t>),
+      pidx_RPA_LowETransfer_0(systtools::kParamUnhandled<size_t>),
+      pidx_RPA_LowETransfer_1(systtools::kParamUnhandled<size_t>),
+      pidx_RPA_LowETransfer_2(systtools::kParamUnhandled<size_t>),
+      pidx_RPA_LowETransfer_3(systtools::kParamUnhandled<size_t>),
+      pidx_RPA_HighETransfer_0(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
 #ifndef NO_ART
@@ -31,7 +35,7 @@ SystMetaData DIRT2_RPA::BuildSystMetaData(ParameterSet const &cfg,
   SystMetaData smd;
 
   for (std::string const &pname :
-       {"RPA_dummy"}) {
+       {"RPA_LowETransfer_0", "RPA_LowETransfer_1", "RPA_LowETransfer_2", "RPA_LowETransfer_3", "RPA_HighETransfer_0"}) {
     systtools::SystParamHeader phdr;
     if (ParseFHiCLSimpleToolConfigurationParameter(cfg, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
@@ -62,9 +66,29 @@ bool DIRT2_RPA::SetupResponseCalculator(
 
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  if (HasParam(md, "RPA_dummy")) {
-    pidx_RPA_dummy =
-        GetParamIndex(md, "RPA_dummy");
+  if (HasParam(md, "RPA_LowETransfer_0")) {
+    pidx_RPA_LowETransfer_0 = 
+        GetParamIndex(md, "RPA_LowETransfer_0");
+  }
+
+  if (HasParam(md, "RPA_LowETransfer_1")) {
+    pidx_RPA_LowETransfer_1 = 
+        GetParamIndex(md, "RPA_LowETransfer_1");
+  }
+
+  if (HasParam(md, "RPA_LowETransfer_2")) {
+    pidx_RPA_LowETransfer_2 = 
+        GetParamIndex(md, "RPA_LowETransfer_2");
+  }
+
+  if (HasParam(md, "RPA_LowETransfer_3")) {
+    pidx_RPA_LowETransfer_3 = 
+        GetParamIndex(md, "RPA_LowETransfer_3");
+  }
+
+  if (HasParam(md, "RPA_HighETransfer_0")) {
+    pidx_RPA_HighETransfer_0 = 
+        GetParamIndex(md, "RPA_HighETransfer_0");
   }
 
   fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
@@ -77,6 +101,11 @@ bool DIRT2_RPA::SetupResponseCalculator(
 
 event_unit_response_t
 DIRT2_RPA::GetEventResponse(genie::EventRecord const &ev) {
+
+  // TH: Return a weight of 1 for non-CCQE event
+  if (!ev.Summary()->ProcInfo().IsWeakCC() && !ev.Summary()->ProcInfo().IsQuasiElastic()){
+    return this->GetDefaultEventResponse();
+  }
 
   genie::GHepParticle *FSLep = ev.FinalStatePrimaryLepton();
   genie::GHepParticle *ISLep = ev.Probe();
@@ -91,10 +120,38 @@ DIRT2_RPA::GetEventResponse(genie::EventRecord const &ev) {
   systtools::event_unit_response_t resp;
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  if (pidx_RPA_dummy != systtools::kParamUnhandled<size_t>) {
-    resp.push_back( {md[pidx_RPA_dummy].systParamId, {}} );
-    for (double var : md[pidx_RPA_dummy].paramVariations) {
-      resp.back().responses.push_back( GetRPA_RW(q0, var) );
+  if (pidx_RPA_LowETransfer_0 != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_RPA_LowETransfer_0].systParamId, {}} );
+    for (double var : md[pidx_RPA_LowETransfer_0].paramVariations) {
+      resp.back().responses.push_back( GetRPA_LowETransfer_0_RW(q0, var) );
+    }
+  }
+
+  if (pidx_RPA_LowETransfer_1 != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_RPA_LowETransfer_1].systParamId, {}} );
+    for (double var : md[pidx_RPA_LowETransfer_1].paramVariations) {
+      resp.back().responses.push_back( GetRPA_LowETransfer_1_RW(q0, var) );
+    }
+  }
+
+  if (pidx_RPA_LowETransfer_2 != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_RPA_LowETransfer_2].systParamId, {}} );
+    for (double var : md[pidx_RPA_LowETransfer_2].paramVariations) {
+      resp.back().responses.push_back( GetRPA_LowETransfer_2_RW(q0, var) );
+    }
+  }
+
+  if (pidx_RPA_LowETransfer_3 != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_RPA_LowETransfer_3].systParamId, {}} );
+    for (double var : md[pidx_RPA_LowETransfer_3].paramVariations) {
+      resp.back().responses.push_back( GetRPA_LowETransfer_3_RW(q0, var) );
+    }
+  }
+
+  if (pidx_RPA_HighETransfer_0 != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_RPA_HighETransfer_0].systParamId, {}} );
+    for (double var : md[pidx_RPA_HighETransfer_0].paramVariations) {
+      resp.back().responses.push_back( GetRPA_HighETransfer_0_RW(q0, var) );
     }
   }
 

@@ -8,13 +8,50 @@
 
 namespace nusyst {
 
-  inline double GetRPA_RW(double q0, double parameter_value) {
-    
-    // TH: blank for now, just a template
-    double weight = 1 + q0*parameter_value;
-    return weight;    
+  inline double GetRPA_LowETransfer_0_RW(double q0, double parameter_value) {
+    if (q0 > 0.01 && q0 <= 0.06){
+      return parameter_value;
+    }
+    else {
+      return 1;
+    }  
   }
-                                  
+
+  inline double GetRPA_LowETransfer_1_RW(double q0, double parameter_value) {
+    if (q0 > 0.06 && q0 <= 0.11){
+      return parameter_value;
+    }
+    else {
+      return 1;
+    }  
+  }
+
+  inline double GetRPA_LowETransfer_2_RW(double q0, double parameter_value) {
+    if (q0 > 0.11 && q0 <= 0.16){
+      return parameter_value;
+    }
+    else {
+      return 1;
+    }  
+  }
+
+  inline double GetRPA_LowETransfer_3_RW(double q0, double parameter_value) {
+    if (q0 > 0.16 && q0 <= 0.21){
+      return parameter_value;
+    }
+    else {
+      return 1;
+    }  
+  }
+
+  inline double GetRPA_HighETransfer_0_RW(double q0, double parameter_value) {
+    if (q0 > 0.21){
+      return parameter_value;
+    }
+    else {
+      return 1;
+    }  
+  }                  
 
 } // namespace nusyst
 

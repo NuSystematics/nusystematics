@@ -1,18 +1,72 @@
 generated_systematic_provider_configuration: {
 	RPA_Engine: {
-		RPA_dummy: {
+		RPA_LowETransfer_0: {
 			centralParamValue: 1
 			paramVariations: [
-				0.5,
-                1.,
-                1.5,
+				0.25,
+				0.75,
+				1,
+				4,
+				6,
 			]
-			prettyName: "RPA_dummy"
+			prettyName: "RPA_LowETransfer_0"
 			systParamId: 0
+		}
+		RPA_LowETransfer_1: {
+			centralParamValue: 1
+			paramVariations: [
+				0.25,
+				0.75,
+				1,
+				2,
+				4,
+			]
+			prettyName: "RPA_LowETransfer_1"
+			systParamId: 1
+		}
+		RPA_LowETransfer_2: {
+			centralParamValue: 1
+			paramVariations: [
+				0.25,
+				0.75,
+				1,
+				1.25,
+				1.9,
+			]
+			prettyName: "RPA_LowETransfer_2"
+			systParamId: 2
+		}
+		RPA_LowETransfer_3: {
+			centralParamValue: 1
+			paramVariations: [
+				0.25,
+				0.75,
+				1,
+				1.1,
+				1.3,
+			]
+			prettyName: "RPA_LowETransfer_3"
+			systParamId: 3
+		}
+		RPA_HighETransfer_0: {
+			centralParamValue: 1
+			paramVariations: [
+				0.25,
+				0.75,
+				1,
+				1.2,
+				1.3,
+			]
+			prettyName: "RPA_HighETransfer_0"
+			systParamId: 4
 		}
 	instance_name: "v1"
 	parameter_headers: [
-		"RPA_dummy",
+		"RPA_LowETransfer_0",
+		"RPA_LowETransfer_1",
+		"RPA_LowETransfer_2",
+		"RPA_LowETransfer_3",
+		"RPA_HighETransfer_0"
 	]
 	tool_options: {
 		OPT_STRING: "option_test"
