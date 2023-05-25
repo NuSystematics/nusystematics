@@ -66,7 +66,7 @@ struct TweakSummaryTree {
 
   // TH: Add variables for for output weight tree
   int Mode;
-  float Emiss, Emiss_preFSI, pmiss, pmiss_preFSI;
+  float Emiss, Emiss_preFSI, pmiss, pmiss_preFSI, q0, Enu_true, plep, q3, Q2;
   double Emiss_GENIE;
   std::vector<int> ntweaks;
   std::vector<std::vector<double>> tweak_branches;
@@ -86,6 +86,11 @@ struct TweakSummaryTree {
   t->Branch("Emiss_GENIE", &Emiss_GENIE, "Emiss_GENIE/D");
   t->Branch("pmiss", &pmiss, "pmiss/F");
   t->Branch("pmiss_preFSI", &pmiss_preFSI, "pmiss/F");
+  t->Branch("q0", &q0, "q0/F");
+  t->Branch("Q2", &Q2, "Q2/F");
+  t->Branch("q3", &q3, "q3/F");
+  t->Branch("Enu_true", &Enu_true, "Enu_true/F");
+  t->Branch("plep", &plep, "plep/F");
     
 	size_t vector_idx = 0;
     for (paramId_t pid : phh.GetParameters()) { // Need to size vectors first so
@@ -419,6 +424,13 @@ int main(int argc, char const *argv[]) {
     gevs->GetEntry(ev_it);
     genie::EventRecord const &GenieGHep = *GenieNtpl->event;
 
+    genie::GHepParticle *FSLep = GenieGHep.FinalStatePrimaryLepton();
+    genie::GHepParticle *ISLep = GenieGHep.Probe();
+    
+    TLorentzVector FSLepP4 = *FSLep->P4();
+    TLorentzVector ISLepP4 = *ISLep->P4();
+    TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
+
     tst.Mode = genie::utils::ghep::NeutReactionCode(&GenieGHep);
     tst.Emiss = GetEmiss(GenieGHep, false);
     tst.Emiss_preFSI = GetEmiss(GenieGHep, true);
@@ -431,6 +443,12 @@ int main(int argc, char const *argv[]) {
     else {
       tst.Emiss_GENIE = GenieGHep.HitNucleon()->RemovalEnergy();
     }
+
+    tst.q0 = emTransfer.E();
+    tst.Q2 = -emTransfer.Mag2();
+    tst.q3 = emTransfer.Vect().Mag();
+    tst.Enu_true = ISLepP4.E();
+    tst.plep = FSLepP4.Vect().Mag();
   
     if (!(ev_it % NToShout)) {
       std::cout << (ev_it ? "\r" : "") << "Event #" << ev_it << "/" << NToRead

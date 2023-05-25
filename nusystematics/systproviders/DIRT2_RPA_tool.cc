@@ -103,7 +103,8 @@ event_unit_response_t
 DIRT2_RPA::GetEventResponse(genie::EventRecord const &ev) {
 
   // TH: Return a weight of 1 for non-CCQE event
-  if (!ev.Summary()->ProcInfo().IsWeakCC() && !ev.Summary()->ProcInfo().IsQuasiElastic()){
+  int Mode = genie::utils::ghep::NeutReactionCode(&ev);
+  if (Mode != 1){
     return this->GetDefaultEventResponse();
   }
 
