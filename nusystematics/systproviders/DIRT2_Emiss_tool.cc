@@ -18,9 +18,12 @@ using namespace fhicl;
 
 DIRT2_Emiss::DIRT2_Emiss(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-      pidx_Emiss_CorrTail(systtools::kParamUnhandled<size_t>),
-      pidx_Emiss_Linear(systtools::kParamUnhandled<size_t>),
-      pidx_Emiss_ShiftPeak(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_CorrTail_p(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_CorrTail_n(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_Linear_p(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_Linear_n(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_ShiftPeak_p(systtools::kParamUnhandled<size_t>),
+      pidx_Emiss_ShiftPeak_n(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
 #ifndef NO_ART
@@ -33,7 +36,7 @@ SystMetaData DIRT2_Emiss::BuildSystMetaData(ParameterSet const &cfg,
   SystMetaData smd;
 
   for (std::string const &pname :
-       {"Emiss_CorrTail", "Emiss_Linear", "Emiss_ShiftPeak"}) {
+       {"Emiss_CorrTail_p", "Emiss_CorrTail_n", "Emiss_Linear_p", "Emiss_Linear_n",  "Emiss_ShiftPeak_p", "Emiss_ShiftPeak_n"}) {
     systtools::SystParamHeader phdr;
     if (ParseFHiCLSimpleToolConfigurationParameter(cfg, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
@@ -64,19 +67,28 @@ bool DIRT2_Emiss::SetupResponseCalculator(
 
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  if (HasParam(md, "Emiss_CorrTail")) {
-    pidx_Emiss_CorrTail =
-        GetParamIndex(md, "Emiss_CorrTail");
+  if (HasParam(md, "Emiss_CorrTail_p")) {
+    pidx_Emiss_CorrTail_p = GetParamIndex(md, "Emiss_CorrTail_p");
   }
 
-  if (HasParam(md, "Emiss_Linear")) {
-    pidx_Emiss_Linear =
-        GetParamIndex(md, "Emiss_Linear");
+  if (HasParam(md, "Emiss_CorrTail_n")) {
+    pidx_Emiss_CorrTail_n = GetParamIndex(md, "Emiss_CorrTail_n");
   }
 
-  if (HasParam(md, "Emiss_ShiftPeak")) {
-    pidx_Emiss_ShiftPeak =
-        GetParamIndex(md, "Emiss_ShiftPeak");
+  if (HasParam(md, "Emiss_Linear_p")) {
+    pidx_Emiss_Linear_p = GetParamIndex(md, "Emiss_Linear_p");
+  }
+
+  if (HasParam(md, "Emiss_Linear_n")) {
+    pidx_Emiss_Linear_n = GetParamIndex(md, "Emiss_Linear_n");
+  }
+
+  if (HasParam(md, "Emiss_ShiftPeak_p")) {
+    pidx_Emiss_ShiftPeak_p = GetParamIndex(md, "Emiss_ShiftPeak_p");
+  }
+
+  if (HasParam(md, "Emiss_ShiftPeak_n")) {
+    pidx_Emiss_ShiftPeak_n = GetParamIndex(md, "Emiss_ShiftPeak_n");
   }
 
   fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
@@ -99,36 +111,104 @@ DIRT2_Emiss::GetEventResponse(genie::EventRecord const &ev) {
 
   // TH: get Ermv directly from GENIE event record
   double Emiss_preFSI;
+  int PDG;
   genie::GHepParticle *nucleon = ev.HitNucleon();
   if (nucleon == NULL){
+    // TH: some events don't have an initial nucleon (e.g. coherent scattering)
+    //     want to skip these events and not re-weight
     Emiss_preFSI = -999;
+    PDG = -999;
   }
   else {
     Emiss_preFSI = nucleon->RemovalEnergy();
-  }  
-  
+    PDG = nucleon->Pdg();
+  } 
+
   // now make the output
   systtools::event_unit_response_t resp;
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  if (pidx_Emiss_CorrTail != systtools::kParamUnhandled<size_t>) {
-    resp.push_back( {md[pidx_Emiss_CorrTail].systParamId, {}} );
-    for (double var : md[pidx_Emiss_CorrTail].paramVariations) {
-      resp.back().responses.push_back( GetEmissCorrTailRW( Emiss_preFSI, var) );
+  if (pidx_Emiss_CorrTail_p != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_CorrTail_p].systParamId, {}} );
+    if (PDG == 2212){
+      for (double var : md[pidx_Emiss_CorrTail_p].paramVariations) {
+        resp.back().responses.push_back( GetEmissCorrTailRW( Emiss_preFSI, var) );
+      } 
+    }
+    else{
+      for (unsigned int i = 0; i < md[pidx_Emiss_CorrTail_p].paramVariations.size(); i++) {
+        resp.back().responses.push_back(1);
+      }
     }
   }
 
-  if (pidx_Emiss_Linear != systtools::kParamUnhandled<size_t>) {
-    resp.push_back( {md[pidx_Emiss_Linear].systParamId, {}} );
-    for (double var : md[pidx_Emiss_Linear].paramVariations) {
-      resp.back().responses.push_back( GetEmissLinearRW( Emiss_preFSI, var) );
+  if (pidx_Emiss_CorrTail_n != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_CorrTail_n].systParamId, {}} );
+    if (PDG == 2112){
+      for (double var : md[pidx_Emiss_CorrTail_n].paramVariations) {
+        resp.back().responses.push_back( GetEmissCorrTailRW( Emiss_preFSI, var) );
+      } 
+    }
+    else{
+      for (unsigned int i = 0; i < md[pidx_Emiss_CorrTail_n].paramVariations.size(); i++) {
+        resp.back().responses.push_back(1);
+      }
     }
   }
 
-  if (pidx_Emiss_ShiftPeak != systtools::kParamUnhandled<size_t>) {
-    resp.push_back( {md[pidx_Emiss_ShiftPeak].systParamId, {}} );
-    for (double var : md[pidx_Emiss_ShiftPeak].paramVariations) {
-      resp.back().responses.push_back( GetEmissShiftPeakRW( Emiss_preFSI, var) );
+  if (pidx_Emiss_Linear_p != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_Linear_p].systParamId, {}} );
+    if (PDG == 2212){
+      for (double var : md[pidx_Emiss_Linear_p].paramVariations) {
+        resp.back().responses.push_back( GetEmissLinearRW( Emiss_preFSI, var) );
+      }
+    }
+    else{
+      for (unsigned int i = 0; i < md[pidx_Emiss_Linear_p].paramVariations.size(); i++) {
+        resp.back().responses.push_back(1);
+      }
+    }
+  }
+
+  if (pidx_Emiss_Linear_n != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_Linear_n].systParamId, {}} );
+    if (PDG == 2112){
+      for (double var : md[pidx_Emiss_Linear_n].paramVariations) {
+        resp.back().responses.push_back( GetEmissLinearRW( Emiss_preFSI, var) );
+      }
+    }
+    else{
+      for (unsigned int i = 0; i < md[pidx_Emiss_Linear_n].paramVariations.size(); i++) {
+        resp.back().responses.push_back(1);
+      }
+    }
+  }
+
+  if (pidx_Emiss_ShiftPeak_p != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_ShiftPeak_p].systParamId, {}} );
+    if (PDG == 2212){
+      for (double var : md[pidx_Emiss_ShiftPeak_p].paramVariations) {
+        resp.back().responses.push_back( GetEmissShiftPeakRW( Emiss_preFSI, var) );
+      }
+    }
+    else {
+      for (unsigned int i = 0; i < md[pidx_Emiss_ShiftPeak_p].paramVariations.size(); i++) {
+        resp.back().responses.push_back(1);
+      }
+    }
+  }
+
+  if (pidx_Emiss_ShiftPeak_n != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_Emiss_ShiftPeak_n].systParamId, {}} );
+    if (PDG == 2112){
+      for (double var : md[pidx_Emiss_ShiftPeak_n].paramVariations) {
+        resp.back().responses.push_back( GetEmissShiftPeakRW( Emiss_preFSI, var) );
+      }
+    }
+    else {
+      for (unsigned int i = 0; i < md[pidx_Emiss_ShiftPeak_n].paramVariations.size(); i++) {
+        resp.back().responses.push_back(1);
+      }
     }
   }
 
