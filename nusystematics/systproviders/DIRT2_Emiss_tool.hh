@@ -36,12 +36,19 @@ private:
 
   fhicl::ParameterSet tool_options;
 
-  size_t pidx_Emiss_CorrTail_p;
-  size_t pidx_Emiss_CorrTail_n;
-  size_t pidx_Emiss_Linear_p;
-  size_t pidx_Emiss_Linear_n;
-  size_t pidx_Emiss_ShiftPeak_p;
-  size_t pidx_Emiss_ShiftPeak_n;
+  size_t pidx_Emiss_CorrTail_Ar_p;
+  size_t pidx_Emiss_CorrTail_Ar_n;
+  size_t pidx_Emiss_Linear_Ar_p;
+  size_t pidx_Emiss_Linear_Ar_n;
+  size_t pidx_Emiss_ShiftPeak_Ar_p;
+  size_t pidx_Emiss_ShiftPeak_Ar_n;
+  
+  size_t pidx_Emiss_CorrTail_C_p;
+  size_t pidx_Emiss_CorrTail_C_n;
+  size_t pidx_Emiss_Linear_C_p;
+  size_t pidx_Emiss_Linear_C_n;
+  size_t pidx_Emiss_ShiftPeak_C_p;
+  size_t pidx_Emiss_ShiftPeak_C_n;
 
   void InitValidTree();
 

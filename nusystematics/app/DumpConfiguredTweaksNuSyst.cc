@@ -65,7 +65,7 @@ struct TweakSummaryTree {
   }
 
   // TH: Add variables for for output weight tree
-  int Mode, nucleon_pdg;
+  int Mode, nucleon_pdg, target_pdg;
   float Emiss, Emiss_preFSI, pmiss, pmiss_preFSI, q0, Enu_true, plep, q3, Q2;
   double Emiss_GENIE;
   std::vector<int> ntweaks;
@@ -92,6 +92,7 @@ struct TweakSummaryTree {
   t->Branch("Enu_true", &Enu_true, "Enu_true/F");
   t->Branch("plep", &plep, "plep/F");
   t->Branch("nucleon_pdg", &nucleon_pdg, "nucleon_pdg/I");
+  t->Branch("target_pdg", &target_pdg, "target_pdg/I");
     
 	size_t vector_idx = 0;
     for (paramId_t pid : phh.GetParameters()) { // Need to size vectors first so
@@ -453,6 +454,7 @@ int main(int argc, char const *argv[]) {
     tst.plep = FSLepP4.Vect().Mag();
     if (nucleon == NULL) {tst.nucleon_pdg = -999;}
     else{tst.nucleon_pdg = nucleon->Pdg();}
+    tst.target_pdg = GenieGHep.TargetNucleus()->Pdg();
 
     if (!(ev_it % NToShout)) {
       std::cout << (ev_it ? "\r" : "") << "Event #" << ev_it << "/" << NToRead
