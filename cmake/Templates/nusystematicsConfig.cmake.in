@@ -2,7 +2,7 @@
 
 set(nusystematics_VERSION @PROJECT_VERSION@)
 
-find_package(systematicstools 23.06
+find_package(systematicstools 23.11
               PATHS ${CMAKE_CURRENT_LIST_DIR}../systematicstools
               REQUIRED)
 
