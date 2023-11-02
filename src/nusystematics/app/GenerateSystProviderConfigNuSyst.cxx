@@ -2,9 +2,9 @@
 #include "systematicstools/interface/types.hh"
 
 #include "systematicstools/utility/ParameterAndProviderConfigurationUtility.hh"
+#include "systematicstools/utility/md5.hh"
 #include "systematicstools/utility/printers.hh"
 #include "systematicstools/utility/string_parsers.hh"
-#include "systematicstools/utility/md5.hh"
 
 #include "nusystematics/utility/make_instance.hh"
 
@@ -62,23 +62,25 @@ int main(int argc, char const *argv[]) {
     exit(1);
   }
 
-/*
-  char const *ev = getenv(cliopts::envvar.c_str());
-  if (!ev) {
-    std::cout << "[ERROR]: Could not read environment variable:\""
-              << cliopts::envvar
-              << "\". Please supply a variable containing a valid path list "
-                 "via the -p command line option."
-              << std::endl;
-    SayUsage(argv);
-    exit(1);
-  }
+  /*
+    char const *ev = getenv(cliopts::envvar.c_str());
+    if (!ev) {
+      std::cout << "[ERROR]: Could not read environment variable:\""
+                << cliopts::envvar
+                << "\". Please supply a variable containing a valid path list "
+                   "via the -p command line option."
+                << std::endl;
+      SayUsage(argv);
+      exit(1);
+    }
 
-  fhicl::ParameterSet in_ps = fhicl::ParameterSet::make(cliopts::fclname, std::make_unique<cet::filepath_lookup>(ev));
-*/
+    fhicl::ParameterSet in_ps = fhicl::ParameterSet::make(cliopts::fclname,
+    std::make_unique<cet::filepath_lookup>(ev));
+  */
 
   // TODO
-  std::unique_ptr<cet::filepath_maker> fm = std::make_unique<cet::filepath_maker>();
+  std::unique_ptr<cet::filepath_maker> fm =
+      std::make_unique<cet::filepath_maker>();
 
   fhicl::ParameterSet in_ps = fhicl::ParameterSet::make(cliopts::fclname, *fm);
 
@@ -139,7 +141,8 @@ int main(int argc, char const *argv[]) {
 
   std::cout << (cliopts::outputfile.size() ? "Wrote" : "Built")
             << " systematic provider configuration with md5: "
-            << std::quoted(md5(out_ps.to_compact_string())) << std::flush;
+            << std::quoted(systtools::md5(out_ps.to_compact_string()))
+            << std::flush;
   if (cliopts::outputfile.size()) {
     std::cout << " to " << std::quoted(cliopts::outputfile) << std::flush;
   }

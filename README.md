@@ -7,7 +7,7 @@ interface to GReWeight) in the `systematicstools` framework.
 
 `nusystematics` will by default build `systematicstools` for you, but requires 
 ROOT v6+ and GENIE v3+ to be set up in the environment at the time of 
-configuration. Requires cmake 3.20+.
+configuration. Requires cmake 3.21+ (see [here](#fetch-cmake-321) for updating CMake hints).
 
 Having checked out the repository in `/path/to/repo`:
 
@@ -306,4 +306,21 @@ generated_systematic_provider_configuration: {
 	syst_providers: [SkeleWeighter_myskele] 
 }
 END_PROLOG
+```
+
+### Fetch CMake 3.21
+
+If you just want a local build of cmake for this package and do not want to update
+your system cmake, you can try the below recipe.
+
+```
+CMAKEVERSION=3.21.7
+cd /path/to/repo
+wget https://github.com/Kitware/CMake/archive/refs/tags/v${CMAKEVERSION}.tar.gz
+tar -zxf v${CMAKEVERSION}.tar.gz
+cd CMake-${CMAKEVERSION}
+./bootstrap
+make -j 8
+export PATH=$(pwd)/bin:${PATH}
+which cmake; cmake --version
 ```
