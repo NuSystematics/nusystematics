@@ -43,6 +43,13 @@ else()
   include(${CMakeModules_SOURCE_DIR}/NuHepMCModules.cmake)
 endif()
 
+CPMFindPackage(
+    NAME eigen3
+    VERSION 3.4.0
+    GITLAB_REPOSITORY "libeigen/eigen"
+    GIT_TAG "3.4.0"
+)
+
 find_package(GENIE3 REQUIRED)
 if(NOT TARGET GENIE3::All)
   message(FATAL_ERROR "Expected find_package(GENIE3 REQUIRED) call to set up target GENIE3::All.")
@@ -51,7 +58,7 @@ endif()
 ###### Compiler set up
 add_library(nusystematics_dependencies INTERFACE)
 target_link_libraries(nusystematics_dependencies INTERFACE 
-  fhiclcpp::fhiclcpp)
+  systtools::all)
 target_include_directories(nusystematics_dependencies INTERFACE 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:include> )
