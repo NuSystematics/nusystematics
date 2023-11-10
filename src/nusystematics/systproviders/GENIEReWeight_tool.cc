@@ -158,6 +158,10 @@ bool GENIEReWeight::SetupResponseCalculator(
       }
     }
 
+  // Quiet mode
+  genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
+      "Messenger_laconic.xml");
+
   extend_ResponseToGENIEParameters(
       ConfigureQEWeightEngine(GetSystMetaData(), tool_options));
 
