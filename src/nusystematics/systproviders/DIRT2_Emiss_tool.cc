@@ -4,10 +4,6 @@
 
 #include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
 
-#ifndef NO_ART
-#include "art/Utilities/ToolMacros.h"
-#endif
-
 #include "Framework/GHEP/GHepParticle.h"
 
 #include "TLorentzVector.h"
@@ -32,10 +28,6 @@ DIRT2_Emiss::DIRT2_Emiss(ParameterSet const &params)
       pidx_Emiss_ShiftPeak_C_n(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
-#ifndef NO_ART
-DEFINE_ART_CLASS_TOOL(DIRT2_Emiss)
-#endif
-
 SystMetaData DIRT2_Emiss::BuildSystMetaData(ParameterSet const &cfg,
                                                      paramId_t firstId) {
 
@@ -45,7 +37,7 @@ SystMetaData DIRT2_Emiss::BuildSystMetaData(ParameterSet const &cfg,
        {"Emiss_CorrTail_Ar_p", "Emiss_CorrTail_Ar_n", "Emiss_Linear_Ar_p", "Emiss_Linear_Ar_n",  "Emiss_ShiftPeak_Ar_p", "Emiss_ShiftPeak_Ar_n",
        "Emiss_CorrTail_C_p", "Emiss_CorrTail_C_n", "Emiss_Linear_C_p", "Emiss_Linear_C_n",  "Emiss_ShiftPeak_C_p", "Emiss_ShiftPeak_C_n"}) {
     systtools::SystParamHeader phdr;
-    if (ParseFHiCLSimpleToolConfigurationParameter(cfg, pname, phdr, firstId)) {
+    if (ParseFhiclToolConfigurationParameter(cfg, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
       smd.push_back(phdr);
     }

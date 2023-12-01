@@ -387,43 +387,6 @@ inline std::string DumpGENIEEv(genie::EventRecord const &ev) {
   return ss.str();
 }
 
-inline double GetErecoil_MINERvA_LowRecoil(genie::EventRecord const &ev) {
-  // Get total energy of hadronic system.
-  double Erecoil = 0.0;
-
-  TIter event_iter(&ev);
-  genie::GHepParticle *p = 0;
-
-  while ((p = dynamic_cast<genie::GHepParticle *>(event_iter.Next()))) {
-    if (p->Status() != genie::kIStStableFinalState) {
-      continue;
-    }
-    switch (p->Pdg()) {
-    case 2212:
-    case 211:
-    case -211: {
-      Erecoil += p->KinE();
-      break;
-    }
-    case 111:
-    case 11:
-    case -11:
-    case -22: {
-      Erecoil += p->E();
-      break;
-    }
-    default: {}
-    }
-  }
-  // For nue CC scattering, we would have counted the E of the charged lepton,
-  // subtract it off here
-  if (ev.Summary()->ProcInfo().IsWeakCC() && (abs(ev.Probe()->Pdg()) == 12)) {
-    Erecoil -= ev.FinalStatePrimaryLepton()->P4()->E();
-  }
-
-  return Erecoil;
-}
-
 // Copy of https://github.com/NuSoftHEP/nugen/blob/6bcd82d9310bd0480df9a8ed03bfc8d8a2c80eff/nugen/EventGeneratorBase/GENIE/GENIE2ART.cxx#L98-L126
 inline std::string ExpandEnvVar(const std::string& s)
 {

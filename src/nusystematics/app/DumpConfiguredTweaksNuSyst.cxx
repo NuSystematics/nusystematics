@@ -128,7 +128,6 @@ struct TweakSummaryTree {
     t->Branch("fsi_pdgs", "vector<int>", &fsi_pdgs);
     t->Branch("fsi_codes", "vector<int>", &fsi_codes);
 
-    size_t vector_idx = 0;
     for (paramId_t pid : phh.GetParameters()) { // Need to size vectors first so
                                                 // that realloc doesn't upset
                                                 // the TBranches
