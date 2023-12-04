@@ -44,10 +44,11 @@ else()
 endif()
 
 CPMFindPackage(
-    NAME eigen3
+    NAME Eigen3
     VERSION 3.4.0
     GITLAB_REPOSITORY "libeigen/eigen"
     GIT_TAG "3.4.0"
+    OPTIONS "EIGEN_BUILD_DOC no" "BUILD_TESTING no"
 )
 
 find_package(GENIE3 REQUIRED)
