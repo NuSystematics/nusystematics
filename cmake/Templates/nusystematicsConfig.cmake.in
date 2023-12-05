@@ -15,7 +15,7 @@ if(EXISTS "${CMakeModules_CMAKE_DIR}/FindGENIE3.cmake")
 endif()
 
 find_package(GENIE3 REQUIRED)
-find_package(eigen3 3.4.0 REQUIRED)
+find_package(Eigen3 3.4.0 REQUIRED)
 
 set(nusystematics_FOUND TRUE)
 
