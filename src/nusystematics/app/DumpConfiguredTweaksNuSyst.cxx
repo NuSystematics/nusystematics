@@ -10,6 +10,7 @@
 
 #include "nusystematics/utility/GENIEUtils.hh"
 #include "nusystematics/utility/enumclass2int.hh"
+#include "nusystematics/utility/KinVarUtils.hh"
 
 #include "nusystematics/utility/response_helper.hh"
 
@@ -18,6 +19,7 @@
 #include "Framework/EventGen/EventRecord.h"
 #include "Framework/GHEP/GHepParticle.h"
 #include "Framework/GHEP/GHepUtils.h"
+#include "Framework/GHEP/GHepRecord.h"
 #include "Framework/Messenger/Messenger.h"
 #include "Framework/Ntuple/NtpMCEventRecord.h"
 
@@ -57,6 +59,10 @@ struct TweakSummaryTree {
     delete f;
   }
 
+  // TH: Add variables for for output weight tree
+  int Mode, nucleon_pdg, target_pdg;
+  float Emiss, Emiss_preFSI, pmiss, pmiss_preFSI, q0, Enu_true, plep, q3, Q2;
+  double Emiss_GENIE;
   int nu_pdg;
   double e_nu_GeV;
   int tgt_A;
@@ -86,6 +92,23 @@ struct TweakSummaryTree {
   std::vector<double> meta_tweak_values;
 
   void AddBranches(ParamHeaderHelper const &phh) {
+    
+    // TH: Add branches for output weights tree
+    t->Branch("Mode", &Mode, "Mode/I");
+    t->Branch("Emiss", &Emiss, "Emiss/F");
+    t->Branch("Emiss_preFSI", &Emiss_preFSI, "Emiss_preFSI/F");
+    t->Branch("Emiss_GENIE", &Emiss_GENIE, "Emiss_GENIE/D");
+    t->Branch("pmiss", &pmiss, "pmiss/F");
+    t->Branch("pmiss_preFSI", &pmiss_preFSI, "pmiss/F");
+    t->Branch("q0", &q0, "q0/F");
+    t->Branch("Q2", &Q2, "Q2/F");
+    t->Branch("q3", &q3, "q3/F");
+    t->Branch("Enu_true", &Enu_true, "Enu_true/F");
+    t->Branch("plep", &plep, "plep/F");
+    t->Branch("nucleon_pdg", &nucleon_pdg, "nucleon_pdg/I");
+    t->Branch("target_pdg", &target_pdg, "target_pdg/I");
+      
+    size_t vector_idx = 0;
     t->Branch("nu_pdg", &nu_pdg, "nu_pdg/I");
     t->Branch("e_nu_GeV", &e_nu_GeV, "e_nu_GeV/D");
     t->Branch("tgt_A", &tgt_A, "tgt_A/I");
@@ -105,7 +128,6 @@ struct TweakSummaryTree {
     t->Branch("fsi_pdgs", "vector<int>", &fsi_pdgs);
     t->Branch("fsi_codes", "vector<int>", &fsi_codes);
 
-    size_t vector_idx = 0;
     for (paramId_t pid : phh.GetParameters()) { // Need to size vectors first so
                                                 // that realloc doesn't upset
                                                 // the TBranches
@@ -342,36 +364,35 @@ int main(int argc, char const *argv[]) {
     gevs->GetEntry(ev_it);
     genie::EventRecord const &GenieGHep = *GenieNtpl->event;
 
-    genie::Target const &tgt = GenieGHep.Summary()->InitState().Tgt();
     genie::GHepParticle *FSLep = GenieGHep.FinalStatePrimaryLepton();
     genie::GHepParticle *ISLep = GenieGHep.Probe();
+    genie::GHepParticle *nucleon = GenieGHep.HitNucleon();
+    
     TLorentzVector FSLepP4 = *FSLep->P4();
     TLorentzVector ISLepP4 = *ISLep->P4();
     TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
 
-    tst.nu_pdg = ISLep->Pdg();
-    tst.e_nu_GeV = ISLepP4.E();
-    tst.tgt_A = tgt.A();
-    tst.tgt_Z = tgt.Z();
-    tst.is_cc = GenieGHep.Summary()->ProcInfo().IsWeakCC();
-    tst.is_qe = GenieGHep.Summary()->ProcInfo().IsQuasiElastic();
-    tst.is_mec = GenieGHep.Summary()->ProcInfo().IsMEC();
-    tst.mec_topology = -1;
-    if (tst.is_mec) {
-      tst.mec_topology = e2i(GetQELikeTarget(GenieGHep));
-    }
-    tst.is_res = GenieGHep.Summary()->ProcInfo().IsResonant();
-    tst.res_channel = 0;
-    if (tst.is_res) {
-      tst.res_channel = SPPChannelFromGHep(GenieGHep);
-    }
-    tst.is_dis = GenieGHep.Summary()->ProcInfo().IsDeepInelastic();
-    tst.W_GeV = GenieGHep.Summary()->Kine().W(true);
-    tst.Q2_GeV2 = -emTransfer.Mag2();
-    tst.q0_GeV = emTransfer[3];
-    tst.q3_GeV = emTransfer.Vect().Mag();
+    tst.Mode = genie::utils::ghep::NeutReactionCode(&GenieGHep);
+    tst.Emiss = GetEmiss(GenieGHep, false);
+    tst.Emiss_preFSI = GetEmiss(GenieGHep, true);
+    tst.pmiss = GetPmiss(GenieGHep, false);
+    tst.pmiss_preFSI = GetPmiss(GenieGHep, true);
 
-    tst.EAvail_GeV = GetErecoil_MINERvA_LowRecoil(GenieGHep);
+    if (GenieGHep.HitNucleon() == NULL){
+      tst.Emiss_GENIE = -999;
+    }
+    else {
+      tst.Emiss_GENIE = GenieGHep.HitNucleon()->RemovalEnergy();
+    }
+
+    tst.q0 = emTransfer.E();
+    tst.Q2 = -emTransfer.Mag2();
+    tst.q3 = emTransfer.Vect().Mag();
+    tst.Enu_true = ISLepP4.E();
+    tst.plep = FSLepP4.Vect().Mag();
+    if (nucleon == NULL) {tst.nucleon_pdg = -999;}
+    else{tst.nucleon_pdg = nucleon->Pdg();}
+    tst.target_pdg = GenieGHep.TargetNucleus()->Pdg();
 
     // loop over particles
     int ip=-1;
@@ -420,9 +441,16 @@ int main(int argc, char const *argv[]) {
     }
 
     tst.Clear();
+
+    // Calcuate weights
     event_unit_response_w_cv_t resp = phh.GetEventVariationAndCVResponse(GenieGHep);
+
     tst.Add(resp);
     tst.Fill();
+    
+    // TH: Very important to clear this object to avoid memory issues!
+    GenieNtpl->Clear();
+
   }
   std::cout << std::endl;
 }

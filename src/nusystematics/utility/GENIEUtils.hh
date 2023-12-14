@@ -49,6 +49,60 @@ inline genie::SppChannel_t SPPChannelFromGHep(genie::EventRecord const &ev) {
 enum class QELikeTarget_t { kNN = 0, knp, kQE, kInvalidTopology };
 NEW_SYSTTOOLS_EXCEPT(indeterminable_QELikeTarget);
 
+
+// TH: Adapted IsPrimary function from NUISANCE
+inline bool IsPrimary(genie::EventRecord const &ev, genie::GHepParticle *p){
+  
+  if (p->Status() == genie::kIStInitialState || p->Status() == genie::kIStNucleonTarget){
+        return true;
+      }
+
+      // Reject intermediate states
+      if (p->Status() == genie::kIStDISPreFragmHadronicState || 
+        p->Status() == genie::kIStPreDecayResonantState || 
+        p->Status() == genie::kIStInitialState || 
+        p->Status() == genie::kIStDecayedState || 
+        p->Status() == genie::kIStUndefined){ 
+          return false;
+      }
+      
+      // Check if the mother is the neutrino or IS nucleon
+      if (p->FirstMother() < 2){
+        return true;
+      }
+
+      // Loop over particle's mothers, gmothers... and clean out intermediate particles
+      genie::GHepParticle *mother = ev.Particle(p->FirstMother());
+      while (mother->FirstMother() > 1) {
+        // could be mother's status is actually a decayed state linked back to the vertex
+        if (mother->Status() == genie::kIStDecayedState || // a decayed state
+            mother->Status() == genie::kIStDISPreFragmHadronicState ||  // a DIS state before fragementation
+            mother->Status() == genie::kIStPreDecayResonantState) { // a pre-decay resonant state
+              mother = ev.Particle(mother->FirstMother());
+            } else { // if not move out of the loop
+              break;
+            }
+      }
+
+      // Then check is mother is associated with primary
+      int MotherID = mother->FirstMother();
+      if (MotherID > 2){
+        return false;
+      }
+
+      // Finally, this could mean particle is marked for transport 
+      // Could also be interactions of a free proton
+      if (p->Status() == genie::kIStHadronInTheNucleus ||  // Then require the particle to be paseed to FSI
+      (p->Status() == genie::kIStStableFinalState && // Can also have interaction on free proton
+       ev.Summary()->InitState().TgtPtr()->A() == 1 &&
+       ev.Summary()->InitState().TgtPtr()->Z() == 1) ) {
+          return true;
+      } 
+  
+    return false;
+  
+}
+
 inline QELikeTarget_t GetQELikeTarget(genie::EventRecord const &ev) {
 
   if (ev.Summary()->ProcInfo().IsQuasiElastic() &&
