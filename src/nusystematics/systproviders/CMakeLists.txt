@@ -27,7 +27,7 @@ SET(SYSTP_HDRFILES
   MKSinglePiTemplate_tool.hh
   MiscInteractionSysts_tool.hh
   NOvAStyleNonResPionNorm_tool.hh
-  DIRT2_Emiss_tool.cc
+  DIRT2_Emiss_tool.hh
 )
 
 if(GENIEReWeight_ENABLED)
