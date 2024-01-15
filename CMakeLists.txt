@@ -50,6 +50,8 @@ CPMFindPackage(
     GIT_TAG "3.4.0"
     OPTIONS "EIGEN_BUILD_DOC no" "BUILD_TESTING no"
 )
+## CMakeLists of Eigen3 include GNUInstallDirs, at it detects the system and change CMAKE_INSTALL_LIBDIR to lib64
+set(CMAKE_INSTALL_LIBDIR "lib")
 
 find_package(GENIE3 REQUIRED)
 if(NOT TARGET GENIE3::All)
