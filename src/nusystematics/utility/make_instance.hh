@@ -11,6 +11,8 @@
 #include "nusystematics/systproviders/MKSinglePiTemplate_tool.hh"
 #include "nusystematics/systproviders/MiscInteractionSysts_tool.hh"
 #include "nusystematics/systproviders/NOvAStyleNonResPionNorm_tool.hh"
+#include "nusystematics/systproviders/SkeleWeighter_tool.hh"
+#include "nusystematics/systproviders/ZExpPCAWeighter_tool.hh"
 #include "nusystematics/systproviders/DIRT2_Emiss_tool.hh"
 
 #include "fhiclcpp/ParameterSet.h"
@@ -43,6 +45,10 @@ make_instance(fhicl::ParameterSet const &paramset) {
     return std::make_unique<EbLepMomShift>(paramset);
   } else if (tool_type == "FSILikeEAvailSmearing") {
     return std::make_unique<FSILikeEAvailSmearing>(paramset);
+  } else if (tool_type == "SkeleWeighter") {
+    return std::make_unique<SkeleWeighter>(paramset);
+  } else if (tool_type == "ZExpPCAWeighter") {
+    return std::make_unique<ZExpPCAWeighter>(paramset);
   } else if (tool_type == "DIRT2_Emiss") {
     return std::make_unique<DIRT2_Emiss>(paramset);
   } else {

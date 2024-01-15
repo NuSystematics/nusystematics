@@ -1,0 +1,13 @@
+zexpansion_weighter_toolconfig: {
+    tool_type: "ReWeighter"
+    instance_name: "myreweighter"
+
+    b1_variation_descriptor: "(-3,3,1)"
+    b2_variation_descriptor: "(-3,3,1)"
+    b3_variation_descriptor: "(-3,3,1)"
+    b4_variation_descriptor: "(-3,3,1)"
+
+    verbosity_level: 5
+  }
+
+syst_providers: [zexpansion_weighter_toolconfig]

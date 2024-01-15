@@ -1,0 +1,13 @@
+ MySkeleProvider_toolconfig: {
+    tool_type: "SkeleWeighter"
+    instance_name: "myskele"
+
+    p1_variation_descriptor: "(-3,3,1)"
+    p2_variation_descriptor: "(-3,3,1)"
+    p3_variation_descriptor: "(-3,3,1)"
+    p4_variation_descriptor: "(-3,3,1)"
+
+    verbosity_level: 5
+  }
+
+syst_providers: [MySkeleProvider_toolconfig]

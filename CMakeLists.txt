@@ -5,7 +5,7 @@ find_program(CMAKE_CXX_COMPILER NAMES $ENV{CXX} g++ PATHS ENV PATH NO_DEFAULT_PA
 
 set(CMAKE_CXX_STANDARD 17)
 
-project(nusystematics VERSION 23.06 LANGUAGES CXX)
+project(nusystematics VERSION 23.11 LANGUAGES CXX)
 
 #Changes default install path to be a subdirectory of the build dir.
 #Can set build dir at configure time with -DCMAKE_INSTALL_PREFIX=/install/path
@@ -24,12 +24,11 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 include(CPM)
 
 find_package(ROOT 6.10 REQUIRED)
-find_package(fhiclcpp 4.17 REQUIRED)
 
 CPMFindPackage(
     NAME systematicstools
     GIT_TAG develop
-    GITHUB_REPOSITORY jedori0228/systematicstools
+    GITHUB_REPOSITORY luketpickering/systematicstools
 )
 
 if(DEFINED ENV{NuHepMCModules_ROOT})
@@ -44,6 +43,13 @@ else()
   include(${CMakeModules_SOURCE_DIR}/NuHepMCModules.cmake)
 endif()
 
+CPMFindPackage(
+    NAME eigen3
+    VERSION 3.4.0
+    GITLAB_REPOSITORY "libeigen/eigen"
+    GIT_TAG "3.4.0"
+)
+
 find_package(GENIE3 REQUIRED)
 if(NOT TARGET GENIE3::All)
   message(FATAL_ERROR "Expected find_package(GENIE3 REQUIRED) call to set up target GENIE3::All.")
@@ -52,7 +58,7 @@ endif()
 ###### Compiler set up
 add_library(nusystematics_dependencies INTERFACE)
 target_link_libraries(nusystematics_dependencies INTERFACE 
-  fhiclcpp::fhiclcpp)
+  systtools::all)
 target_include_directories(nusystematics_dependencies INTERFACE 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:include> )

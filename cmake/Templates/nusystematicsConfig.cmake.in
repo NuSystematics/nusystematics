@@ -1,8 +1,10 @@
 @PACKAGE_INIT@
 
-set(systematicstools_VERSION @PROJECT_VERSION@)
+set(nusystematics_VERSION @PROJECT_VERSION@)
 
-find_package(systematicstools 23.06 REQUIRED)
+find_package(systematicstools 23.11
+              PATHS ${CMAKE_CURRENT_LIST_DIR}../systematicstools
+              REQUIRED)
 
 #expect that NuHepMC/CMakeModules gets installed to the prefix/cmake
 get_filename_component(CMakeModules_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
@@ -13,12 +15,13 @@ if(EXISTS "${CMakeModules_CMAKE_DIR}/FindGENIE3.cmake")
 endif()
 
 find_package(GENIE3 REQUIRED)
+find_package(eigen3 3.4.0 REQUIRED)
 
-set(systematicstools_FOUND TRUE)
+set(nusystematics_FOUND TRUE)
 
 if(NOT TARGET GENIE3::All)
   message(WARNING "Expected find_package(GENIE3 REQUIRED) call to set up target GENIE3::All.")
-  set(systematicstools_FOUND FALSE)
+  set(nusystematics_FOUND FALSE)
   return()
 endif()
 
@@ -26,6 +29,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/nusyst-targets.cmake)
 
 if(NOT TARGET nusyst::all)
   message(WARNING "Expected to find target nusyst::all in ${CMAKE_CURRENT_LIST_DIR}/systtools-targets.cmake")
-  set(systematicstools_FOUND FALSE)
+  set(nusystematics_FOUND FALSE)
   return()
 endif()
