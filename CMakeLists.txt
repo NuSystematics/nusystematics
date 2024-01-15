@@ -28,7 +28,7 @@ find_package(ROOT 6.10 REQUIRED)
 CPMFindPackage(
     NAME systematicstools
     GIT_TAG develop
-    GITHUB_REPOSITORY luketpickering/systematicstools
+    GITHUB_REPOSITORY jedori0228/systematicstools
 )
 
 if(DEFINED ENV{NuHepMCModules_ROOT})
