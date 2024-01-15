@@ -8,6 +8,7 @@ SET(UTLY_HDRFILES
   simbUtility.hh
   make_instance.hh
   response_helper.hh
+  KinVarUtils.hh
 )
 
 
