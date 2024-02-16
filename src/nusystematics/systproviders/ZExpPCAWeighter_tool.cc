@@ -233,7 +233,7 @@ ZExpPCAWeighter::GetEventResponse(genie::EventRecord const &ev) {
   if (!ev.Summary()->ProcInfo().IsQuasiElastic() ||
       !ev.Summary()->ProcInfo().IsWeakCC() ||
       ev.Summary()->ExclTag().IsCharmEvent()) {
-    return resp;
+    return this->GetDefaultEventResponse();
   }
 
   // loop through and calculate weights
