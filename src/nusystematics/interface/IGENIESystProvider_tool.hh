@@ -110,41 +110,58 @@ public:
       systtools::SystParamHeader const &hdr =
           GetParam(GetSystMetaData(), pr.pid);
 
-      if (pr.responses.size() != hdr.paramVariations.size()) {
+      // If not a correction dial, responses and paramVariations should have same size
+      if ( !hdr.isCorrection &&
+           (pr.responses.size() != hdr.paramVariations.size())
+      ) {
         throw invalid_response()
             << "[ERROR]: Parameter: " << hdr.prettyName << ", with "
             << hdr.paramVariations.size() << " parameter variations, returned "
             << pr.responses.size() << " responses.";
       }
+      // make sure correction dial has zero paramVariations.size()
+      if( hdr.isCorrection && hdr.paramVariations.size() != 0 ){
+        throw invalid_response()
+            << "[ERROR]: Parameter: " << hdr.prettyName << " is a correction but has non-zero parameter variations ("
+            << hdr.paramVariations.size() << ").";
+      }
+      // make sure correction dial has exactly one response
+      if( hdr.isCorrection && pr.responses.size() != 1 ){
+        throw invalid_response()
+            << "[ERROR]: Parameter: " << hdr.prettyName << " is a correction and should have single response, but got"
+            << pr.responses.size() << " responses.";
+      }
 
       double CVResp = hdr.isWeightSystematicVariation ? 1 : 0;
-      size_t NVars = hdr.paramVariations.size();
+      size_t NVars = hdr.paramVariations.size(); // note: NVars is zero for correction dial
 
-      double cv_param_val = 0;
+      // If CV is different from default, find it from paramVariations and get the CV weight,
+      // then divide all the weights by this CV weight.
+      // Analyzers should apply the CV weight first and then multiply each response
       if (hdr.centralParamValue != systtools::kDefaultDouble) {
-        cv_param_val = hdr.centralParamValue;
-      }
-      for (size_t idx = 0; idx < NVars; ++idx) {
-        if (fabs(cv_param_val - hdr.paramVariations[idx]) <=
-            std::numeric_limits<float>::epsilon()) {
-          CVResp = pr.responses[idx];
-          break;
+        // note: NVars is zero for correction dial
+        for (size_t idx = 0; idx < NVars; ++idx) {
+          if (fabs(hdr.centralParamValue - hdr.paramVariations[idx]) <=
+              std::numeric_limits<float>::epsilon()) {
+            CVResp = pr.responses[idx];
+            break;
+          }
+        }
+        // if we didn't find it, the CVResp stays as 1/0 depending on whether it
+        // is a weight or not.
+        for (size_t idx = 0; idx < NVars; ++idx) {
+          if (hdr.isWeightSystematicVariation) {
+            pr.responses[idx] /= CVResp; // divide the responses by CV weight
+          } else {
+            pr.responses[idx] -= CVResp;
+          }
+        }
+        // For a correction dial, we have NVars=0, so manually update CVResp and responses
+        if( hdr.isCorrection ){
+          CVResp = pr.responses[0];
+          pr.responses[0] = 1.;
         }
       }
-
-
-/*
-//TODO
-      // if we didn't find it, the CVResp stays as 1/0 depending on whether it
-      // is a weight or not.
-      for (size_t idx = 0; idx < NVars; ++idx) {
-        if (hdr.isWeightSystematicVariation) {
-          pr.responses[idx] /= CVResp;
-        } else {
-          pr.responses[idx] -= CVResp;
-        }
-      }
-*/
 
       responseandCV.push_back({pr.pid, CVResp, pr.responses});
     } // end for parameter response

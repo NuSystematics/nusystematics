@@ -182,8 +182,13 @@ struct TweakSummaryTree {
 
       *meta_name = hdr.prettyName.c_str();
       meta_n = ntweaks[idx];
-      std::copy_n(hdr.paramVariations.begin(), meta_n,
-                  meta_tweak_values.begin());
+      // For a correction dial, hdr.paramVariations is empty, so manually fill the vector
+      if (hdr.isCorrection) {
+        meta_tweak_values[0] = hdr.centralParamValue;
+      } else {
+        std::copy_n(hdr.paramVariations.begin(), meta_n,
+                    meta_tweak_values.begin());
+      }
 
       m->Fill();
     }
@@ -246,6 +251,7 @@ struct TweakSummaryTree {
 namespace cliopts {
 std::string fclname = "";
 std::string genie_input = "";
+std::string genie_branch_name = "gmcrec";
 std::string outputfile = "";
 std::string envvar = "FHICL_FILE_PATH";
 std::string fhicl_key = "generated_systematic_provider_configuration";
@@ -266,6 +272,7 @@ void SayUsage(char const *argv[]) {
                "\t                   by default.\n"
                "\t-i <ghep.root>   : GENIE TChain descriptor to read events\n"
                "\t                   from. (n.b. quote wildcards).\n"
+               "\t-b <NtpMCEventRecord branch name>   : Name of the NtpMCEventRecord branch (default:gmcrec)\n"
                "\t-N <NMax>        : Maximum number of events to process.\n"
                "\t-s <NSkip>       : Number of events to skip.\n"
                "\t-o <out.root>    : File to write validation canvases to.\n"
@@ -285,6 +292,8 @@ void HandleOpts(int argc, char const *argv[]) {
       cliopts::fhicl_key = argv[++opt];
     } else if (std::string(argv[opt]) == "-i") {
       cliopts::genie_input = argv[++opt];
+    } else if (std::string(argv[opt]) == "-b") {
+      cliopts::genie_branch_name = argv[++opt];
     } else if (std::string(argv[opt]) == "-N") {
       cliopts::NMax = str2T<size_t>(argv[++opt]);
     } else if (std::string(argv[opt]) == "-s") {
@@ -345,7 +354,7 @@ int main(int argc, char const *argv[]) {
 
   genie::NtpMCEventRecord *GenieNtpl = nullptr;
 
-  if (gevs->SetBranchAddress("gmcrec", &GenieNtpl) != TTree::kMatch) {
+  if (gevs->SetBranchAddress(cliopts::genie_branch_name.c_str(), &GenieNtpl) != TTree::kMatch) {
     std::cout << "[ERROR]: Failed to set branch address on ghep tree."
               << std::endl;
     return 6;
