@@ -17,7 +17,8 @@ if(GENIEReWeight_ENABLED)
     GENIEReWeightParamConfig.cc
     GENIEReWeight_tool.cc
     SkeleWeighter_tool.cc
-    ZExpPCAWeighter_tool.cc)
+    ZExpPCAWeighter_tool.cc
+    ResIso_tool.cc)
 endif()
 
 SET(SYSTP_HDRFILES
@@ -39,7 +40,8 @@ if(GENIEReWeight_ENABLED)
     GENIEReWeight_tool.hh
     GENIEResponseParameterAssociation.hh
     SkeleWeighter_tool.hh
-    ZExpPCAWeighter_tool.hh)
+    ZExpPCAWeighter_tool.hh
+    ResIso_tool.hh)
 endif()
 
 add_library(nusystematics_systproviders SHARED ${SYSTP_IMPLFILES})
