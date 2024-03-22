@@ -8,6 +8,7 @@ SET(SYSTP_IMPLFILES
   MKSinglePiTemplate_tool.cc
   MiscInteractionSysts_tool.cc
   NOvAStyleNonResPionNorm_tool.cc
+  DIRT2_Emiss_tool.cc
   )
 
 if(GENIEReWeight_ENABLED)
@@ -29,6 +30,7 @@ SET(SYSTP_HDRFILES
   MKSinglePiTemplate_tool.hh
   MiscInteractionSysts_tool.hh
   NOvAStyleNonResPionNorm_tool.hh
+  DIRT2_Emiss_tool.hh
 )
 
 if(GENIEReWeight_ENABLED)

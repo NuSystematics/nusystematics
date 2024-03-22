@@ -7,7 +7,9 @@
 using namespace nusyst;
 using namespace systtools;
 
-// constructor passes up configuration object to base class for generic tool  initialization and initialises our local copies of paramIds to unconfigured flag values
+// constructor passes up configuration object to base class for generic tool
+// initialization and initialises our local copies of paramIds to unconfigured
+//  flag values
 ResIso::ResIso(fhicl::ParameterSet const &params)
     : IGENIESystProvider_tool(params) {
 
@@ -47,7 +49,8 @@ SystMetaData ResIso::BuildSystMetaData(fhicl::ParameterSet const &ps,
     SystParamHeader phdr = dial_variation_template;
     phdr.prettyName = prettyname;
 
-    // Set up parameter definition with a standard tool configuration form using helper function.
+    // Set up parameter definition with a standard tool configuration form
+    // using helper function.
     phdr.systParamId = firstId++;
 
     // set any parameter-specific ParamHeader metadata here
@@ -145,7 +148,8 @@ ResIso::GetEventResponse(genie::EventRecord const &ev) {
     // loop through variations for this parameter
     for (size_t v_it = 0; v_it < Variations[i].size(); ++v_it) {
 
-      // put the response weight for this variation of this parameter into the response object
+      // put the response weight for this variation of this parameter into the
+      // response object
       resp.back().responses.push_back(ReWeightEngines[i][v_it].CalcWeight(ev));
       if (verbosity_level > 3) {
         std::cout << "[DEBG]: For parameter " << md[pidx_Params[i]].prettyName
