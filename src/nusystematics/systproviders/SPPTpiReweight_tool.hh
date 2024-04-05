@@ -18,6 +18,8 @@ class SPPTpiReweight : public nusyst::IGENIESystProvider_tool {
 
 public:
 
+  NEW_SYSTTOOLS_EXCEPT(invalid_engine_state);
+
   explicit SPPTpiReweight(fhicl::ParameterSet const &);
 
   bool SetupResponseCalculator(fhicl::ParameterSet const &);
@@ -37,9 +39,8 @@ private:
 
   fhicl::ParameterSet tool_options;
 
-  size_t pidx_SPPQ2TemplateReweight;
-  size_t pidx_SPPTpiReweight;
-  size_t pidx_SPPTpiReweightMINERvA;
+  size_t pidx_SPPTpiCVCorrection;
+  size_t pidx_SPPTpiCorrectionRW;
 
   void InitValidTree();
 

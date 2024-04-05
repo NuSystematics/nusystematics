@@ -15,9 +15,8 @@ using namespace fhicl;
 
 SPPTpiReweight::SPPTpiReweight(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-      pidx_SPPQ2TemplateReweight(systtools::kParamUnhandled<size_t>),
-      pidx_SPPTpiReweight(systtools::kParamUnhandled<size_t>),
-      pidx_SPPTpiReweightMINERvA(systtools::kParamUnhandled<size_t>),
+      pidx_SPPTpiCVCorrection(systtools::kParamUnhandled<size_t>),
+      pidx_SPPTpiCorrectionRW(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
 SystMetaData SPPTpiReweight::BuildSystMetaData(ParameterSet const &cfg,
@@ -27,7 +26,7 @@ SystMetaData SPPTpiReweight::BuildSystMetaData(ParameterSet const &cfg,
 
   SystMetaData smd;
   for (std::string const &pname :
-       {"SPPQ2TemplateReweight", "SPPTpiReweight", "SPPTpiReweightMINERvA"}){
+       {"SPPTpiCVCorrection", "SPPTpiCorrectionRW"}){
     systtools::SystParamHeader phdr;
     if (ParseFhiclToolConfigurationParameter(cfg, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
@@ -48,19 +47,22 @@ bool SPPTpiReweight::SetupResponseCalculator(
 
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  if (HasParam(md, "SPPQ2TemplateReweight")) {
-    pidx_SPPQ2TemplateReweight = 
-        GetParamIndex(md, "SPPQ2TemplateReweight");
-  }
-  if (HasParam(md, "SPPTpiReweight")) {
-    pidx_SPPTpiReweight = 
-        GetParamIndex(md, "SPPTpiReweight");
-  }
-  if (HasParam(md, "SPPTpiReweightMINERvA")) {
-    pidx_SPPTpiReweight = 
-        GetParamIndex(md, "SPPTpiReweightMINERvA");
-  }
+  if (HasParam(md, "SPPTpiCVCorrection")) {
+    pidx_SPPTpiCVCorrection = 
+        GetParamIndex(md, "SPPTpiCVCorrection");
 
+    // this must be "isCorrection"
+    if( ! GetParam(md, pidx_SPPTpiCVCorrection).isCorrection ){
+
+      throw invalid_engine_state()
+          << "SPPTpiCVCorrection from SPPTpiReweight module must be a correction dial, but it is not. Check your config/paramheader file";
+    }
+
+  }
+  if (HasParam(md, "SPPTpiCorrectionRW")) {
+    pidx_SPPTpiCorrectionRW =
+        GetParamIndex(md, "SPPTpiCorrectionRW");
+  }
 
   fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
   if (fill_valid_tree) {
@@ -134,32 +136,21 @@ SPPTpiReweight::GetEventResponse(genie::EventRecord const &ev) {
   int TargetA = ev.Summary()->InitState().Tgt().A();
   bool IsH = TargetA==1;
 
-  if (pidx_SPPQ2TemplateReweight != systtools::kParamUnhandled<size_t>) {
-    resp.push_back( {md[pidx_SPPQ2TemplateReweight].systParamId, {}} );
-    for (double var : md[pidx_SPPQ2TemplateReweight].paramVariations) {
-      double this_reweight = GetSPPQ2Reweight(this_Q2_GeV2, var);
+  if (pidx_SPPTpiCVCorrection != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_SPPTpiCVCorrection].systParamId, {}} );
+    double this_reweight = GetSPPTpiCVCorrection(this_Q2_GeV2, this_Tpi_GeV);
+    if(IsH) resp.back().responses.push_back( 1. );
+    else resp.back().responses.push_back( this_reweight );
+  }
+
+  if (pidx_SPPTpiCorrectionRW != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_SPPTpiCorrectionRW].systParamId, {}} );
+    for (double var : md[pidx_SPPTpiCorrectionRW].paramVariations) {
+      double this_reweight = GetSPPTpiCorrectionRW(this_Q2_GeV2, this_Tpi_GeV, var);
       if(IsH) resp.back().responses.push_back( 1. );
       else resp.back().responses.push_back( this_reweight );
     }
   }
-
-  if (pidx_SPPTpiReweight != systtools::kParamUnhandled<size_t>) {
-    resp.push_back( {md[pidx_SPPTpiReweight].systParamId, {}} );
-    for (double var : md[pidx_SPPTpiReweight].paramVariations) {
-      double this_reweight = GetSPPTpiReweight(this_Tpi_GeV, var);
-      if(IsH) resp.back().responses.push_back( 1. );
-      else resp.back().responses.push_back( this_reweight );
-    }
-  }
-
-  if (pidx_SPPTpiReweightMINERvA != systtools::kParamUnhandled<size_t>) {
-    resp.push_back( {md[pidx_SPPTpiReweightMINERvA].systParamId, {}} );
-    for (double var : md[pidx_SPPTpiReweightMINERvA].paramVariations) {
-      double this_reweight = GetSPPTpiReweightMINERvA(this_Tpi_GeV, var);
-      resp.back().responses.push_back( this_reweight );
-    }
-  }
-
 
 
   if (fill_valid_tree) {

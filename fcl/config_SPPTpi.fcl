@@ -1,0 +1,17 @@
+NuSyst_SPPTpiReweight_Tool_Config: {
+    tool_type: "SPPTpiReweight"
+    instance_name: "CC1piSyst"
+
+    TuneName: "AR23_20i_00_000"
+    ignore_parameter_dependence: true
+
+    SPPTpiCVCorrection_central_value: 0
+    SPPTpiCVCorrection_variation_descriptor: "[1]"
+
+    SPPTpiCorrectionRW_central_value: 0
+    SPPTpiCorrectionRW_variation_descriptor: "[-3, -2, -1, 0, 1, 2, 3]"
+
+
+}
+
+syst_providers: [NuSyst_SPPTpiReweight_Tool_Config]

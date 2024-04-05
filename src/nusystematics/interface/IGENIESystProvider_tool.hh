@@ -128,7 +128,7 @@ public:
       // make sure correction dial has exactly one response
       if( hdr.isCorrection && pr.responses.size() != 1 ){
         throw invalid_response()
-            << "[ERROR]: Parameter: " << hdr.prettyName << " is a correction and should have single response, but got"
+            << "[ERROR]: Parameter: " << hdr.prettyName << " is a correction and should have single response, but got "
             << pr.responses.size() << " responses.";
       }
 
