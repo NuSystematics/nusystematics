@@ -99,7 +99,7 @@ struct TweakSummaryTree {
     t->Branch("Emiss_preFSI", &Emiss_preFSI, "Emiss_preFSI/F");
     t->Branch("Emiss_GENIE", &Emiss_GENIE, "Emiss_GENIE/D");
     t->Branch("pmiss", &pmiss, "pmiss/F");
-    t->Branch("pmiss_preFSI", &pmiss_preFSI, "pmiss/F");
+    t->Branch("pmiss_preFSI", &pmiss_preFSI, "pmiss_preFSI/F");
     t->Branch("q0", &q0, "q0/F");
     t->Branch("Q2", &Q2, "Q2/F");
     t->Branch("q3", &q3, "q3/F");

@@ -13,6 +13,7 @@
 #include "nusystematics/systproviders/NOvAStyleNonResPionNorm_tool.hh"
 #include "nusystematics/systproviders/SkeleWeighter_tool.hh"
 #include "nusystematics/systproviders/ZExpPCAWeighter_tool.hh"
+#include "nusystematics/systproviders/ResIso_tool.hh"
 #include "nusystematics/systproviders/DIRT2_Emiss_tool.hh"
 #include "nusystematics/systproviders/SPPTpiReweight_tool.hh"
 
@@ -54,6 +55,8 @@ make_instance(fhicl::ParameterSet const &paramset) {
     return std::make_unique<DIRT2_Emiss>(paramset);
   } else if (tool_type == "SPPTpiReweight") {
     return std::make_unique<SPPTpiReweight>(paramset);
+  } else if (tool_type == "ResIso") {
+    return std::make_unique<ResIso>(paramset);
   } else {
     throw unknown_nusyst_systprovider()
         << "[ERROR]: Unknown tool type: " << std::quoted(tool_type);
