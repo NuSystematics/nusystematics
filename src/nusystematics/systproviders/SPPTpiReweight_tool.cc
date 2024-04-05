@@ -91,7 +91,9 @@ SPPTpiReweight::GetEventResponse(genie::EventRecord const &ev) {
   // find highest momentum final-state particle
   double max_mom_fs_pip = -999.;
   genie::GHepParticle *ptl_hm_fs_pip = 0;
-  int npi=0;
+  int genie_n_photons = 0;
+  int genie_n_mesons = 0;
+  int nPip=0;
 
   while ( (p = dynamic_cast<genie::GHepParticle *>(event_iter.Next())) ) {
 
@@ -102,21 +104,59 @@ SPPTpiReweight::GetEventResponse(genie::EventRecord const &ev) {
     bool is_pion    = genie::pdg::IsPion   (pdgc);
     genie::GHepStatus_t ist  = p->Status();
     if( ist!=genie::kIStStableFinalState ) continue;
-    if( pdgc!=genie::kPdgPiP ) continue;
 
-    TLorentzVector* ptl_P4 = p->P4();
-    double mom_mag = ptl_P4->Vect().Mag();
+    // photon
+    if( pdgc==22 ){
+      TLorentzVector* ptl_P4 = p->P4();
+      if(ptl_P4->E() > 0.010){
+        genie_n_photons++;
+      }
+    }
 
-    if( mom_mag > max_mom_fs_pip ){
-      ptl_hm_fs_pip = p;
+    // count all mesons
+    if (abs(pdgc) == 211 || //pi+-
+             pdgc == 111 ||  // pi0
+             abs(pdgc) == 321 || // K-
+             abs(pdgc) == 323 || // K*+-
+             pdgc == 130 || // KL0
+             pdgc == 310 || // KS0
+             pdgc == 311 || // K0
+             pdgc == 313 || // K*0
+             abs(pdgc) == 221 || // eta
+             abs(pdgc) == 331 // eta' (958)
+             ) {
+      genie_n_mesons++;
+    }
+
+    // count pip and save thet momentum
+    if( pdgc==genie::kPdgPiP ){
+
+      nPip++;
+
+      TLorentzVector* ptl_P4 = p->P4();
+      double mom_mag = ptl_P4->Vect().Mag();
+
+      if( mom_mag > max_mom_fs_pip ){
+        ptl_hm_fs_pip = p;
+      }
+
+    }
+    else{
+      continue;
     }
 
   }//p
 
-  // no pion case
-  if(ptl_hm_fs_pip==0){
+  // SPP
+  if( nPip != 1 || genie_n_mesons!= 1 ){
     return this->GetDefaultEventResponse();
   }
+
+  // has photon with E>10 MeV; following MINERvA CC1pip signal definition
+  if(genie_n_photons!=0){
+    return this->GetDefaultEventResponse();
+  }
+
 
   genie::GHepParticle *FSLep = ev.FinalStatePrimaryLepton();
   genie::GHepParticle *ISLep = ev.Probe();
