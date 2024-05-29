@@ -28,7 +28,7 @@ find_package(ROOT 6.10 REQUIRED)
 CPMFindPackage(
     NAME systematicstools
     GIT_TAG develop
-    GITHUB_REPOSITORY jedori0228/systematicstools
+    GITHUB_REPOSITORY NuSystematics/systematicstools
 )
 
 if(DEFINED ENV{NuHepMCModules_ROOT})
@@ -73,6 +73,8 @@ install(TARGETS
     EXPORT nusyst-targets)
 
 add_subdirectory(src/nusystematics)
+
+add_subdirectory(data)
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
