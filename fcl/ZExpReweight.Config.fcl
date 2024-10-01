@@ -1,0 +1,16 @@
+ZExpReweight_ToolConfig: {
+
+  tool_type: "ZExpReweight"
+  instance_name: "NuSyst"
+
+  ZExpReweightCalculator_input_manifest: {
+    input_file: "ZExpReweighTemplate.root"
+    hist_name: "h_rw_Enu_vs_Q2"
+    debug: true
+  }
+
+  ZExpReweight_variation_descriptor: "[0., 1.]"
+
+}
+
+syst_providers: [ZExpReweight_ToolConfig]
