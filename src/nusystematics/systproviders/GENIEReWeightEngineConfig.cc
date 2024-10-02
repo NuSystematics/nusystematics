@@ -293,10 +293,7 @@ ConfigureMECWeightEngine(SystMetaData const &MECmd,
         kXSecTwkDial_NormEMMEC,
         kXSecTwkDial_FracPN_CCMEC,
         kXSecTwkDial_FracDelta_CCMEC,
-        kXSecTwkDial_XSecShape_CCMEC,
-        kXSecTwkDial_XSecShape_CCMEC_Empirical,
-        kXSecTwkDial_XSecShape_CCMEC_Martini,
-        kXSecTwkDial_EnergyDependence_CCMEC
+        kXSecTwkDial_XSecShape_CCMEC
       },
       "xsec_mec", []() { return new GReWeightXSecMEC; }, UseFullHERG, param_map);
 

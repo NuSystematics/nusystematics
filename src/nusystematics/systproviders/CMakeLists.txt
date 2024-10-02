@@ -10,6 +10,7 @@ SET(SYSTP_IMPLFILES
   NOvAStyleNonResPionNorm_tool.cc
   DIRT2_Emiss_tool.cc
   CCQERPAReweight_tool.cc
+  FSIReweight_tool.cc
   )
 
 if(GENIEReWeight_ENABLED)
@@ -33,6 +34,7 @@ SET(SYSTP_HDRFILES
   NOvAStyleNonResPionNorm_tool.hh
   DIRT2_Emiss_tool.hh
   CCQERPAReweight_tool.hh
+  FSIReweight_tool.hh
 )
 
 if(GENIEReWeight_ENABLED)

@@ -147,7 +147,10 @@ DIRT2_Emiss::GetEventResponse(genie::EventRecord const &ev) {
     nucleon_PDG = nucleon->Pdg();
   } 
 
-  target_PDG = ev.TargetNucleus()->Pdg();
+  // GHepRecord::TargetNucleus() is designed to return nullptr for a free nucleon target (e.g., hydrogen)
+  // If TargetNucleus() is available, use ev.TargetNucleus()->Pdg()
+  // if not, force it to hydrogen
+  target_PDG = ev.TargetNucleus() ? ev.TargetNucleus()->Pdg() : 1000010010;
 
   // now make the output
   systtools::event_unit_response_t resp;

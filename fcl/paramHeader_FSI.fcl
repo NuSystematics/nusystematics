@@ -1,0 +1,78 @@
+generated_systematic_provider_configuration: {
+   DIRT_DEV_v1: {
+      FSIReweight: {
+         centralParamValue: 0
+         paramVariations: [
+            1
+         ]
+         prettyName: "FSIReweight"
+         isSplineable: true
+         systParamId: 0
+      }
+      instance_name: "v1"
+      parameter_headers: [
+         "FSIReweight"
+      ]
+      tool_options: {
+        fill_valid_tree: false
+        FSIReweight_input_manifest: {
+          input_file: "FSI_reweight_template.root"
+          inputs: [
+              {
+                name: "hist_nom_proton"
+                input_hist: "hA2018_proton_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_alt_proton"
+                input_hist: "hN2018_proton_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_nom_neutron"
+                input_hist: "hA2018_neutron_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_alt_neutron"
+                input_hist: "hN2018_neutron_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_nom_pionp"
+                input_hist: "hA2018_pionp_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_alt_pionp"
+                input_hist: "hN2018_pionp_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_nom_pion0"
+                input_hist: "hA2018_pion0_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_alt_pion0"
+                input_hist: "hN2018_pion0_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_nom_pionm"
+                input_hist: "hA2018_pionm_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_alt_pionm"
+                input_hist: "hN2018_pionm_KEini_vs_Ebias"
+              }
+              
+              ,{
+                name: "hist_nom_2p"
+                input_hist: "hA2018_2p_KEini_vs_Ebias"
+              }
+              ,{
+                name: "hist_alt_2p"
+                input_hist: "hN2018_2p_KEini_vs_Ebias"
+              }
+          ]
+        }
+      }
+      tool_type: "FSIReweight"
+   }
+   syst_providers: [
+      "DIRT_DEV_v1"
+   ]
+}
