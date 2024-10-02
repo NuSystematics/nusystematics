@@ -281,13 +281,16 @@ ConfigureMECWeightEngine(SystMetaData const &MECmd,
 
   bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
 
+  AddResponseAndDependentDials(
+      MECmd, "DecayAngMECVariationResponse",
+      {kXSecTwkDial_DecayAngMEC, kXSecTwkDial_DecayAng2MEC}, "xsec_mec_decang",
+      []() { return new GReWeightXSecMEC; }, UseFullHERG, param_map);
+
   AddIndependentParameters(
       MECmd, {
         kXSecTwkDial_NormCCMEC,
         kXSecTwkDial_NormNCMEC,
         kXSecTwkDial_NormEMMEC,
-        kXSecTwkDial_DecayAngMEC,
-        kXSecTwkDial_DecayAng2MEC,
         kXSecTwkDial_FracPN_CCMEC,
         kXSecTwkDial_FracDelta_CCMEC,
         kXSecTwkDial_XSecShape_CCMEC,

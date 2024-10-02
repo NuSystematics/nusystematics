@@ -127,6 +127,7 @@ SystMetaData ConfigureSetOfDependentParameters(
     if (!ignore_parameter_dependence) {
       param.isResponselessParam = true;
       param.responseParamId = Response.systParamId;
+      param.isSplineable = false;
       if (param.isSplineable) {
         throw invalid_ToolConfigurationFHiCL()
             << "[ERROR]: Attempted to build spline from "
@@ -268,13 +269,17 @@ SystMetaData ConfigureMECParameterHeaders(fhicl::ParameterSet const &cfg,
                                           paramId_t firstParamId,
                                           fhicl::ParameterSet &tool_options) {
 
-  return ConfigureSetOfIndependentParameters(
+
+  SystMetaData MECmd = ConfigureSetOfDependentParameters(
+      cfg, firstParamId, tool_options, "DecayAngMECVariationResponse",
+      {kXSecTwkDial_DecayAngMEC, kXSecTwkDial_DecayAng2MEC});
+  firstParamId += MECmd.size();
+
+  SystMetaData IndepMECmd = ConfigureSetOfIndependentParameters(
       cfg, firstParamId,
       { kXSecTwkDial_NormCCMEC,
         kXSecTwkDial_NormNCMEC,
         kXSecTwkDial_NormEMMEC,
-        kXSecTwkDial_DecayAngMEC,
-        kXSecTwkDial_DecayAng2MEC,
         kXSecTwkDial_FracPN_CCMEC,
         kXSecTwkDial_FracDelta_CCMEC,
         kXSecTwkDial_XSecShape_CCMEC,
@@ -282,6 +287,10 @@ SystMetaData ConfigureMECParameterHeaders(fhicl::ParameterSet const &cfg,
         kXSecTwkDial_XSecShape_CCMEC_Martini,
         kXSecTwkDial_EnergyDependence_CCMEC}
   );
+
+  ExtendSystMetaData(MECmd, std::move(IndepMECmd));
+
+  return MECmd;
 
 }
 
