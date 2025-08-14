@@ -12,6 +12,7 @@ SET(SYSTP_IMPLFILES
   CCQERPAReweight_tool.cc
   FSIReweight_tool.cc
   WSReweight_tool.cc
+  AMUVariation_tool.cc
   )
 
 if(GENIEReWeight_ENABLED)
@@ -37,6 +38,7 @@ SET(SYSTP_HDRFILES
   CCQERPAReweight_tool.hh
   FSIReweight_tool.hh
   WSReweight_tool.hh
+  AMUVariation_tool.hh
 )
 
 if(GENIEReWeight_ENABLED)
