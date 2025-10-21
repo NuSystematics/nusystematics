@@ -13,6 +13,7 @@ SET(SYSTP_IMPLFILES
   FSIReweight_tool.cc
   WSReweight_tool.cc
   QEInterference_tool.cc
+  ValenciaMECq0q3InterpWeighting_tool.cc
   )
 
 if(GENIEReWeight_ENABLED)
@@ -39,6 +40,7 @@ SET(SYSTP_HDRFILES
   FSIReweight_tool.hh
   WSReweight_tool.hh
   QEInterference_tool.hh
+  ValenciaMECq0q3InterpWeighting_tool.hh
 )
 
 if(GENIEReWeight_ENABLED)

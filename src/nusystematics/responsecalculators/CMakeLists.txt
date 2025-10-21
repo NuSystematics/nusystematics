@@ -19,6 +19,7 @@ SET(RSPC_HDRFILES
   CCQERPAReweightCalculator.hh
   FSIReweightCalculator.hh
   QEInterferenceResponseCalculator.hh
+  ValenciaMECq0q3ResponseCalc.hh
 )
 
 
