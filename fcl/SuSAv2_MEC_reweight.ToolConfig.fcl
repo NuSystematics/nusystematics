@@ -1,0 +1,51 @@
+ValenciaInterp: {
+
+  tool_type: "ValenciaMECq0q3InterpWeighting"
+  instance_name: "SBNNuSyst"
+
+  # Define the systematic parameter (dial) for interpolation weighting
+  # central value 0, evaluate at -1, 0, +1 (can expand later)
+  ValenciaMECResponse_central_value: 0
+  ValenciaMECResponse_variation_descriptor: "[-1,0,1]"
+
+  ValenciaMECResponse_input_manifest: {
+
+    # ============================================================
+    # MODEL SELECTION: Choose "valencia" or "martini"
+    # File paths are auto-generated based on Model and DataBaseDir
+    # No need to manually specify np_files/nn_files anymore!
+    # ============================================================
+    Model: "valencia"  # Options: "valencia" or "martini"
+    
+    # Base data directory
+    DataBaseDir: "/exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/data"
+
+    # full energy grid (0.4 to 2.5 GeV, 0.1 GeV step)
+    EnergyGrid : [ 0.4,0.5,0.6,0.7,0.8,0.9,
+                 1.0,1.1,1.2,1.3,1.4,1.5,
+                 1.6,1.7,1.8,1.9,2.0,2.1,
+                 2.2,2.3,2.4,2.5 ]
+
+    # Weight limits (min, max)
+    WeightLimits : [0.1, 1000.0]
+
+    # NEW: apply only in this q0 window
+    Q0ApplyMin: 0.0     # GeV
+    Q0ApplyMax: 3.0     # GeV
+
+    Q0GuardMin: 0.0            
+    Q0GuardMax: 0.0 
+
+    EnuMin:       0.4
+    EnuMax:       2.5
+    EnuSnapTol:   0.005
+
+    HistNameNP: "h_weights_map;1"
+    HistNameNN: "h_weights_map;1"
+    MapIsQ3xQ0: true
+
+  }
+
+}
+
+syst_providers : [ValenciaInterp]

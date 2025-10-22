@@ -143,10 +143,54 @@ ValenciaMECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet cons
   // Histogram sourcing:
   //  (A) WeightFile with conventional names: h_weights_map_{np|nn}_<E>GeV
   //  (B) Arrays np_files/nn_files with explicit histogram names: HistNameNP/HistNameNN
+  //  (C) Auto-generate file paths based on Model parameter
+  
+  // NEW: Check for Model parameter to auto-select file paths
+  std::string model = manifest.get<std::string>("Model", "");
+  std::string dataBaseDir = manifest.get<std::string>("DataBaseDir", "");
+  
+  std::vector<std::string> np_files, nn_files;
+  
+  // If Model is specified, auto-generate file paths
+  if (!model.empty() && !dataBaseDir.empty()) {
+    std::string modelDir, filePrefix;
+    
+    if (model == "valencia") {
+      modelDir = "ValenciaMECq0q3";
+      filePrefix = "reweight_combined";
+    } else if (model == "martini") {
+      modelDir = "martini_2p2h_weights";
+      filePrefix = "reweight__SuSAv2_to_martini";
+    } else {
+      throw std::runtime_error("Unknown Model: '" + model + "'. Expected 'valencia' or 'martini'");
+    }
+    
+    std::cout << "[ValenciaMECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
+    std::cout << "  Model directory: " << modelDir << "\n";
+    
+    // Generate file paths for each energy point
+    for (double E : fEgrid) {
+      std::string np_file = dataBaseDir + "/" + modelDir + "/" + 
+                           filePrefix + "_np_" + Form("%0.1f", E) + "GeV.root";
+      std::string nn_file = dataBaseDir + "/" + modelDir + "/" + 
+                           filePrefix + "_nn_" + Form("%0.1f", E) + "GeV.root";
+      np_files.push_back(np_file);
+      nn_files.push_back(nn_file);
+      std::cout << "  Generated np file: " << np_file << "\n";
+      std::cout << "  Generated nn file: " << nn_file << "\n";
+    }
+  } else {
+    // Fallback to explicitly provided file lists
+    if (manifest.has_key("np_files") && manifest.has_key("nn_files")) {
+      np_files = manifest.get<std::vector<std::string>>("np_files");
+      nn_files = manifest.get<std::vector<std::string>>("nn_files");
+    }
+  }
+  
   const bool haveSingle = manifest.has_key("WeightFile");
-  const bool haveArrays = manifest.has_key("np_files") && manifest.has_key("nn_files");
+  const bool haveArrays = !np_files.empty() && !nn_files.empty();
   if (!haveSingle && !haveArrays)
-    throw std::runtime_error("Need either WeightFile or (np_files & nn_files)");
+    throw std::runtime_error("Need either WeightFile, (np_files & nn_files), or (Model & DataBaseDir)");
 
   fCalcs.clear();
 
@@ -177,8 +221,6 @@ ValenciaMECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet cons
     fin.Close();
   } else {
     // arrays: explicit TH2 names are REQUIRED
-    auto np_files = manifest.get<std::vector<std::string>>("np_files");
-    auto nn_files = manifest.get<std::vector<std::string>>("nn_files");
     if (np_files.size() != fEgrid.size() || nn_files.size() != fEgrid.size())
       throw std::runtime_error("np_files/nn_files sizes must match EnergyGrid size");
 
