@@ -1,5 +1,5 @@
-#ifndef NUSYST_VALENCIA_MEC_Q0Q3_RESPONSECALC_HH
-#define NUSYST_VALENCIA_MEC_Q0Q3_RESPONSECALC_HH
+#ifndef NUSYST_MEC_Q0Q3_RESPONSECALC_HH
+#define NUSYST_MEC_Q0Q3_RESPONSECALC_HH
 
 #include <memory>
 #include <TH2D.h>
@@ -9,13 +9,13 @@
 namespace nusyst {
 
 /// Lightweight helper that evaluates a single 2‑D weight histogram.
-class ValenciaMECq0q3ResponseCalc {
+class MECq0q3ResponseCalc {
 public:
 
 
 
   /// Constructor takes ownership of the histogram (cloned internally).
-  ValenciaMECq0q3ResponseCalc(TH2D* h, double w_min = 0.0, double w_max = 5.0,bool mapIsQ3xQ0 = false);
+  MECq0q3ResponseCalc(TH2D* h, double w_min = 0.0, double w_max = 5.0,bool mapIsQ3xQ0 = false);
 
   /// Central weight with **bilinear interpolation** inside the map.
   double GetCentralWeight(double q0, double q3) const;
@@ -30,7 +30,7 @@ private:
 };
 
 // ---------------------------------------------------------------------------
-inline ValenciaMECq0q3ResponseCalc::ValenciaMECq0q3ResponseCalc(TH2D* h,
+inline MECq0q3ResponseCalc::MECq0q3ResponseCalc(TH2D* h,
                                                          double wmin,
                                                          double wmax,
                                                          bool mapIsQ3xQ0)
@@ -49,7 +49,7 @@ inline double clamp(double x, double a, double b) {
 }
 
 // ---------------------------------------------------------------------------
-inline double ValenciaMECq0q3ResponseCalc::GetCentralWeight(double q0, double q3) const
+inline double MECq0q3ResponseCalc::GetCentralWeight(double q0, double q3) const
 {
 
   // Histogram axis order = (x = q3, y = q0)
@@ -69,7 +69,7 @@ inline double ValenciaMECq0q3ResponseCalc::GetCentralWeight(double q0, double q3
 }
 
 // ---------------------------------------------------------------------------
-inline double ValenciaMECq0q3ResponseCalc::GetVariation(int ivar,
+inline double MECq0q3ResponseCalc::GetVariation(int ivar,
                                                  double q0, double q3) const
 {
   if (ivar == 0) return GetCentralWeight(q0, q3);
@@ -79,4 +79,4 @@ inline double ValenciaMECq0q3ResponseCalc::GetVariation(int ivar,
 
 } // namespace nusyst
 
-#endif // NUSYST_VALENCIA_MEC_Q0Q3_RESPONSECALC_HH
+#endif // NUSYST_MEC_Q0Q3_RESPONSECALC_HH

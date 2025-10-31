@@ -1,11 +1,11 @@
 /*******************************************************************************
- *   ValenciaMECq0q3InterpWeighting_tool.hh
+ *   MECq0q3InterpWeighting_tool.hh
  ******************************************************************************/
-#ifndef NUSYST_VALENCIA_MEC_Q0Q3_INTERPWEIGHTING_TOOL_HH
-#define NUSYST_VALENCIA_MEC_Q0Q3_INTERPWEIGHTING_TOOL_HH
+#ifndef NUSYST_MEC_Q0Q3_INTERPWEIGHTING_TOOL_HH
+#define NUSYST_MEC_Q0Q3_INTERPWEIGHTING_TOOL_HH
 
 #include "nusystematics/interface/IGENIESystProvider_tool.hh"
-#include "nusystematics/responsecalculators/ValenciaMECq0q3ResponseCalc.hh"
+#include "nusystematics/responsecalculators/MECq0q3ResponseCalc.hh"
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -13,9 +13,9 @@
 
 namespace nusyst {
 
-class ValenciaMECq0q3InterpWeighting : public IGENIESystProvider_tool {
+class MECq0q3InterpWeighting : public IGENIESystProvider_tool {
 public:
-  explicit ValenciaMECq0q3InterpWeighting(const fhicl::ParameterSet& pset);
+  explicit MECq0q3InterpWeighting(const fhicl::ParameterSet& pset);
 
   systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const &,
                                             systtools::paramId_t) override;
@@ -65,9 +65,9 @@ private:
   double fEnuSnapTol{5e-3}; // GeV
 
   std::unordered_map<Topo,
-      std::vector<std::unique_ptr<ValenciaMECq0q3ResponseCalc>>> fCalcs;
+      std::vector<std::unique_ptr<MECq0q3ResponseCalc>>> fCalcs;
 };
 
 } // namespace nusyst
 
-#endif // NUSYST_VALENCIA_MEC_Q0Q3_INTERPWEIGHTING_TOOL_HH
+#endif // NUSYST_MEC_Q0Q3_INTERPWEIGHTING_TOOL_HH

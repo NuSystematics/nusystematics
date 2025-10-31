@@ -1,7 +1,7 @@
 /*******************************************************************************
- * ValenciaMECq0q3InterpWeighting_tool.cc
+ * MECq0q3InterpWeighting_tool.cc
  ******************************************************************************/
-#include "ValenciaMECq0q3InterpWeighting_tool.hh"
+#include "MECq0q3InterpWeighting_tool.hh"
 
 #include <fhiclcpp/ParameterSet.h>
 #include <TFile.h>
@@ -30,30 +30,30 @@
 using namespace nusyst;
 using namespace systtools;
 
-ValenciaMECq0q3InterpWeighting::ValenciaMECq0q3InterpWeighting(
+MECq0q3InterpWeighting::MECq0q3InterpWeighting(
     const fhicl::ParameterSet& p)
   : IGENIESystProvider_tool(p) {}
 
 // ---------------------------------------------------------------------------
 // Build metadata (standard NuSyst header parsing)
 SystMetaData
-ValenciaMECq0q3InterpWeighting::BuildSystMetaData(fhicl::ParameterSet const &ps,
+MECq0q3InterpWeighting::BuildSystMetaData(fhicl::ParameterSet const &ps,
                                                   systtools::paramId_t firstId) {
 
-  std::cout << "[ValenciaMECq0q3InterpWeighting::BuildSystMetaData] Called\n";
+  std::cout << "[MECq0q3InterpWeighting::BuildSystMetaData] Called\n";
 
   SystMetaData smd;
   SystParamHeader phdr;
   if (ParseFhiclToolConfigurationParameter(ps,
-                                           "ValenciaMECResponse",
+                                           "MECResponse",
                                            phdr, firstId)) {
     phdr.systParamId = firstId++;
     smd.push_back(phdr);
   }
 
   // stash manifest for SetupResponseCalculator
-  auto man = ps.get<fhicl::ParameterSet>("ValenciaMECResponse_input_manifest");
-  tool_options.put("ValenciaMECResponse_input_manifest", man);
+  auto man = ps.get<fhicl::ParameterSet>("MECResponse_input_manifest");
+  tool_options.put("MECResponse_input_manifest", man);
 
   return smd;
 }
@@ -61,12 +61,12 @@ ValenciaMECq0q3InterpWeighting::BuildSystMetaData(fhicl::ParameterSet const &ps,
 // ---------------------------------------------------------------------------
 // Read manifest and build calculators
 bool
-ValenciaMECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_opts)
+MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_opts)
 {
-  std::cout << "[ValenciaMECq0q3InterpWeighting] SetupResponseCalculator begin\n";
+  std::cout << "[MECq0q3InterpWeighting] SetupResponseCalculator begin\n";
 
   const auto manifest =
-      tool_opts.get<fhicl::ParameterSet>("ValenciaMECResponse_input_manifest");
+      tool_opts.get<fhicl::ParameterSet>("MECResponse_input_manifest");
 
   // Energy grid (required)
   if (!manifest.has_key("EnergyGrid"))
@@ -157,23 +157,23 @@ ValenciaMECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet cons
     
     if (model == "valencia") {
       modelDir = "ValenciaMECq0q3";
-      filePrefix = "reweight_combined";
+      filePrefix = "reweight_data_SuSAv2_to_valencia";
     } else if (model == "martini") {
       modelDir = "martini_2p2h_weights";
-      filePrefix = "reweight__SuSAv2_to_martini";
+      filePrefix = "reweight_data_SuSAv2_to_martini";
     } else {
       throw std::runtime_error("Unknown Model: '" + model + "'. Expected 'valencia' or 'martini'");
     }
     
-    std::cout << "[ValenciaMECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
+    std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
     std::cout << "  Model directory: " << modelDir << "\n";
     
     // Generate file paths for each energy point
     for (double E : fEgrid) {
-      std::string np_file = dataBaseDir + "/" + modelDir + "/" + 
-                           filePrefix + "_np_" + Form("%0.1f", E) + "GeV.root";
-      std::string nn_file = dataBaseDir + "/" + modelDir + "/" + 
-                           filePrefix + "_nn_" + Form("%0.1f", E) + "GeV.root";
+  std::string np_file = dataBaseDir + "/" + modelDir + "/" + 
+           filePrefix + "_np_" + Form("%0.2f", E) + "GeV.root";
+  std::string nn_file = dataBaseDir + "/" + modelDir + "/" + 
+           filePrefix + "_nn_" + Form("%0.2f", E) + "GeV.root";
       np_files.push_back(np_file);
       nn_files.push_back(nn_file);
       std::cout << "  Generated np file: " << np_file << "\n";
@@ -206,7 +206,7 @@ ValenciaMECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet cons
       vec.reserve(fEgrid.size());
 
       for (double E : fEgrid) {
-        const std::string hname = Form("h_weights_map_%s_%0.1fGeV", tag, E);
+  const std::string hname = Form("h_weights_map_%s_%0.2fGeV", tag, E);
         TH2D* h = dynamic_cast<TH2D*>(fin.Get(hname.c_str()));
         if (!h) throw std::runtime_error("Missing histogram '" + hname +
                                          "' in file " + fname);
@@ -215,7 +215,7 @@ ValenciaMECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet cons
                   << "  X:[" << h->GetXaxis()->GetXmin() << "," << h->GetXaxis()->GetXmax() << "]"
                   << "  Y:[" << h->GetYaxis()->GetXmin() << "," << h->GetYaxis()->GetXmax() << "]\n";
 
-        vec.emplace_back(std::make_unique<ValenciaMECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0));
+        vec.emplace_back(std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0));
       }
     }
     fin.Close();
@@ -244,7 +244,7 @@ ValenciaMECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet cons
                   << "  X:[" << h->GetXaxis()->GetXmin() << "," << h->GetXaxis()->GetXmax() << "]"
                   << "  Y:[" << h->GetYaxis()->GetXmin() << "," << h->GetYaxis()->GetXmax() << "]\n";
 
-        vec.emplace_back(std::make_unique<ValenciaMECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0));
+        vec.emplace_back(std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0));
         fin.Close();
       }
     };
@@ -253,14 +253,14 @@ ValenciaMECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet cons
     load_list(nn_files, Topo::nn, hname_nn);
   }
 
-  std::cout << "[ValenciaMECq0q3InterpWeighting] SetupResponseCalculator done\n";
+  std::cout << "[MECq0q3InterpWeighting] SetupResponseCalculator done\n";
   return true;
 }
 
 // ---------------------------------------------------------------------------
 // Event response
 systtools::event_unit_response_t
-ValenciaMECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
+MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
 {
   // classify topology
   const Topo topo = ClassifyEvent(ev);
@@ -349,7 +349,7 @@ ValenciaMECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
 
 // q0, q3, Enu from (probe – final-state lepton)
 void
-ValenciaMECq0q3InterpWeighting::ComputeQ0Q3(genie::EventRecord const& ev,
+MECq0q3InterpWeighting::ComputeQ0Q3(genie::EventRecord const& ev,
                                             double& q0, double& q3, double& Enu)
 {
   const TLorentzVector p4nu  = *ev.Probe()->P4();
@@ -364,8 +364,8 @@ ValenciaMECq0q3InterpWeighting::ComputeQ0Q3(genie::EventRecord const& ev,
 }
 
 // classify 2N initial cluster
-ValenciaMECq0q3InterpWeighting::Topo
-ValenciaMECq0q3InterpWeighting::ClassifyEvent(genie::EventRecord const& ev)
+MECq0q3InterpWeighting::Topo
+MECq0q3InterpWeighting::ClassifyEvent(genie::EventRecord const& ev)
 {
   for (int i = 0; i < ev.GetEntries(); ++i) {
     const auto* p = ev.Particle(i);
