@@ -41,12 +41,8 @@ SET(SYSTP_HDRFILES
   CCQETemplateReweight_tool.hh
   FSIReweight_tool.hh
   WSReweight_tool.hh
-<<<<<<< HEAD
   QEInterference_tool.hh
-  ValenciaMECq0q3InterpWeighting_tool.hh
-=======
   MECq0q3InterpWeighting_tool.hh
->>>>>>> feature/ccmec-reweight-dev
 )
 
 if(GENIEReWeight_ENABLED)
