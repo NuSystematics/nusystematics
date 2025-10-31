@@ -12,6 +12,7 @@
 #include "TH3D.h"
 
 #include <string>
+#include <sstream>
 
 /*
  * \class QEInterference
@@ -52,9 +53,29 @@ private:
   
   fhicl::ParameterSet tool_options;
 
-  size_t ResponseParameterIdx;
+  // Vector to hold the name of the descriptors.
+  // Will be loaded into the appropriate members in BuildSystMetaData()
+  // Each is a tweak dial t, controlling a linear response: in different q0 ranges,
+  // we will have different dials.
+  // General formula: f(t; W) = 1-t + t*W
+  std::vector<std::string> descriptors = {
+    "QEIntf_dial_0",
+    "QEIntf_dial_1",
+    "QEIntf_dial_2",
+    "QEIntf_dial_3",
+    "QEIntf_dial_4",
+    "QEIntf_dial_5"
+  };
+
+  //size_t ResponseParameterIdx;
+  std::vector<size_t> ResponseParameterIndices;
+
+  // this has size descriptors.size() + 1 to indicate q0 bin edges
+  std::vector<double> q0BinEdges;
 
   int nu_pdg;
   double Enu, Q0, Q3;
+
+  int verbosity_level;
 
 }; // class QEInterference

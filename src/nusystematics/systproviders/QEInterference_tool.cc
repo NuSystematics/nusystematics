@@ -9,8 +9,14 @@ using namespace fhicl;
 
 QEInterference::QEInterference(ParameterSet const & ps) :
   IGENIESystProvider_tool(ps),
-  QEIntfResponseCalculator(nullptr),
-  ResponseParameterIdx(kParamUnhandled<size_t>) {}
+  QEIntfResponseCalculator(nullptr)/*,
+				     ResponseParameterIdx(kParamUnhandled<size_t>) {}*/
+{
+  for( std::vector<std::string>::iterator it_desc = descriptors.begin();
+       it_desc != descriptors.end(); ++it_desc ) {
+    ResponseParameterIndices.emplace_back( kParamUnhandled<size_t> );
+  }
+}
 
 QEInterference::~QEInterference() {}
 
@@ -18,15 +24,52 @@ bool QEInterference::SetupResponseCalculator(ParameterSet const & tool_options)
 {
   // Silence GENIE
   genie::Messenger::Instance()->SetPrioritiesFromXmlFile("Messenger_whisper.xml");
-  //genie::Messenger::Instance()->SetPriorityLevel("GHepUtils",
-  //                                               log4cpp::Priority::FATAL);
+
+  verbosity_level = tool_options.get<int>("verbosity_level", 0);
+
+  std::string bedges = tool_options.get<std::string>("q0_bin_edges");
+  if( verbosity_level > 3 ) {
+    std::cout << "[INFO]: Using bin edges " << bedges.c_str() << std::endl;
+  }
+
+  bedges.erase(std::remove_if(bedges.begin(), bedges.end(), 
+			      [](char c){ return (static_cast<int>(c) == static_cast<int>('[') || 
+						  static_cast<int>(c) == static_cast<int>(']')); }),
+	       bedges.end());
+  std::stringstream ists(bedges);
+  std::string token;
+
+  while (std::getline(ists, token, ',')) {
+    try {
+      q0BinEdges.emplace_back(std::stod(token));
+    } catch (...) {
+      continue;
+    }
+  }
 
   // Check the metadata makes sense
-  if (!HasParam(GetSystMetaData(), "QEInterference")) {
-    throw incorrectly_configured()
-        << "[ERROR]: Expected to find parameter named "
-        << std::quoted("QEInterference");
-  }
+  SystMetaData const & md = GetSystMetaData();
+
+  for( std::vector<std::string>::iterator it_desc = descriptors.begin();
+       it_desc != descriptors.end(); ++it_desc ) {
+    if( !HasParam( md, *it_desc ) ) {
+      throw incorrectly_configured()
+	<< "[ERROR]: Expected to find parameter named "
+	<< std::quoted(*it_desc);
+    } // Problem: Parameter not found.
+    
+    // Get the parameter index
+    ResponseParameterIndices[it_desc - descriptors.begin()] = GetParamIndex(md, *it_desc);
+    if( verbosity_level > 1 ) {
+      std::ostringstream asts;
+      std::vector<double> param_variations = md[GetParamIndex(md, *it_desc)].paramVariations;
+      asts << "[INFO]: Configured parameter " << *it_desc << " with variations:\n\t[";
+      for( double & var: param_variations ) asts << " " << var << ",";
+      asts << " ]";
+      std::cout << asts.str() << std::endl;
+    } // verbose output about configuration
+    
+  } // loop over descriptors
 
   // Get manifests for options
   if (!tool_options.has_key("QEInterference_input_manifest")) {
@@ -45,9 +88,6 @@ bool QEInterference::SetupResponseCalculator(ParameterSet const & tool_options)
       tool_options.get<fhicl::ParameterSet>(
           "QEInterference_input_manifest");
 
-  ResponseParameterIdx =
-      GetParamIndex(GetSystMetaData(), "QEInterference");
-
   // Initialise the calculator
   QEIntfResponseCalculator = std::make_unique<QEInterferenceResponseCalculator>(templateManifest);
 
@@ -59,12 +99,26 @@ SystMetaData QEInterference::BuildSystMetaData(ParameterSet const & cfg,
 {
   SystMetaData smd;
 
-  SystParamHeader phdr;
-  if (ParseFhiclToolConfigurationParameter(cfg, "QEInterference",
-                                                 phdr, id)) {
-    phdr.systParamId = id++;
-    smd.push_back(phdr);
+  // Obtain each named parameter from the descriptors in the fcl
+  for( std::vector<std::string>::iterator it_desc = descriptors.begin();
+       it_desc != descriptors.end(); ++it_desc ) {
+    SystParamHeader phdr;
+    std::string pname = *it_desc;
+    if( ParseFhiclToolConfigurationParameter(cfg, pname, phdr, id) ) {
+      if( verbosity_level > 4 ) {
+	std::cout << "[DEBUG]: Found parameter " << pname << " with id = " << id << std::endl;
+      } // verbose output
+      phdr.systParamId = id++; // increment id here
+      smd.push_back(phdr);
+    }
+  } // loop over named parameters
+
+  std::string q0Bins = 
+    cfg.get<std::string>("q0_bin_edges");
+  if( !cfg.has_key("QEInterference_input_manifest") ) {
+    throw invalid_ToolConfigurationFHiCL() << "No q0 bin edges!!!";
   }
+  tool_options.put("q0_bin_edges", q0Bins);
 
   ParameterSet templateManifest =
       cfg.get<ParameterSet>("QEInterference_input_manifest");
@@ -123,14 +177,43 @@ event_unit_response_t QEInterference::GetEventResponse(genie::EventRecord const 
 
   // Make the output
   event_unit_response_t resp;
-  SystParamHeader const & hdr = GetSystMetaData()[ResponseParameterIdx];
 
-  resp.push_back( {hdr.systParamId, {}} );
-  for (double var : hdr.paramVariations) {
-    double this_reweight = (1-var) + var * QEIntfResponseCalculator->GetWeight( pdg, current,
-										Enu, Q0, Q3 );
-    resp.back().responses.push_back( this_reweight );
-  }
+  SystMetaData const & md = GetSystMetaData();
+
+  // From the tweak dial and the strength, construct the weight.
+  // First, get the raw response from the histogram
+  double raw_response = QEIntfResponseCalculator->GetWeight( pdg, current, Enu, Q0, Q3 );
+
+  // Initialise response arrays
+  // We'll be careful here. Use resize to construct the vectors
+  
+  SystParamHeader const & td0 = md[ResponseParameterIndices[0]];
+  SystParamHeader const & td1 = md[ResponseParameterIndices[1]];
+  SystParamHeader const & td2 = md[ResponseParameterIndices[2]];
+  SystParamHeader const & td3 = md[ResponseParameterIndices[3]];
+  SystParamHeader const & td4 = md[ResponseParameterIndices[4]];
+  SystParamHeader const & td5 = md[ResponseParameterIndices[5]];
+
+  std::vector<SystParamHeader> systs = { td0, td1, td2, td3, td4, td5 };
+  int iSyst = 0;
+  for( auto param : systs ) {
+    resp.push_back({param.systParamId, {}});
+    // Figure out if this is the correct q0 bin to use
+    std::cout << Q0 << std::endl;
+    if(q0BinEdges[iSyst+1] < Q0 || q0BinEdges[iSyst] >= Q0) { // Default response
+      std::vector<double> vec(param.paramVariations.size(), 1.0);
+      resp.back().responses = vec; 
+    } else {
+      std::vector<double> vec;
+      std::cout << "Picking iSyst = " << iSyst << std::endl;
+      for( const double & twk : param.paramVariations ) {
+	double this_reweight = std::max( 0.0, (1.0 - twk) + twk * raw_response );
+	vec.push_back(this_reweight);
+      }
+      resp.back().responses = vec; 
+    }
+    iSyst++;
+  }  // loop over all systs 
 
   return resp;
 }

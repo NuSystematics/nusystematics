@@ -76,13 +76,6 @@ namespace nusyst {
     if( Enu_GeV < *(Enu_bins.begin()) || Enu_GeV > *(Enu_bins.end()-2) ||
 	Q0_GeV < *(Q0_bins.begin()) || Q0_GeV > *(Q0_bins.end()-2) ||
 	Q3_GeV < *(Q3_bins.begin()) || Q3_GeV > *(Q3_bins.end()-2) ) {
-      /*
-      std::cout << "Outside kinematic range! Enu = " << Enu_GeV
-		<< ", Q0 = " << Q0_GeV << ", Q3 = " << Q3_GeV << std::endl;
-      std::cout << "cf. Enu bins: " << *(Enu_bins.begin()) << " - " << *(Enu_bins.end()-2)
-		<< "\nQ0 bins: " << *(Q0_bins.begin()) << " - " << *(Q0_bins.end()-2)
-		<< "\nQ3 bins: " << *(Q3_bins.begin()) << " - " << *(Q3_bins.end()-2) << std::endl;
-      */
       return 1.0;
     }
 
@@ -102,7 +95,7 @@ namespace nusyst {
 
     double weight = ratio_histogram.GetBinContent( bin_enu, bin_q0, bin_q3 );
     weight = std::isnan(weight) ? 1.0 : weight; // Guards against NaNs in histogram if outside ACHILLES coverage
-    return weight;
+    return (weight != 0.0) ? weight : 1.0; // default response if zero
 
   } // GetWeight()
 
