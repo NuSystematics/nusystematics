@@ -6,7 +6,7 @@ MECInterp: {
   # Define the systematic parameter (dial) for interpolation weighting
   # central value 0, evaluate at -1, 0, +1 (can expand later)
   MECResponse_central_value: 0
-  MECResponse_variation_descriptor: "[-1,0,1]"
+  MECResponse_variation_descriptor: "[1]"
 
   MECResponse_input_manifest: {
 
@@ -15,7 +15,7 @@ MECInterp: {
     # File paths are auto-generated based on Model and DataBaseDir
     # No need to manually specify np_files/nn_files anymore!
     # ============================================================
-    Model: "martini"  # Options: "valencia" or "martini"
+    Model: "valencia"  # Options: "valencia" or "martini"
     
     # Base data directory
     DataBaseDir: "/exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/data"
@@ -39,10 +39,13 @@ MECInterp: {
     EnuMin:       0.4
     EnuMax:       2.5
     EnuSnapTol:   0.005
-
+    
     HistNameNP: "h_weights_map;1"
     HistNameNN: "h_weights_map;1"
     MapIsQ3xQ0: true
+
+    UseNearestBin: true
+    EdgeClamp: false
 
   }
 

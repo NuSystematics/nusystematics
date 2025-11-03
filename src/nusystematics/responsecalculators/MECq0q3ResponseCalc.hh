@@ -20,13 +20,18 @@ public:
   /// Central weight with **bilinear interpolation** inside the map.
   double GetCentralWeight(double q0, double q3) const;
 
-  /// Up / Down side variation (ivar = ±1) – symmetric envelope 2 − w_CV.
+  /// Up / Down side variation (ivar = ±1) – symmetric envelope 2 − w_CV.
   double GetVariation(int ivar, double q0, double q3) const;
+
+  void   SetUseNearestBin(bool v) { fUseNearestBin = v; }
+  void   SetEdgeClamp(bool v)     { fEdgeClamp = v; }
 
 private:
   std::unique_ptr<TH2D> fHist;   ///< owned, thread‑safe clone of the histogram
   double fWmin, fWmax;      ///< clamp limits
   bool   fMapIsQ3xQ0{false};           ///< true if map is in (q3, q0) coordinates
+  bool   fUseNearestBin{false};   ///< default off → legacy bilinear
+  bool   fEdgeClamp{false};       ///< default off → legacy out-of-range=1
 };
 
 // ---------------------------------------------------------------------------
@@ -58,13 +63,26 @@ inline double MECq0q3ResponseCalc::GetCentralWeight(double q0, double q3) const
   const double yMin = fHist->GetYaxis()->GetXmin();
   const double yMax = fHist->GetYaxis()->GetXmax();
 
-  // If kinematics fall outside trained / provided map domain, return neutral weight
-  if (q3 < xMin || q3 > xMax || q0 < yMin || q0 > yMax) {
-    return 1.0; // do not extrapolate beyond Valencia map coverage
+  auto in_x = (q3 >= xMin && q3 <= xMax);
+  auto in_y = (q0 >= yMin && q0 <= yMax);
+
+  double w = 1.0;
+  if (fUseNearestBin) {
+    // --- piecewise-constant: nearest-bin content ---
+    int ix = fHist->GetXaxis()->FindBin(q3);
+    int iy = fHist->GetYaxis()->FindBin(q0);
+    // clamp to valid bins (1..Nbins) if requested, else treat OOR as unity
+    if (!in_x || !in_y) {
+      if (!fEdgeClamp) return 1.0;
+      ix = std::clamp(ix, 1, fHist->GetNbinsX());
+      iy = std::clamp(iy, 1, fHist->GetNbinsY());
+    }
+    w = fHist->GetBinContent(ix, iy);
+  } else {
+    // --- legacy: bilinear interpolation inside domain; 1.0 outside ---
+    if (!in_x || !in_y) return 1.0;
+    w = fHist->Interpolate(q3, q0);
   }
-
-  const double w = fHist->Interpolate(q3, q0); // bilinear inside domain
-
   return clamp(w, fWmin, fWmax);
 }
 

@@ -126,7 +126,11 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     throw std::runtime_error("EnuSnapTol must be finite and >= 0");
 
   const bool mapIsQ3xQ0 = manifest.get<bool>("MapIsQ3xQ0", false);
+  const bool useNearestBin = manifest.get<bool>("UseNearestBin", true);  // turn ON new behavior
+  const bool edgeClamp     = manifest.get<bool>("EdgeClamp",     true);  // clamp OOR to edge bin
   std::cout << "  MapIsQ3xQ0     : " << (mapIsQ3xQ0 ? "true" : "false") << "\n";
+  std::cout << "  UseNearestBin  : " << (useNearestBin ? "true" : "false") << "\n";
+  std::cout << "  EdgeClamp      : " << (edgeClamp ? "true" : "false") << "\n";
 
 
 
@@ -215,7 +219,10 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
                   << "  X:[" << h->GetXaxis()->GetXmin() << "," << h->GetXaxis()->GetXmax() << "]"
                   << "  Y:[" << h->GetYaxis()->GetXmin() << "," << h->GetYaxis()->GetXmax() << "]\n";
 
-        vec.emplace_back(std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0));
+        auto calc = std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0);
+        calc->SetUseNearestBin(useNearestBin);
+        calc->SetEdgeClamp(edgeClamp);
+        vec.emplace_back(std::move(calc));
       }
     }
     fin.Close();
@@ -244,7 +251,10 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
                   << "  X:[" << h->GetXaxis()->GetXmin() << "," << h->GetXaxis()->GetXmax() << "]"
                   << "  Y:[" << h->GetYaxis()->GetXmin() << "," << h->GetYaxis()->GetXmax() << "]\n";
 
-        vec.emplace_back(std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0));
+        auto calc = std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0);
+        calc->SetUseNearestBin(useNearestBin);
+        calc->SetEdgeClamp(edgeClamp);
+        vec.emplace_back(std::move(calc));
         fin.Close();
       }
     };
