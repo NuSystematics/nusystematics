@@ -31,16 +31,14 @@ using namespace std;
 
 // global variables
 namespace PRD_93_113015 {
-Eigen::Vector4d a_14_cv{2.3, -0.6, -3.8, 2.3};
-Eigen::Vector4d a_14_errors{0.13, 1, 2.5, 2.7};
-Eigen::MatrixXd Covariance_Matrix{{0.0169, 0.0455, -0.22035, 0.214461},
-                                  {0.0455, 1., -2.245, 0.9909},
-                                  {-0.22035, -2.245, 6.25, -4.62375},
-                                  {0.214461, 0.9909, -4.62375, 7.29}};
-Eigen::Array4d central_values_a_from_genie = {2.30, -0.60, -3.80, 2.30};
-Eigen::Array4d central_values_afrom_errors_genie_code = {0.14, 0.67, 1,
-                                                         0.75}; //-----in genie
-Eigen::Array4d central_values_afrom_errors_genie = {0.13, 1, 2.5, 2.7};
+// Values provided by Aaron Meyer, the lead auther of PRD 93 113015
+Eigen::Vector4d a_14_cv{2.2962961514010414, -0.5702353490765429, -3.7873956246696396, 2.312770215323479};
+Eigen::MatrixXd Covariance_Matrix{{ 0.01545818, 0.04518361, -0.21564118, 0.20647022},
+                                  { 0.04518361, 1.08090689, -2.38701609, 1.03860128},
+                                  {-0.21564118, -2.38701609, 6.53567566, -4.76577493},
+                                  { 0.20647022, 1.03860128, -4.76577493, 7.39831933}};
+Eigen::Array4d central_values_a_from_genie = {2.30, -0.60, -3.80, 2.30}; // Note) GENIE's CV
+Eigen::Array4d central_values_afrom_errors_genie_code = {0.14, 0.67, 1, 0.75}; // Note) GENIE's one-sigma in percentage
 } // namespace PRD_93_113015
 
 Eigen::MatrixXd
