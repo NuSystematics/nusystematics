@@ -43,6 +43,19 @@ Eigen::Array4d central_values_afrom_errors_genie_code = {0.14, 0.67, 1,
 Eigen::Array4d central_values_afrom_errors_genie = {0.13, 1, 2.5, 2.7};
 } // namespace PRD_93_113015
 
+namespace Nature_614_102522 {
+Eigen::Vector4d a_14_cv{1.50, -1.2, -0.1, 0.2};
+Eigen::Vector4d a_14_errors{0.31, 0.7, 1.9, 2.5};
+Eigen::MatrixXd Covariance_Matrix{{0.0961, 0.002604, -0.54777, 0.403},
+                                  {0.002604, 0.49, -0.4256, -1.365},
+                                  {-0.54777, -0.4256, 3.61, -1.2825},
+                                  {0.403, -1.365, -1.2825, 6.25}};
+Eigen::Array4d central_values_a_from_genie = {2.30, -0.60, -3.80, 2.30};
+Eigen::Array4d central_values_afrom_errors_genie_code = {0.14, 0.67, 1,
+                                                         0.75}; //-----in genie
+Eigen::Array4d central_values_afrom_errors_genie = {0.13, 1, 2.5, 2.7};
+} // namespace Nature_614_102522
+
 Eigen::MatrixXd
 GetPCAFromCovarianceMatrix(Eigen::MatrixXd const &Covariance_Matrix) {
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(Covariance_Matrix);
@@ -70,10 +83,10 @@ Eigen::VectorXd ChangeBasisBParams(std::vector<double> const &BVals,
 // Function to rescale the a parameters for GENIE ReWeight
 Eigen::Array4d ScaleAparamsforGenie(Eigen::VectorXd &avals) {
   Eigen::VectorXd avalues_for_genie =
-      (((PRD_93_113015::a_14_cv + avals).array() /
-        PRD_93_113015::central_values_a_from_genie.array()) -
+      (((Nature_614_102522::a_14_cv + avals).array() /
+        Nature_614_102522::central_values_a_from_genie.array()) -
        1.0) /
-      PRD_93_113015::central_values_afrom_errors_genie_code.array();
+      Nature_614_102522::central_values_afrom_errors_genie_code.array();
   return avalues_for_genie;
 }
 
@@ -89,11 +102,11 @@ ZExpPCAWeighter::ZExpPCAWeighter(
     : IGENIESystProvider_tool(
           params), // IGENIESystProvider_tool takes parameters and sets tune and
                    // event records etc. in GENIE
+                   //
       pidx_Params{kParamUnhandled<size_t>, kParamUnhandled<size_t>,
                   kParamUnhandled<size_t>, kParamUnhandled<size_t>} {
 } // The ParamHeaders id of the four free parameters provided by
   // thissystprovider
-
 SystMetaData ZExpPCAWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
                                                 paramId_t firstId) {
   SystMetaData smd;
@@ -127,6 +140,8 @@ SystMetaData ZExpPCAWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
 bool ZExpPCAWeighter::SetupResponseCalculator(
     fhicl::ParameterSet const &tool_options) {
   verbosity_level = tool_options.get<int>("verbosity_level", 0);
+  std::string RwtoPub = tool_options.get<std::string>("RWtoPub", "PRD_93_113015");
+  std::cout << "Found RwtoPub: " << RwtoPub << std::endl;
 
   // grab the pre-parsed param headers object
   SystMetaData const &md = GetSystMetaData();
@@ -189,7 +204,7 @@ bool ZExpPCAWeighter::SetupResponseCalculator(
       // md and the rotation function
       Eigen::VectorXd a_variations = ChangeBasisBParams(
           bvariations,
-          GetPCAFromCovarianceMatrix(PRD_93_113015::Covariance_Matrix));
+          GetPCAFromCovarianceMatrix(Nature_614_102522::Covariance_Matrix));
 
       // Now use the b_variations to get the a values
       auto myaparameters = ScaleAparamsforGenie(a_variations);
