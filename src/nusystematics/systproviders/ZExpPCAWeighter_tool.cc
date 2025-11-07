@@ -156,7 +156,8 @@ bool ZExpPCAWeighter::SetupResponseCalculator(
     Covariance_Matrix = PRD_93_113015::Covariance_Matrix;
   }
   else{
-    std::cout << RWtoPub << " Not available for RWtoPub" << std::endl; 
+    //std::cout << RWtoPub << " Not available for RWtoPub" << std::endl; 
+    throw std::invalid_argument( "Invalid option for RWtoPub, please select Nature_614_102522 or PRD_93_113015" );
   }
 
   // grab the pre-parsed param headers object
