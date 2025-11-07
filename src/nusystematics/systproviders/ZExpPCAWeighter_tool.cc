@@ -131,6 +131,9 @@ SystMetaData ZExpPCAWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
   tool_options.put("verbosity_level",
                    ps.get<int>("verbosity_level",
                                0)); // put tool config options in papam geaders
+  tool_options.put("RWtoPub",
+                   ps.get<std::string>("RWtoPub",
+                               "PRD_93_113015")); // put tool config options in papam geaders
 
   return smd;
 }
