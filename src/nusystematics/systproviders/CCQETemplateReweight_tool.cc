@@ -159,7 +159,7 @@ CCQETemplateReweight::GetEventResponse(genie::EventRecord const &ev) {
     //bin_kin = {emTransfer.Vect().Mag(), emTransfer.E()};
     // TEST; cutoff for non-physical reweights
     double this_q3 = emTransfer.Vect().Mag();
-    double this_q0 = emTransfer.E()>q0_bin_boundaries[kNumQ0Bins+1] ? q0_bin_boundaries[kNumQ0Bins+1] : emTransfer.E();
+    double this_q0 = emTransfer.E()>q0_bin_boundaries[kNumQ0Bins] ? q0_bin_boundaries[kNumQ0Bins] : emTransfer.E();
     bin_kin = {this_q3, this_q0};
   }
   else if(rwMode==PCTheta){
@@ -179,24 +179,29 @@ CCQETemplateReweight::GetEventResponse(genie::EventRecord const &ev) {
   // Determine which q0 bin this event belongs to
   double q0_value = emTransfer.E();
   int q0_bin_index = GetQ0BinIndex(q0_value);
-  /*
-  std::cout << "[CCQETemplateReweight::GetEventResponse] q0=" << q0_value 
-            << " -> bin " << q0_bin_index << std::endl;
-  */
+  // std::cout << "[CCQETemplateReweight::GetEventResponse] q0=" << q0_value 
+  //          << " -> bin " << q0_bin_index << " -> resp index " << ResponseParameterIdx_q0bin[q0_bin_index] << std::endl;
 
   systtools::event_unit_response_t resp;
 
+  // put in default (1) for all of the weights
+  for (size_t i = 0; i < kNumQ0Bins; ++i) {
+    SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIdx_q0bin[i]];
+    resp.push_back( {hdr.systParamId, {}} );
+    for (double var : hdr.paramVariations) resp.back().responses.push_back(1.);
+  }
+
   // reweighting for the corresponding q0 bin
   SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIdx_q0bin[q0_bin_index]];
-
-  resp.push_back( {hdr.systParamId, {}} );
+  unsigned i_var = 0;
   for (double var : hdr.paramVariations) {
     double this_reweight = ccqeTemplateReweightCalculator->GetTemplateReweight( 
       ISLepP4.E(),
       bin_kin,
       var
     );
-    resp.back().responses.push_back( this_reweight );
+    resp[q0_bin_index].responses[i_var] = this_reweight;
+    i_var ++;
   }
 
   if (fill_valid_tree) {
@@ -234,7 +239,7 @@ std::string CCQETemplateReweight::AsString() { return ""; }
 
 int CCQETemplateReweight::GetQ0BinIndex(double q0_value) const {
 
-  double q0_cutoff = (q0_value > q0_bin_boundaries[kNumQ0Bins+1]) ? q0_bin_boundaries[kNumQ0Bins+1] : q0_value;
+  double q0_cutoff = (q0_value > q0_bin_boundaries[kNumQ0Bins]) ? q0_bin_boundaries[kNumQ0Bins] : q0_value;
   
   for (size_t i = 0; i < kNumQ0Bins; ++i) {
     if (q0_cutoff >= q0_bin_boundaries[i] && q0_cutoff < q0_bin_boundaries[i + 1]) {
@@ -242,7 +247,7 @@ int CCQETemplateReweight::GetQ0BinIndex(double q0_value) const {
     }
   }
   
-  if (q0_cutoff >= q0_bin_boundaries[kNumQ0Bins+1]) {
+  if (q0_cutoff >= q0_bin_boundaries[kNumQ0Bins]) {
     return kNumQ0Bins;
   }
   
