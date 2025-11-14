@@ -422,8 +422,26 @@ SystMetaData ConfigureFSIParameterHeaders(fhicl::ParameterSet const &cfg,
       cfg, firstParamId, tool_options, "FSI_N_VariationResponse",
       {kINukeTwkDial_MFP_N, kINukeTwkDial_FrCEx_N, kINukeTwkDial_FrInel_N,
        kINukeTwkDial_FrAbs_N, kINukeTwkDial_FrPiProd_N});
-
+  firstParamId += FSI_N_md.size();
   ExtendSystMetaData(FSImd, std::move(FSI_N_md));
+
+  SystMetaData FSI_N_EDep_md = ConfigureSetOfDependentParameters(
+      cfg, firstParamId, tool_options, "FSI_N_EDep_VariationResponse",
+       {kINukeTwkDial_G4_N, kINukeTwkDial_INCL_N,
+       kINukeTwkDial_G4LoE_N, kINukeTwkDial_INCLLoE_N,
+       kINukeTwkDial_G4M1E_N, kINukeTwkDial_INCLM1E_N,
+       kINukeTwkDial_G4M2E_N, kINukeTwkDial_INCLM2E_N,
+       kINukeTwkDial_G4HiE_N, kINukeTwkDial_INCLHiE_N,
+       kINukeTwkDial_MFPLoE_N, kINukeTwkDial_MFPM1E_N,
+       kINukeTwkDial_MFPM2E_N, kINukeTwkDial_MFPHiE_N});
+  firstParamId += FSI_N_EDep_md.size();
+  ExtendSystMetaData(FSImd, std::move(FSI_N_EDep_md));
+
+  SystMetaData FSI_Kinematics = ConfigureSetOfDependentParameters(
+      cfg, firstParamId, tool_options, "FSI_Kinematics",
+      {kINukeKinematicsTwkDial_NP_N, kINukeKinematicsTwkDial_PP_N, 
+       kINukeKinematicsFixPiPro, kINukeKinematicsPiProBias, kINukeKinematicsPiProBiaswFix}); 
+  ExtendSystMetaData(FSImd, std::move(FSI_Kinematics));
 
   return FSImd;
 }
