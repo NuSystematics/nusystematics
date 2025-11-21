@@ -101,6 +101,20 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   if (!(fQ0ApplyMax > fQ0ApplyMin))
     throw std::runtime_error("Q0ApplyMax must be > Q0ApplyMin");
 
+  // NEW: q3 apply window (optional, defaults to [0, +inf))
+  fQ3ApplyMin = manifest.get<double>("Q3ApplyMin", 0.0);
+  if (manifest.has_key("Q3ApplyMax")) {
+    fQ3ApplyMax = manifest.get<double>("Q3ApplyMax");
+    if (!(std::isfinite(fQ3ApplyMax)))
+      throw std::runtime_error("Q3ApplyMax must be finite if provided");
+  } else {
+    fQ3ApplyMax = std::numeric_limits<double>::infinity();
+  }
+  if (!(std::isfinite(fQ3ApplyMin) && fQ3ApplyMin >= 0.0))
+    throw std::runtime_error("Q3ApplyMin must be finite and >= 0");
+  if (!(fQ3ApplyMax > fQ3ApplyMin))
+    throw std::runtime_error("Q3ApplyMax must be > Q3ApplyMin");
+
 
 
 
@@ -128,9 +142,28 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   const bool mapIsQ3xQ0 = manifest.get<bool>("MapIsQ3xQ0", false);
   const bool useNearestBin = manifest.get<bool>("UseNearestBin", true);  // turn ON new behavior
   const bool edgeClamp     = manifest.get<bool>("EdgeClamp",     true);  // clamp OOR to edge bin
+  
+  // Read Model parameter early to determine default out-of-range behavior
+  std::string model = manifest.get<std::string>("Model", "");
+  
+  // Out-of-range weight: default depends on model
+  // Valencia: 0.0 (suppress beyond q3~1.2 GeV, q0~??? GeV)
+  // Martini:  0.0 (suppress beyond q0~0.995 GeV)
+  // Custom:   configurable via OutOfRangeWeight parameter
+  double outOfRangeWeight = 1.0;  // backward compatible default
+  if (manifest.has_key("OutOfRangeWeight")) {
+    outOfRangeWeight = manifest.get<double>("OutOfRangeWeight");
+  } else if (!model.empty()) {
+    // Auto-set based on model to match native generator behavior
+    if (model == "valencia" || model == "martini") {
+      outOfRangeWeight = 0.0;  // Suppress events outside model's phase space
+    }
+  }
+  
   std::cout << "  MapIsQ3xQ0     : " << (mapIsQ3xQ0 ? "true" : "false") << "\n";
   std::cout << "  UseNearestBin  : " << (useNearestBin ? "true" : "false") << "\n";
   std::cout << "  EdgeClamp      : " << (edgeClamp ? "true" : "false") << "\n";
+  std::cout << "  OutOfRangeWeight: " << outOfRangeWeight << "\n";
 
 
 
@@ -149,8 +182,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   //  (B) Arrays np_files/nn_files with explicit histogram names: HistNameNP/HistNameNN
   //  (C) Auto-generate file paths based on Model parameter
   
-  // NEW: Check for Model parameter to auto-select file paths
-  std::string model = manifest.get<std::string>("Model", "");
+  // Read DataBaseDir for auto-generation (model already read earlier for outOfRangeWeight)
   std::string dataBaseDir = manifest.get<std::string>("DataBaseDir", "");
   
   std::vector<std::string> np_files, nn_files;
@@ -222,6 +254,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
         auto calc = std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0);
         calc->SetUseNearestBin(useNearestBin);
         calc->SetEdgeClamp(edgeClamp);
+        calc->SetOutOfRangeWeight(outOfRangeWeight);
         vec.emplace_back(std::move(calc));
       }
     }
@@ -254,6 +287,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
         auto calc = std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0);
         calc->SetUseNearestBin(useNearestBin);
         calc->SetEdgeClamp(edgeClamp);
+        calc->SetOutOfRangeWeight(outOfRangeWeight);
         vec.emplace_back(std::move(calc));
         fin.Close();
       }
@@ -285,9 +319,30 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
   if (Enu < fEnuMin - 1e-6 || Enu > fEnuMax + 1e-6)
     return this->GetDefaultEventResponse();
 
-  // NEW: q0 apply window gate: unity if outside (q0min, q0max)
+  // Helper lambda to create zero-weight response (suppress events)
+
+  auto GetZeroWeightResponse = [this]() {
+    auto const& smd = this->GetSystMetaData();
+    systtools::event_unit_response_t resp;
+    resp.reserve(smd.size());
+    for(auto const& sph : smd) {
+      // Create zero-weight response for this parameter
+      if (sph.isCorrection) {
+        resp.push_back({sph.systParamId, std::vector<double>{0.0}});
+      } else {
+        resp.push_back({sph.systParamId, std::vector<double>(sph.paramVariations.size(), 0.0)});
+      }
+    }
+    return resp;
+  };
+
+  // NEW: q0 apply window gate: ZERO weight if outside (q0min, q0max)
   if (q0 <= fQ0ApplyMin + 1e-6 || q0 >= fQ0ApplyMax - 1e-6)
-    return this->GetDefaultEventResponse();
+    return GetZeroWeightResponse();
+
+  // NEW: q3 apply window gate: ZERO weight if outside (q3min, q3max)
+  if (q3 <= fQ3ApplyMin + 1e-6 || q3 >= fQ3ApplyMax - 1e-6)
+    return GetZeroWeightResponse();
 
 
   // q0 guard: unity below Min (inclusive with epsilon)

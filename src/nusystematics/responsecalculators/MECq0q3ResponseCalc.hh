@@ -25,6 +25,7 @@ public:
 
   void   SetUseNearestBin(bool v) { fUseNearestBin = v; }
   void   SetEdgeClamp(bool v)     { fEdgeClamp = v; }
+  void   SetOutOfRangeWeight(double w) { fOutOfRangeWeight = w; }
 
 private:
   std::unique_ptr<TH2D> fHist;   ///< owned, thread‑safe clone of the histogram
@@ -32,6 +33,7 @@ private:
   bool   fMapIsQ3xQ0{false};           ///< true if map is in (q3, q0) coordinates
   bool   fUseNearestBin{false};   ///< default off → legacy bilinear
   bool   fEdgeClamp{false};       ///< default off → legacy out-of-range=1
+  double fOutOfRangeWeight{1.0};  ///< weight to return when outside histogram bounds (default 1.0 for backward compatibility, set to 0.0 to suppress)
 };
 
 // ---------------------------------------------------------------------------
@@ -71,16 +73,16 @@ inline double MECq0q3ResponseCalc::GetCentralWeight(double q0, double q3) const
     // --- piecewise-constant: nearest-bin content ---
     int ix = fHist->GetXaxis()->FindBin(q3);
     int iy = fHist->GetYaxis()->FindBin(q0);
-    // clamp to valid bins (1..Nbins) if requested, else treat OOR as unity
+    // clamp to valid bins (1..Nbins) if requested, else treat OOR as configurable
     if (!in_x || !in_y) {
-      if (!fEdgeClamp) return 1.0;
+      if (!fEdgeClamp) return fOutOfRangeWeight;
       ix = std::clamp(ix, 1, fHist->GetNbinsX());
       iy = std::clamp(iy, 1, fHist->GetNbinsY());
     }
     w = fHist->GetBinContent(ix, iy);
   } else {
-    // --- legacy: bilinear interpolation inside domain; 1.0 outside ---
-    if (!in_x || !in_y) return 1.0;
+    // --- legacy: bilinear interpolation inside domain; configurable weight outside ---
+    if (!in_x || !in_y) return fOutOfRangeWeight;
     w = fHist->Interpolate(q3, q0);
   }
   return clamp(w, fWmin, fWmax);

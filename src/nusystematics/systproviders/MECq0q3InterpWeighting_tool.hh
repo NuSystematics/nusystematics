@@ -52,6 +52,11 @@ private:
   double fQ0ApplyMin{0.0};                                   // GeV
   double fQ0ApplyMax{std::numeric_limits<double>::infinity()}; // GeV
 
+  // NEW: q3 apply window (gate). Weighting applies only if
+  //      fQ3ApplyMin < q3 < fQ3ApplyMax. Defaults: [0, +inf)
+  double fQ3ApplyMin{0.0};                                   // GeV
+  double fQ3ApplyMax{std::numeric_limits<double>::infinity()}; // GeV
+
   // Ramp guard: unity below Min; linear blend to full weight by Max
   // If Max == Min, behaves like a hard cutoff at Min
   double fQ0GuardMin{0.0};  // GeV

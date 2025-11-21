@@ -393,8 +393,6 @@ int main(int argc, char const *argv[]) {
     // Start-of-event: reset tweak containers so later Add() fills cleanly.
     // (This does NOT touch physics scalars like w, q0, Q2.)
     tst.Clear();
-    // Optional: set physics sentinels to catch logic mistakes in quick scans.
-    tst.w   = -999.0;
 
     gevs->GetEntry(ev_it);
     genie::EventRecord const &GenieGHep = *GenieNtpl->event;
@@ -426,20 +424,13 @@ int main(int argc, char const *argv[]) {
     tst.q0 = emTransfer.E();
     tst.Q2 = -emTransfer.Mag2();
     tst.q3 = emTransfer.Vect().Mag();
-
-// ------------------------------------------------------------
-    // Compute W from (q0, Q2) and a nucleon mass.
-    // W^2 = M_N^2 + 2 M_N q0 - Q^2, with q0 = energy transfer (nu)
-    // Use GENIE's nucleon mass if available; otherwise default to 0.939 GeV.
-    // ------------------------------------------------------------
-    {
-      double MN = 0.939;               // default GeV
-  if (nucleon) MN = nucleon->Mass();  // use GENIE's struck-nucleon mass if available
-
-  const double W2 = MN*MN + 2.0*MN*tst.q0 - tst.Q2;
-  tst.w = (W2 > 0.0) ? std::sqrt(W2) : -1.0; // guard small negatives
-    }
-
+    
+    // Compute W from (q0, Q2) and nucleon mass
+    // W^2 = M_N^2 + 2 M_N q0 - Q^2  (q0 = energy transfer)
+    // Use consistent nucleon mass value from nuisance
+    double MN = 0.93827203; // GeV
+    double W2 = MN * MN + 2.0 * MN * tst.q0 - tst.Q2;
+    tst.w = (W2 > 0.0) ? std::sqrt(W2) : -1.0;
     
     tst.Enu_true = ISLepP4.E();
     tst.nu_pdg = ISLep->Pdg();
@@ -564,7 +555,7 @@ int main(int argc, char const *argv[]) {
 
     tst.fsprotons_KE.clear();
     for(const auto& proton: protons){
-      const double this_KE = proton->KinE();
+      double this_KE = proton->KinE();
       tst.fsprotons_KE.push_back(this_KE);
     }
     // Calculate TKI
@@ -607,20 +598,7 @@ int main(int argc, char const *argv[]) {
       event_unit_response_w_cv_t resp = phh.GetEventVariationAndCVResponse(GenieGHep);
       tst.Add(resp);
     }
-    // --- Compute W from (q0, Q2) and nucleon mass *right before Fill* ---
-    //    W^2 = M_N^2 + 2 M_N q0 - Q^2  (q0 = energy transfer)
-    {
-      // Force single-nucleon mass for consistent comparison (no cluster mass)
-      const double MN = 0.939; // GeV
-      const double W2 = MN * MN + 2.0 * MN * tst.q0 - tst.Q2;
-      tst.w = (W2 > 0.0) ? std::sqrt(W2) : -1.0;
-    }
 
-    // Optional quick debug every ~50k events to prove values are changing:
-    // if ((ev_it % 50000) == 0) {
-    //   std::cout << "\n[ev " << ev_it << "] q0=" << tst.q0
-    //             << " Q2=" << tst.Q2 << " W=" << tst.w << std::endl;
-    // }
     tst.Fill();
     
     // TH: Very important to clear this object to avoid memory issues!
