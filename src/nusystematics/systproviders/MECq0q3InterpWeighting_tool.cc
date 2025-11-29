@@ -315,12 +315,7 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
   double q0 = 0.0, q3 = 0.0, Enu = 0.0;
   ComputeQ0Q3(ev, q0, q3, Enu);
 
-  // Energy guard: weight=1 outside [fEnuMin, fEnuMax]
-  if (Enu < fEnuMin - 1e-6 || Enu > fEnuMax + 1e-6)
-    return this->GetDefaultEventResponse();
-
   // Helper lambda to create zero-weight response (suppress events)
-
   auto GetZeroWeightResponse = [this]() {
     auto const& smd = this->GetSystMetaData();
     systtools::event_unit_response_t resp;
@@ -336,16 +331,26 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
     return resp;
   };
 
+  // NEW: q3 apply window gate: ZERO weight if outside (q3min, q3max) - CHECK BEFORE ENERGY GUARD
+  if (q3 <= fQ3ApplyMin + 1e-6 || q3 >= fQ3ApplyMax - 1e-6) {
+    static int debug_count = 0;
+    if (debug_count < 10) {
+      std::cout << "[DEBUG] Suppressing event: q3=" << q3 << " (q3min=" << fQ3ApplyMin 
+                << ", q3max=" << fQ3ApplyMax << "), q0=" << q0 << ", Enu=" << Enu << std::endl;
+      debug_count++;
+    }
+    return GetZeroWeightResponse();
+  }
+
   // NEW: q0 apply window gate: ZERO weight if outside (q0min, q0max)
   if (q0 <= fQ0ApplyMin + 1e-6 || q0 >= fQ0ApplyMax - 1e-6)
     return GetZeroWeightResponse();
 
-  // NEW: q3 apply window gate: ZERO weight if outside (q3min, q3max)
-  if (q3 <= fQ3ApplyMin + 1e-6 || q3 >= fQ3ApplyMax - 1e-6)
-    return GetZeroWeightResponse();
+  // Energy guard: weight=1 outside [fEnuMin, fEnuMax] (after q3/q0 gates)
+  if (Enu < fEnuMin - 1e-6 || Enu > fEnuMax + 1e-6)
+    return this->GetDefaultEventResponse();
 
-
-  // q0 guard: unity below Min (inclusive with epsilon)
+  // q0 guard: unity below GuardMin (for events that passed q3/q0 apply gates)
   if (q0 <= fQ0GuardMin + 1e-6)
     return this->GetDefaultEventResponse();
 
