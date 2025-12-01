@@ -131,9 +131,19 @@ SystMetaData ZExpPCAWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
   tool_options.put("verbosity_level",
                    ps.get<int>("verbosity_level",
                                0)); // put tool config options in papam geaders
-  tool_options.put("RWtoPub",
-                   ps.get<std::string>("RWtoPub",
-                               "PRD_93_113015")); // put tool config options in papam geaders
+
+  std::string RWtoPub = ps.get<std::string>("RWtoPub", "PRD_93_113015");
+  tool_options.put("RWtoPub", RWtoPub);
+
+  if(RWtoPub == "Nature_614_102522"){
+    tool_options.put("T0", -0.75);
+  }
+  else if(RWtoPub == "PRD_93_113015"){
+    tool_options.put("T0", -0.28);
+  }
+  else{
+    throw std::invalid_argument( "Invalid option for RWtoPub, please select Nature_614_102522 or PRD_93_113015" );
+  }
 
   return smd;
 }
@@ -162,6 +172,9 @@ bool ZExpPCAWeighter::SetupResponseCalculator(
     //std::cout << RWtoPub << " Not available for RWtoPub" << std::endl; 
     throw std::invalid_argument( "Invalid option for RWtoPub, please select Nature_614_102522 or PRD_93_113015" );
   }
+
+  if (tool_options.get_if_present("T0", fZExpT0)) fZExpOverrideT0 = true;
+  if (tool_options.get_if_present("Tcut", fZExpTcut)) fZExpOverrideTcut = true;
 
   // grab the pre-parsed param headers object
   SystMetaData const &md = GetSystMetaData();
@@ -242,6 +255,11 @@ bool ZExpPCAWeighter::SetupResponseCalculator(
         ReWeightEngines_new[i].back()->SetSystematic(zexp_dials[aval_j],
                                                      myaparameters[aval_j]);
       }
+
+      // set other Z-exp parameters
+      if (fZExpOverrideT0) ReWeightEngines_new[i].back()->SetZExpT0(fZExpT0);
+      if (fZExpOverrideTcut) ReWeightEngines_new[i].back()->SetZExpTcut(fZExpTcut);
+
       ReWeightEngines_new[i].back()->Reconfigure();
       if (verbosity_level > 2) {
         std::cout << "Done Reconfigure()" << std::endl;
