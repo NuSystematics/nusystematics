@@ -71,7 +71,9 @@ public:
     config_file = fhicl_config_filename;
 
     // TODO
-    std::unique_ptr<cet::filepath_maker> fm = std::make_unique<cet::filepath_maker>();
+    const char * fhicl_file_path = getenv("FHICL_FILE_PATH");
+    std::unique_ptr<cet::filepath_maker> fm
+        = std::make_unique<cet::filepath_lookup_nonabsolute>(fhicl_file_path ? std::string(fhicl_file_path) : "");
     fhicl::ParameterSet ps = fhicl::ParameterSet::make(config_file, *fm);
 
     LoadProvidersAndHeaders(ps.get<fhicl::ParameterSet>(
