@@ -10,6 +10,7 @@ SET(SYSTP_IMPLFILES
   NOvAStyleNonResPionNorm_tool.cc
   DIRT2_Emiss_tool.cc
   CCQERPAReweight_tool.cc
+  CCQETemplateReweight_tool.cc
   FSIReweight_tool.cc
   WSReweight_tool.cc
   QEInterference_tool.cc
@@ -37,6 +38,7 @@ SET(SYSTP_HDRFILES
   NOvAStyleNonResPionNorm_tool.hh
   DIRT2_Emiss_tool.hh
   CCQERPAReweight_tool.hh
+  CCQETemplateReweight_tool.hh
   FSIReweight_tool.hh
   WSReweight_tool.hh
   QEInterference_tool.hh
