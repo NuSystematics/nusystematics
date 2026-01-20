@@ -428,9 +428,6 @@ SystMetaData ConfigureFSIParameterHeaders(fhicl::ParameterSet const &cfg,
 #if GENIE_VERSION_CODE >= 30800
   SystMetaData FSI_N_EDep_md = ConfigureSetOfIndependentParameters(
       cfg, firstParamId,
-      {kINukeTwkDial_G4_N, kINukeTwkDial_INCL_N,
-  SystMetaData FSI_N_EDep_md = ConfigureSetOfDependentParameters(
-      cfg, firstParamId, tool_options, "FSI_N_EDep_VariationResponse",
        {kINukeTwkDial_G4_N, kINukeTwkDial_INCL_N,
        kINukeTwkDial_G4LoE_N, kINukeTwkDial_INCLLoE_N,
        kINukeTwkDial_G4M1E_N, kINukeTwkDial_INCLM1E_N,

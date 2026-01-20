@@ -486,9 +486,6 @@ ConfigureFSIWeightEngine(systtools::SystMetaData const &FSImd,
   // Fates
   AddIndependentParameters(
       FSImd, {kINukeTwkDial_G4_N, kINukeTwkDial_INCL_N,
-  AddResponseAndDependentDials(
-      FSImd, "FSI_N_EDepVariationResponse",
-       {kINukeTwkDial_G4_N, kINukeTwkDial_INCL_N,
        kINukeTwkDial_G4LoE_N, kINukeTwkDial_INCLLoE_N,
        kINukeTwkDial_G4M1E_N, kINukeTwkDial_INCLM1E_N,
        kINukeTwkDial_G4M2E_N, kINukeTwkDial_INCLM2E_N,
