@@ -8,6 +8,7 @@ zexpansion_weighter_toolconfig: {
     b4_variation_descriptor: "(-3,3,1)"
 
     verbosity_level: 5
+    RWtoPub: "PRD_93_113015"
   }
 
 syst_providers: [zexpansion_weighter_toolconfig]
