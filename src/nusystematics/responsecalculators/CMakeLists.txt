@@ -7,6 +7,7 @@ SET(RSPC_HDRFILES
   CCQETemplateReweightCalculator.hh
   FSIReweightCalculator.hh
   FSIReweightCalculatorMult.hh
+  PionAbsResponseCalculator.hh
   QEInterferenceResponseCalculator.hh
   MECq0q3ResponseCalc.hh
 )
@@ -28,6 +29,7 @@ if(nusyst_DUNETDRv1_ENABLED)
   nuenuebar_xsec_ratio.hh
   )
 endif()
+>>>>>>> 25f433f (Pion Absorption Kinematics reweights)
 
 
 add_library(nusystematics_responsecalculators INTERFACE)
