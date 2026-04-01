@@ -16,9 +16,12 @@
 #include "nusystematics/systproviders/ResIso_tool.hh"
 #include "nusystematics/systproviders/DIRT2_Emiss_tool.hh"
 #include "nusystematics/systproviders/CCQERPAReweight_tool.hh"
+#include "nusystematics/systproviders/CCQETemplateReweight_tool.hh"
+#include "nusystematics/systproviders/QEInterference_tool.hh"
 #include "nusystematics/systproviders/FSIReweight_tool.hh"
 #include "nusystematics/systproviders/WSReweight_tool.hh"
 #include "nusystematics/systproviders/PionAbsWeighter_tool.hh"
+#include "nusystematics/systproviders/MECq0q3InterpWeighting_tool.hh"
 
 #include "fhiclcpp/ParameterSet.h"
 
@@ -60,12 +63,18 @@ make_instance(fhicl::ParameterSet const &paramset) {
     return std::make_unique<ResIso>(paramset);
   } else if (tool_type == "CCQERPAReweight"){
     return std::make_unique<CCQERPAReweight>(paramset);
+  } else if (tool_type == "CCQETemplateReweight"){
+    return std::make_unique<CCQETemplateReweight>(paramset);
   } else if (tool_type == "FSIReweight"){
-  return std::make_unique<FSIReweight>(paramset);
+    return std::make_unique<FSIReweight>(paramset);
   } else if (tool_type == "WSReweight") {
     return std::make_unique<WSReweight>(paramset);
   } else if (tool_type == "PionAbsWeighter"){
     return std::make_unique<PionAbsWeighter>(paramset);
+  } else if (tool_type == "QEInterference") {
+    return std::make_unique<QEInterference>(paramset);
+  } else if (tool_type == "MECq0q3InterpWeighting") {
+    return std::make_unique<MECq0q3InterpWeighting>(paramset);
   } else {
     throw unknown_nusyst_systprovider()
         << "[ERROR]: Unknown tool type: " << std::quoted(tool_type);

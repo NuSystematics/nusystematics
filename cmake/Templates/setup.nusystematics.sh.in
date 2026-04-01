@@ -54,6 +54,7 @@ fi
 
 export nusystematics_ROOT=@CMAKE_INSTALL_PREFIX@
 export nusystematics_VERSION=@PROJECT_VERSION@
+export FHICL_FILE_PATH=.:${nusystematics_ROOT}/fcl:${FHICL_FILE_PATH}
 
 add_to_PATH "@CMAKE_INSTALL_PREFIX@/bin"
 

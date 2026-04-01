@@ -35,7 +35,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
+#include <cmath>
 using namespace systtools;
 using namespace nusyst;
 using namespace genie;
@@ -99,7 +99,7 @@ struct TweakSummaryTree {
   int meta_n;
   std::vector<double> meta_tweak_values;
 
-  void AddBranches(ParamHeaderHelper const &phh) {
+  void AddBranches(response_helper &phh) {
     
     // TH: Add branches for output weights tree
     t->Branch("Mode", &Mode, "Mode/I");
@@ -133,10 +133,11 @@ struct TweakSummaryTree {
     t->Branch("EAvail_GeV", &EAvail_GeV, "EAvail_GeV/D");
     t->Branch("fsi_pdgs", "vector<int>", &fsi_pdgs);
     t->Branch("fsi_codes", "vector<int>", &fsi_codes);
-    t->Branch("fsprotons_KE", "vector<double", &fsprotons_KE);
+    t->Branch("fsprotons_KE", "vector<double>", &fsprotons_KE);
     t->Branch("deltaPT", &deltaPT, "deltaPT/D");
     t->Branch("deltaalphaT", &deltaalphaT, "deltaalphaT/D");
     t->Branch("IsSignal_ICARUS_1muNp0pi", &IsSignal_ICARUS_1muNp0pi, "IsSignal_ICARUS_1muNp0pi/O");
+
 
     if(m){
 
@@ -177,22 +178,36 @@ struct TweakSummaryTree {
         }
         size_t idx = tweak_indices[pid];
 
+        // Find the IGENIESystProvider_tool(ISystProviderTool) for this pid
+        int matched_idx_sp = -1;
+        for(int idx_sp=0; idx_sp<phh.GetSystProvider().size(); idx_sp++){
+          if(phh.GetSystProvider()[idx_sp]->ParamIsHandled(pid)){
+            matched_idx_sp = idx_sp;
+          }
+        }
+        if(matched_idx_sp<0){
+          printf("[WeightUpdater::CreateGlobalTree] IGENIESystProvider_tool not found from pid = %d\n", int(pid));
+          abort();
+        }
+
+        std::string this_full_name = phh.GetSystProvider()[matched_idx_sp]->GetFullyQualifiedName()+"_"+hdr.prettyName;
+
         std::stringstream ss_ntwk("");
-        ss_ntwk << "ntweaks_" << hdr.prettyName;
+        ss_ntwk << "ntweaks_" << this_full_name;
         t->Branch(ss_ntwk.str().c_str(), &ntweaks[idx],
                   (ss_ntwk.str() + "/I").c_str());
 
         std::stringstream ss_twkr("");
-        ss_twkr << "tweak_responses_" << hdr.prettyName;
+        ss_twkr << "tweak_responses_" << this_full_name;
         t->Branch(ss_twkr.str().c_str(), tweak_branches[idx].data(),
                   (ss_twkr.str() + "[" + ss_ntwk.str() + "]/D").c_str());
 
         std::stringstream ss_twkcv("");
-        ss_twkcv << "paramCVWeight_" << hdr.prettyName;
+        ss_twkcv << "paramCVWeight_" << this_full_name;
         t->Branch(ss_twkcv.str().c_str(), &paramCVResponses[idx],
                   (ss_twkcv.str() + "/D").c_str());
 
-        *meta_name = hdr.prettyName.c_str();
+        *meta_name = this_full_name.c_str();
         meta_n = ntweaks[idx];
         // For a correction dial, hdr.paramVariations is empty, so manually fill the vector
         if (hdr.isCorrection) {
@@ -389,6 +404,10 @@ int main(int argc, char const *argv[]) {
   size_t NToShout = NToRead / 20;
   NToShout = NToShout ? NToShout : 1;
   for (size_t ev_it = cliopts::NSkip; ev_it < NToRead; ++ev_it) {
+    // Start-of-event: reset tweak containers so later Add() fills cleanly.
+    // (This does NOT touch physics scalars like w, q0, Q2.)
+    tst.Clear();
+
     gevs->GetEntry(ev_it);
     genie::EventRecord const &GenieGHep = *GenieNtpl->event;
 
@@ -419,6 +438,14 @@ int main(int argc, char const *argv[]) {
     tst.q0 = emTransfer.E();
     tst.Q2 = -emTransfer.Mag2();
     tst.q3 = emTransfer.Vect().Mag();
+    
+    // Compute W from (q0, Q2) and nucleon mass
+    // W^2 = M_N^2 + 2 M_N q0 - Q^2  (q0 = energy transfer)
+    // Use consistent nucleon mass value from nuisance
+    double MN = 0.93827203; // GeV
+    double W2 = MN * MN + 2.0 * MN * tst.q0 - tst.Q2;
+    tst.w = (W2 > 0.0) ? std::sqrt(W2) : -1.0;
+    
     tst.Enu_true = ISLepP4.E();
     tst.nu_pdg = ISLep->Pdg();
 
@@ -543,6 +570,7 @@ int main(int argc, char const *argv[]) {
     tst.fsprotons_KE.clear();
     for(const auto& proton: protons){
       double this_KE = proton->KinE();
+      tst.fsprotons_KE.push_back(this_KE);
     }
     // Calculate TKI
     double deltaPT = -999.;
@@ -577,13 +605,14 @@ int main(int argc, char const *argv[]) {
                 << std::flush;
     }
 
-    tst.Clear();
+    
 
     // Calcuate weights
     if(RunNuSyst){
       event_unit_response_w_cv_t resp = phh.GetEventVariationAndCVResponse(GenieGHep);
       tst.Add(resp);
     }
+
     tst.Fill();
     
     // TH: Very important to clear this object to avoid memory issues!

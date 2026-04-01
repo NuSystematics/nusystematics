@@ -1,0 +1,107 @@
+SuSAv2ToMartini_MECInterp: {
+
+  tool_type: "MECq0q3InterpWeighting"
+  instance_name: "SuSAv2ToMartini"
+
+  # ============================================================
+  # SINGLE-DIAL MODE
+  # This configuration uses ONE dial that applies to all events.
+  # For multiple q0-binned dials, see:
+  #   SuSAv2ToMartini_MEC_q0binned.ToolConfig.fcl
+  # ============================================================
+
+  # Define the systematic parameter (dial) for interpolation weighting
+  # central value 0, evaluate at -1, 0, +1 (can expand later)
+  MECResponse_central_value: 0
+  MECResponse_variation_descriptor: "[1]"
+
+  MECResponse_input_manifest: {
+
+    # ============================================================
+    # MODEL SELECTION: Choose "valencia" or "martini"
+    # File paths are auto-generated based on Model and DataBaseDir
+    # No need to manually specify np_files/nn_files anymore!
+    #
+    # Physics coverage:
+    #   Valencia: q0 <= 1.2 GeV, q3 <= 1.2 GeV (both limited)
+    #   Martini:  q0 <= 0.995 GeV (limited), q3 <= ~2.0 GeV (good)
+    # ============================================================
+    Model: "martini"  # Options: "valencia" or "martini"
+    
+    # Base data directory
+    DataBaseDir: "/exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/data"
+
+    # full energy grid (0.4 to 2.5 GeV, 0.05 GeV step)
+    EnergyGrid : [ 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+                   1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55,
+                   1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0, 2.05, 2.1, 2.15,
+                   2.2, 2.25, 2.3, 2.35, 2.4, 2.45, 2.5 ]
+
+    # Weight limits (min, max)
+    WeightLimits : [0.1, 1000.0]
+
+    # NEW: apply only in this q0 window
+    # Valencia: q0 up to 1.2 GeV
+    # Martini:  q0 up to 0.995 GeV
+    Q0ApplyMin: 0.0     # GeV
+    Q0ApplyMax: 0.995     # GeV (Valencia: 1.2, Martini: 0.995)
+
+    # NEW: apply only in this q3 window
+    # Valencia: q3 up to 1.2 GeV (limited)
+    # Martini:  q3 up to ~2.0 GeV (good coverage, use 3.0 for no limit)
+    Q3ApplyMin: 0.0     # GeV
+    Q3ApplyMax: 2.0     # GeV (Valencia: 1.2, Martini: 2.0)
+
+    # Q0 selection range (SINGLE-DIAL MODE ONLY)
+    # If both are 0, selection is disabled and reweighting applies to all q0
+    # If set, reweighting is applied ONLY in this range; outside it, weight=1
+    # Example: Q0SelectMin: 0.05, Q0SelectMax: 0.1  -> reweight only 0.05-0.1 GeV
+    # This is independent of Q0ApplyMin/Q0ApplyMax above
+    # 
+    # NOTE: For multiple q0 bins with separate dials, use Q0Bins instead.
+    #       See SuSAv2ToMartini_MEC_q0binned.ToolConfig.fcl for example.
+    #       Q0SelectMin/Max is ignored when Q0Bins is set.
+    Q0SelectMin: 0.0    # GeV (0.0 = disabled)
+    Q0SelectMax: 0.0    # GeV (0.0 = disabled)
+
+    EnuMin:       0.4
+    EnuMax:       2.5
+    EnuSnapTol:   0.005
+
+    HistNameNP: "h_weights_map;1"
+    HistNameNN: "h_weights_map;1"
+    MapIsQ3xQ0: true
+
+    # UseNearestBin: when true, picks the nearest histogram bin (causes
+    # step/discontinuous jumps). Prefer interpolation when possible.
+    UseNearestBin: false
+
+    # EdgeClamp: when true, clamps q0/q3 lookups to the histogram edges
+    # instead of extrapolating or using empty bins. Enabling this reduces
+    # large discontinuities and suppresses artificial peaks at the edges.
+    EdgeClamp: true
+
+    # OutOfRangeWeight: weight to return for events outside histogram bounds.
+    # Default behavior (auto-determined by Model):
+    #   - valencia: 0.0 (suppress events beyond histogram range)
+    #   - martini:  0.0 (suppress events beyond histogram range)
+    #   - custom:   1.0 (keep original prediction, backward compatible)
+    # Explicitly set to override auto-detection:
+    OutOfRangeWeight: 0.0
+
+    # IMPORTANT: OutOfRangeWeight applies to events outside HISTOGRAM bounds.
+    # For physics-based cutoffs, use Q0ApplyMax/Q3ApplyMax above:
+    #
+    # Valencia limits (both q0 and q3 limited to 1.2 GeV):
+    #   Q0ApplyMax: 1.2  ->  weight=1.0 for q0>=1.2 GeV
+    #   Q3ApplyMax: 1.2  ->  weight=1.0 for q3>=1.2 GeV
+    #
+    # Martini limits (q0 limited to 0.995 GeV, q3 good to ~2.0 GeV):
+    #   Q0ApplyMax: 0.995  ->  weight=1.0 for q0>=0.995 GeV
+    #   Q3ApplyMax: 3.0    ->  effectively no q3 limit (Martini has good coverage)
+
+  }
+
+}
+
+syst_providers : [SuSAv2ToMartini_MECInterp]
