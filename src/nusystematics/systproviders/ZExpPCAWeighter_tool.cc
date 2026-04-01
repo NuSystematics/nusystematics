@@ -173,8 +173,18 @@ bool ZExpPCAWeighter::SetupResponseCalculator(
     throw std::invalid_argument( "Invalid option for RWtoPub, please select Nature_614_102522 or PRD_93_113015" );
   }
 
-  if (tool_options.get_if_present("T0", fZExpT0)) fZExpOverrideT0 = true;
-  if (tool_options.get_if_present("Tcut", fZExpTcut)) fZExpOverrideTcut = true;
+  if (tool_options.get_if_present("T0", fZExpT0)) {
+    fZExpOverrideT0 = true;
+  }
+  else {
+    fZExpOverrideT0 = false;
+  }
+  if (tool_options.get_if_present("Tcut", fZExpTcut)) {
+    fZExpOverrideTcut = true;
+  }
+  else {
+    fZExpOverrideTcut = false;
+  }
 
   // grab the pre-parsed param headers object
   SystMetaData const &md = GetSystMetaData();
