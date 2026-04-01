@@ -52,7 +52,7 @@ namespace nusyst {
   inline double PionAbsResponseCalculator::GetWeight( bool is_INCL, bool doSum, int pion_pdg,
 							     double KEpi_GeV, int mult) {
 
-    bool debug = true;
+    bool debug = false;
 
     if (debug) std::cout<<"In GetWeight for the event"<<std::endl;
 

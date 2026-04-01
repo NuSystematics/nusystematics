@@ -93,8 +93,6 @@ private:
   // configurable verbosity as an example of some arbitrary systprovider
   // configuration
   int verbosity_level;
-  bool debug = true;
-    
 
   //Helper functions
   std::vector<int> IndicesOfAbsNucleons(genie::EventRecord const &, int);
