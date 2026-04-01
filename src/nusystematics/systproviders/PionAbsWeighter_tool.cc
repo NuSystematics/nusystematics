@@ -171,7 +171,7 @@ bool PionAbsWeighter::SetupResponseCalculator(
 event_unit_response_t
 PionAbsWeighter::GetEventResponse(genie::EventRecord const &ev) {
  
-  //if (debug) std::cout<<"In GetEventResponse"<<std::endl;
+  //if (verbosity_level > 4) std::cout<<"In GetEventResponse"<<std::endl;
 
   event_unit_response_t resp;
   SystMetaData const &md = GetSystMetaData();
@@ -184,7 +184,7 @@ PionAbsWeighter::GetEventResponse(genie::EventRecord const &ev) {
     resFlag = true;
   }
   
-  if (debug && resFlag) std::cout<<"Event is RES"<<std::endl;
+  if (verbosity_level > 5 && resFlag) std::cout<<"Event is RES"<<std::endl;
 
   //demand that the event contain no pion in the final state:
   int NfPip      = 0; // number of \pi^+'s         in final state
@@ -239,7 +239,7 @@ PionAbsWeighter::GetEventResponse(genie::EventRecord const &ev) {
    //Define pion absorption based on the presence of intermediate state pion and absence of final state pion
    //if ( (niPip + niPim + niPi0 > 0) && (NfPip + NfPim + NfPi0 == 0) ) isPionAbs = true;
 
-  if (debug && absFlag) std::cout<<"We have a pion abs event."<<std::endl;
+  if (verbosity_level > 5 && absFlag) std::cout<<"We have a pion abs event."<<std::endl;
   //Now that we know we have a pion abs, assign the reweights:
   // loop through and calculate weights
    for( std::vector<std::string>::iterator it_desc = descriptors.begin();
@@ -252,11 +252,11 @@ PionAbsWeighter::GetEventResponse(genie::EventRecord const &ev) {
     // initialize the response array with this paramId
     resp.push_back({md[ResponseParameterIndices[it_desc - descriptors.begin()]].systParamId, {}});
 
-    if (debug) std::cout<<"Initialized response array"<<std::endl;
+    if (verbosity_level>5) std::cout<<"Initialized response array"<<std::endl;
     // loop through variations for this parameter
     std::vector<double> param_variations = md[ResponseParameterIndices[it_desc - descriptors.begin()]].paramVariations;
     for (size_t v_it = 0; v_it < param_variations.size(); ++v_it) {
-	if(debug) std::cout<<"In variation "<<v_it<<std::endl;
+	if(verbosity_level>5) std::cout<<"In variation "<<v_it<<std::endl;
 
       // put the response weight for this variation of this parameter into the
       // response object
@@ -383,12 +383,12 @@ double PionAbsWeighter::ReweighthADiff(genie::EventRecord const &ev,int pionAbsI
 	else continue;
       }
     
-    if (debug) std::cout<<"KEpi_GeV = "<<KEpi_GeV<<"; diff = "<<diff<<std::endl;
+    if (verbosity_level > 5) std::cout<<"KEpi_GeV = "<<KEpi_GeV<<"; diff = "<<diff<<std::endl;
     //load the ROOT histogram from the file, read the bin content corresponding to diff
     double weight_central_value = PionAbsCalculator->GetWeight(is_INCL, false, pionPDG, KEpi_GeV, diff); //doSum = false
 
-    if (debug) std::cout<<"Back in ReweighthADiff: weight_central_value = "<<weight_central_value<<std::endl;
-    if (debug) std::cout<<"This variation = "<<this_variation<<std::endl;
+    if (verbosity_level > 5) std::cout<<"Back in ReweighthADiff: weight_central_value = "<<weight_central_value<<std::endl;
+    if (verbosity_level > 5) std::cout<<"This variation = "<<this_variation<<std::endl;
 
     weight = 1 + (weight_central_value - 1)*this_variation;
 
@@ -398,7 +398,7 @@ double PionAbsWeighter::ReweighthADiff(genie::EventRecord const &ev,int pionAbsI
 
 double PionAbsWeighter::ScalableErf(double this_variation, double asymptotic_unc=0.5, double scale = 1.0) {
     double ev = std::erf(this_variation * scale);
-    if (debug) std::cout<<"this_variation: "<<this_variation<<"; scale: "<<scale<<"; asymptotic_unc: "<<asymptotic_unc<<"; ev: "<<ev<<"; return value: "<<(1-asymptotic_unc) + asymptotic_unc*(1+ev)<<std::endl;
+    if (verbosity_level > 5) std::cout<<"this_variation: "<<this_variation<<"; scale: "<<scale<<"; asymptotic_unc: "<<asymptotic_unc<<"; ev: "<<ev<<"; return value: "<<(1-asymptotic_unc) + asymptotic_unc*(1+ev)<<std::endl;
     return 1 + asymptotic_unc*ev;
 }
 
@@ -407,11 +407,11 @@ double PionAbsWeighter::ReweightQDFraction(genie::EventRecord const &ev,int pion
 
     //Determine the value of MN reweight given QD reweight
     float ke = ev.Particle(pionAbsIndex)->Energy() - ev.Particle(pionAbsIndex)->Mass(); //ke is the pion ke in GeV
-    if (debug) std::cout<<"In ReweightQDFraction: pion ke = "<<ke<<std::endl;
+    if (verbosity_level > 5) std::cout<<"In ReweightQDFraction: pion ke = "<<ke<<std::endl;
     float fRemnA = 40.0;
     float f_QD = 1.14*(.903-0.00189*fRemnA)*(1.35-0.00467*(ke*1000)); //empirical QD fraction from hAcode, ke in GeV -> *1000 in MeV
     if (f_QD < 0 || f_QD > 1) return 1.0;
-    if (debug) std::cout<<"QD fraction: "<<f_QD<<std::endl; 
+    if (verbosity_level > 5) std::cout<<"QD fraction: "<<f_QD<<std::endl; 
     
     double asymptotic_unc = 0.5;
     //If QD_Reweight > 1 + (1-f_QD)/f_QD, then MN_Reweight is negative. That's bad.
