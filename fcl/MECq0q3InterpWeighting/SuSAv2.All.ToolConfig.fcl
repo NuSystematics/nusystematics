@@ -1,0 +1,7 @@
+#include "SuSAv2ToValenica_MEC_reweight.ToolConfig.fcl"
+#include "SuSAv2ToMartini_MEC_reweight.ToolConfig.fcl"
+
+syst_providers : [
+SuSAv2ToValenica_MECInterp,
+SuSAv2ToMartini_MECInterp
+]

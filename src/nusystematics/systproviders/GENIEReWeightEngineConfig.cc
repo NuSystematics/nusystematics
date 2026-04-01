@@ -6,6 +6,17 @@
 #include "RwCalculators/GReWeightFGM.h"
 #include "RwCalculators/GReWeightFZone.h"
 #include "RwCalculators/GReWeightINuke.h"
+
+// TODO These modules are not yet merged into tagged Reweight
+// https://github.com/GENIE-MC/Reweight/pull/44
+// https://github.com/GENIE-MC/Reweight/pull/45
+// Assuming these are activated for GENIE>=3.08.00 for now (01/12/2026),
+// but need to be updated
+#if BUILD_AR25_FSI_DIALS
+#include "RwCalculators/GReWeightINukeExtra.h"
+#include "RwCalculators/GReWeightINukeKinematics.h"
+#endif
+
 #include "RwCalculators/GReWeightNonResonanceBkg.h"
 #include "RwCalculators/GReWeightNuXSecCCQE.h"
 #include "RwCalculators/GReWeightNuXSecCCQEaxial.h"
@@ -470,6 +481,44 @@ ConfigureFSIWeightEngine(systtools::SystMetaData const &FSImd,
       {kINukeTwkDial_MFP_N, kINukeTwkDial_FrCEx_N, kINukeTwkDial_FrInel_N,
        kINukeTwkDial_FrAbs_N, kINukeTwkDial_FrPiProd_N},
       "INuke_N", []() { return new GReWeightINuke; }, UseFullHERG, param_map);
+
+#if BUILD_AR25_FSI_DIALS
+  // Fates
+  AddIndependentParameters(
+      FSImd, {kINukeTwkDial_G4_N, kINukeTwkDial_INCL_N,
+       kINukeTwkDial_G4LoE_N, kINukeTwkDial_INCLLoE_N,
+       kINukeTwkDial_G4M1E_N, kINukeTwkDial_INCLM1E_N,
+       kINukeTwkDial_G4M2E_N, kINukeTwkDial_INCLM2E_N,
+       kINukeTwkDial_G4HiE_N, kINukeTwkDial_INCLHiE_N,
+       kINukeTwkDial_MFPLoE_N, kINukeTwkDial_MFPM1E_N,
+       kINukeTwkDial_MFPM2E_N, kINukeTwkDial_MFPHiE_N}, "Fr_EDep_N",
+      []() { return new GReWeightINukeExtra; }, UseFullHERG, param_map);
+
+  // Includes Bootstrapped (nucleon) Inelastic or Charge Exchange kinematics
+  AddResponseAndDependentDials(
+      FSImd, "FSI_Kinematics",
+      {kINukeKinematicsTwkDial_NP_N, kINukeKinematicsTwkDial_PP_N},
+      "FrKin", []() { return new GReWeightINukeKinematics; }, UseFullHERG, param_map);
+
+  // If started with a sample without the hA-PiProd-bugfix,
+  // first we fix the CV
+  AddIndependentParameters(
+      FSImd, {kINukeKinematicsFixPiPro}, "FrKin_FixPiPro",
+      []() { return new GReWeightINukeKinematics; }, UseFullHERG, param_map);
+
+  // If started with a sample without the hA-PiProd-bugfix,
+  // a bias variation with the correction included?
+  AddIndependentParameters(
+      FSImd, {kINukeKinematicsPiProBias}, "FrKin_PiProBias",
+      []() { return new GReWeightINukeKinematics; }, UseFullHERG, param_map);
+
+
+  // If started with a sample with the hA-PiProd-bugfix,
+  // a bias variation 
+  AddIndependentParameters(
+      FSImd, {kINukeKinematicsPiProBiaswFix}, "FrKin_PiProBiaswFix",
+      []() { return new GReWeightINukeKinematics; }, UseFullHERG, param_map);
+#endif
 
   return param_map;
 }
