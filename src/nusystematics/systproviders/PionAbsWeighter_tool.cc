@@ -413,11 +413,11 @@ double PionAbsWeighter::ReweightQDFraction(genie::EventRecord const &ev,int pion
     if (f_QD < 0 || f_QD > 1) return 1.0;
     if (verbosity_level > 5) std::cout<<"QD fraction: "<<f_QD<<std::endl; 
     
-    double asymptotic_unc = 0.5;
+    double asymptotic_unc = 1.0;
     //If QD_Reweight > 1 + (1-f_QD)/f_QD, then MN_Reweight is negative. That's bad.
     if (asymptotic_unc > (1-f_QD)/f_QD) asymptotic_unc = (1-f_QD)/f_QD;
 
-    double QD_Reweight = PionAbsWeighter::ScalableErf(this_variation, asymptotic_unc, 0.4);
+    double QD_Reweight = PionAbsWeighter::ScalableErf(this_variation, asymptotic_unc, 0.55);
     //This value makes sure to preserve the total number of pion abs events
     double MN_Reweight = (1 + (1 - QD_Reweight)*f_QD/(1-f_QD));
 
