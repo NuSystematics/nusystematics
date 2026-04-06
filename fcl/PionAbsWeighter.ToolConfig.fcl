@@ -4,7 +4,7 @@
 
     MultiplicityDiffG4_variation_descriptor:   "(0,1,0.2)"
     MultiplicityDiffINCL_variation_descriptor: "(0,1,0.2)"
-    QuasiDeuteronFraction_variation_descriptor: "(-5,5,1)"
+    QuasiDeuteronFraction_variation_descriptor: "(-3,3,1)"
 
     verbosity_level: 5
   
