@@ -20,7 +20,7 @@ message(STATUS "GENIE_VERSION_CODE: ${GENIE_VERSION_CODE}")
 # https://github.com/GENIE-MC/Reweight/pull/45
 # Assuming these are activated for GENIE>=3.08.00 for now (01/12/2026),
 # but need to be updated
-if(GENIE_VERSION_CODE GREATER_EQUAL 30800 OR EXTENSION STREQUAL "sbn")
+if(GENIE_VERSION_CODE GREATER_EQUAL 30800 OR EXTENSION MATCHES "sbn")
   set(BUILD_AR25_FSI_DIALS TRUE)
 else()
   set(BUILD_AR25_FSI_DIALS FALSE)
