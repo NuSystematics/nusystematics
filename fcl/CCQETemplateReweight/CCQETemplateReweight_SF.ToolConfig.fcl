@@ -1,24 +1,24 @@
-CCQETemplate_Tool_Config: {
+CCQETemplate_SF_Tool_Config: {
 
     tool_type: "CCQETemplateReweight"
-    instance_name: "SBNNuSyst_CCQETemplateReweight_multisigma"
+    instance_name: "CCQETemplate_SF"
 
     // weight in four q0 bins
-    q0bin1_central_value: 0
+
+    q0_bin_edges: "[0.0, 0.05, 0.10, 0.20, 0.7, 10.0]"
+
+    q0bin0_variation_descriptor: "[0, 1]"
     q0bin1_variation_descriptor: "[0, 1]"
-    q0bin2_central_value: 0
     q0bin2_variation_descriptor: "[0, 1]"
-    q0bin3_central_value: 0
     q0bin3_variation_descriptor: "[0, 1]"
-    q0bin4_central_value: 0
     q0bin4_variation_descriptor: "[0, 1]"
-    q0bin5_central_value: 0
-    q0bin5_variation_descriptor: "[0, 1]"
+
+    verbosity_level: 5
 
     CCQETemplateReweight_input_manifest: {
       RWMode: "q3q0"
-      ENuBoundary: 2.0
-      input_file: "/exp/sbnd/data/users/munjung/ccqe_rw/CCQEReweight_templates.root"
+      ENuBoundary: 10.0
+      input_file: "/exp/sbnd/data/users/munjung/ccqe_rw/CCQEReweight_templates_2026Feb5_coarsebins.root"
       inputs: [
           {
             name: "LowE_WithTemplate"
@@ -33,4 +33,4 @@ CCQETemplate_Tool_Config: {
 
   }
 
-syst_providers: [CCQETemplate_Tool_Config]
+syst_providers: [CCQETemplate_SF_Tool_Config]

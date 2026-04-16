@@ -58,20 +58,13 @@ private:
   // Each is a tweak dial t, controlling a linear response: in different q0 ranges,
   // we will have different dials.
   // General formula: f(t; W) = 1-t + t*W
-  std::vector<std::string> descriptors = {
-    "QEIntf_dial_0",
-    "QEIntf_dial_1",
-    "QEIntf_dial_2",
-    "QEIntf_dial_3",
-    "QEIntf_dial_4",
-    "QEIntf_dial_5"
-  };
 
   //size_t ResponseParameterIdx;
-  std::vector<size_t> ResponseParameterIndices;
+  std::vector<unsigned int> ResponseParameterIndices;
 
-  // this has size descriptors.size() + 1 to indicate q0 bin edges
+  // per-q0 bin edges
   std::vector<double> q0BinEdges;
+  unsigned int Nq0Bins{0}; // Will set by q0BinEdges.size()-1
 
   int nu_pdg;
   double Enu, Q0, Q3;

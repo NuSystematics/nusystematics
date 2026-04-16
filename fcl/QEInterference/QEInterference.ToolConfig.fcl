@@ -2,12 +2,12 @@ QEInterference_toolconfig: {
     tool_type: "QEInterference"
     instance_name: "QEInterference"
 
-    QEIntf_dial_0_variation_descriptor: "(0,1,0.5)"
-    QEIntf_dial_1_variation_descriptor: "(0,1,0.5)"
-    QEIntf_dial_2_variation_descriptor: "(0,1,0.5)"
-    QEIntf_dial_3_variation_descriptor: "(0,1,0.5)"
-    QEIntf_dial_4_variation_descriptor: "(0,1,0.5)"
-    QEIntf_dial_5_variation_descriptor: "(0,1,0.5)"
+    QEIntf_dial_0_variation_descriptor: "[0, 1]"
+    QEIntf_dial_1_variation_descriptor: "[0, 1]"
+    QEIntf_dial_2_variation_descriptor: "[0, 1]"
+    QEIntf_dial_3_variation_descriptor: "[0, 1]"
+    QEIntf_dial_4_variation_descriptor: "[0, 1]"
+    QEIntf_dial_5_variation_descriptor: "[0, 1]"
 
     q0_bin_edges: "[0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 3.0]"
 

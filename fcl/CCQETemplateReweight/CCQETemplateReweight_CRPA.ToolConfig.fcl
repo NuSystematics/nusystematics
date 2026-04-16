@@ -1,0 +1,34 @@
+CCQETemplate_CRPA_Tool_Config: {
+
+    tool_type: "CCQETemplateReweight"
+    instance_name: "CCQETemplate_CRPA"
+
+    q0_bin_edges: "[0.0, 0.05, 0.10, 0.20, 0.7, 10.0]"
+
+    q0bin0_variation_descriptor: "[0, 1]"
+    q0bin1_variation_descriptor: "[0, 1]"
+    q0bin2_variation_descriptor: "[0, 1]"
+    q0bin3_variation_descriptor: "[0, 1]"
+    q0bin4_variation_descriptor: "[0, 1]"
+
+    verbosity_level: 5
+
+    CCQETemplateReweight_input_manifest: {
+      RWMode: "q3q0"
+      ENuBoundary: 1.0
+      input_file: "/exp/sbnd/data/users/munjung/ccqe_rw/CCQEReweight_templates_2026Feb5_coarsebins.root"
+      inputs: [
+          {
+            name: "LowE_WithTemplate"
+            input_hist: "LowE/h_ENuq3q0_With_CRPA"
+          },
+          {
+            name: "LowE_WithoutTemplate"
+            input_hist: "LowE/h_ENuq3q0_Without_CRPA"
+          }
+      ]
+    }
+
+  }
+
+syst_providers: [CCQETemplate_CRPA_Tool_Config]

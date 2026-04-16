@@ -60,10 +60,13 @@ private:
 
   // q0 bins (GeV)
   // note that 10 GeV cutoff is ~dummy, since there is a Enu cutoff of 2 GeV
-  static constexpr std::size_t kNumQ0Bins = 5;
-  static constexpr std::array<double, kNumQ0Bins + 1> q0_bin_boundaries = {0.0, 0.05, 0.10, 0.20, 0.7, 10.0};
-  std::array<size_t, kNumQ0Bins> ResponseParameterIdx_q0bin;
-  std::array<std::string, kNumQ0Bins> q0bin_params_for_ccqe_sf_names;
+  std::vector<double> q0BinEdges;
+  unsigned int Nq0Bins{0}; // Will set by q0BinEdges.size()-1
+
+  std::vector<unsigned int> ResponseParameterIndices;
+
+  int verbosity_level;
+
 };
 
 #endif

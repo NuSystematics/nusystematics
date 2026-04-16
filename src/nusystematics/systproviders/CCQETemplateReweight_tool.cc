@@ -18,14 +18,6 @@ CCQETemplateReweight::CCQETemplateReweight(ParameterSet const &params)
       ccqeTemplateReweightCalculator(nullptr),
       valid_file(nullptr), valid_tree(nullptr) {
 
-  // knob names
-  for (size_t i = 0; i < kNumQ0Bins; ++i) {
-      q0bin_params_for_ccqe_sf_names[i] = "q0bin" + std::to_string(i + 1);
-  }
-
-  for (size_t i = 0; i < kNumQ0Bins; ++i) {
-    ResponseParameterIdx_q0bin[i] = systtools::kParamUnhandled<size_t>;
-  }
 }
 
 SystMetaData CCQETemplateReweight::BuildSystMetaData(ParameterSet const &cfg,
@@ -35,25 +27,39 @@ SystMetaData CCQETemplateReweight::BuildSystMetaData(ParameterSet const &cfg,
 
   SystMetaData smd;
 
-  for (size_t i = 0; i < kNumQ0Bins; ++i) {
+  std::vector<double> this_q0BinEdges = cfg.get<std::vector<double>>("q0_bin_edges");
+  unsigned int this_Nq0Bins = this_q0BinEdges.size()-1;
+  int this_verbosity_level = cfg.get<int>("verbosity_level", 0);
+
+  std::cout << "[INFO]: Using bin edges: ";
+  for(const auto q0BinEdge: this_q0BinEdges) std::cout << q0BinEdge << ", ";
+  std::cout << std::endl;
+
+  for (size_t i = 0; i < this_Nq0Bins; ++i) {
+
+    std::string desc = "q0bin"+std::to_string(i);
+
     systtools::SystParamHeader phdr;
     std::cout << "[CCQETemplateReweight::BuildSystMetaData] Attempting to parse parameter: " 
-              << q0bin_params_for_ccqe_sf_names[i] << std::endl;
-    if (ParseFhiclToolConfigurationParameter(cfg, q0bin_params_for_ccqe_sf_names[i],
-                                                   phdr, firstId)) {
+              << desc << std::endl;
+    if (ParseFhiclToolConfigurationParameter(cfg, desc, phdr, firstId)) {
       phdr.systParamId = firstId++;
       smd.push_back(phdr);
       std::cout << "[CCQETemplateReweight::BuildSystMetaData] Successfully parsed parameter: " 
-                << q0bin_params_for_ccqe_sf_names[i] << " with ID: " << phdr.systParamId << std::endl;
+                << desc << " with ID: " << phdr.systParamId << std::endl;
     } else {
       std::cout << "[CCQETemplateReweight::BuildSystMetaData] Failed to parse parameter: " 
-                << q0bin_params_for_ccqe_sf_names[i] << std::endl;
+                << desc << std::endl;
     }
   }
+
+  tool_options.put("q0_bin_edges", this_q0BinEdges);
 
   fhicl::ParameterSet templateManifest =
       cfg.get<fhicl::ParameterSet>("CCQETemplateReweight_input_manifest");
   tool_options.put("CCQETemplateReweight_input_manifest", templateManifest);
+
+  tool_options.put("verbosity_level", this_verbosity_level);
 
   // OPTION_IN_CONF_FILE can be defined in the configuration file
   // then it is copied to tool_option when running "GenerateSystProviderConfig" to generation paramHeader
@@ -70,6 +76,43 @@ bool CCQETemplateReweight::SetupResponseCalculator(
     fhicl::ParameterSet const &tool_options) {
 
   std::cout << "[CCQETemplateReweight::SetupResponseCalculator] called" << std::endl;
+
+  verbosity_level = tool_options.get<int>("verbosity_level", 0);
+
+  q0BinEdges = tool_options.get<std::vector<double>>("q0_bin_edges");
+  if( verbosity_level > 3 ) {
+    std::cout << "[INFO]: Using bin edges: ";
+    for(const auto q0BinEdge: q0BinEdges) std::cout << q0BinEdge << ", ";
+    std::cout << std::endl;
+  }
+
+  Nq0Bins = q0BinEdges.size()-1;
+  ResponseParameterIndices.resize(Nq0Bins);
+
+  // Check the metadata makes sense
+  SystMetaData const & md = GetSystMetaData();
+  for(unsigned int i_q0bin=0; i_q0bin<Nq0Bins; i_q0bin++){
+
+    std::string desc = "q0bin"+std::to_string(i_q0bin);
+
+    if( !HasParam( md, desc ) ) {
+      throw incorrectly_configured()
+  << "[ERROR]: Expected to find parameter named "
+  << std::quoted(desc);
+    } // Problem: Parameter not found.
+
+    // Get the parameter index
+    ResponseParameterIndices[i_q0bin] = GetParamIndex(md, desc);
+    if( verbosity_level > 1 ) {
+      std::ostringstream asts;
+      std::vector<double> param_variations = md[GetParamIndex(md, desc)].paramVariations;
+      asts << "[INFO]: Configured parameter " << desc << " with variations:\n\t[";
+      for( double & var: param_variations ) asts << " " << var << ",";
+      asts << " ]";
+      std::cout << asts.str() << std::endl;
+    } // verbose output about configuration
+
+  } // loop over descriptors
 
   fhicl::ParameterSet templateManifest =
       tool_options.get<fhicl::ParameterSet>("CCQETemplateReweight_input_manifest");
@@ -109,12 +152,6 @@ bool CCQETemplateReweight::SetupResponseCalculator(
   std::cout << "[CCQETemplateReweight::SetupResponseCalculator] z: " << kin_Z_str << std::endl;
 
   ccqeTemplateReweightCalculator = std::make_unique<CCQETemplateReweightCalculator>( templateManifest );
-
-  for (size_t i = 0; i < kNumQ0Bins; ++i) {
-    ResponseParameterIdx_q0bin[i] = GetParamIndex(GetSystMetaData(), q0bin_params_for_ccqe_sf_names[i]);
-    std::cout << "[CCQETemplateReweight::SetupResponseCalculator] " << q0bin_params_for_ccqe_sf_names[i] 
-              << " parameter index: " << ResponseParameterIdx_q0bin[i] << std::endl;
-  }
 
   fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
   if (fill_valid_tree) {
@@ -159,7 +196,7 @@ CCQETemplateReweight::GetEventResponse(genie::EventRecord const &ev) {
     //bin_kin = {emTransfer.Vect().Mag(), emTransfer.E()};
     // TEST; cutoff for non-physical reweights
     double this_q3 = emTransfer.Vect().Mag();
-    double this_q0 = emTransfer.E()>q0_bin_boundaries[kNumQ0Bins] ? q0_bin_boundaries[kNumQ0Bins] : emTransfer.E();
+    double this_q0 = emTransfer.E()>q0BinEdges[Nq0Bins] ? q0BinEdges[Nq0Bins] : emTransfer.E();
     bin_kin = {this_q3, this_q0};
   }
   else if(rwMode==PCTheta){
@@ -180,19 +217,19 @@ CCQETemplateReweight::GetEventResponse(genie::EventRecord const &ev) {
   double q0_value = emTransfer.E();
   int q0_bin_index = GetQ0BinIndex(q0_value);
   // std::cout << "[CCQETemplateReweight::GetEventResponse] q0=" << q0_value 
-  //          << " -> bin " << q0_bin_index << " -> resp index " << ResponseParameterIdx_q0bin[q0_bin_index] << std::endl;
+  //          << " -> bin " << q0_bin_index << " -> resp index " << ResponseParameterIndices[q0_bin_index] << std::endl;
 
   systtools::event_unit_response_t resp;
 
   // put in default (1) for all of the weights
-  for (size_t i = 0; i < kNumQ0Bins; ++i) {
-    SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIdx_q0bin[i]];
+  for (size_t i = 0; i < Nq0Bins; ++i) {
+    SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIndices[i]];
     resp.push_back( {hdr.systParamId, {}} );
     for (double var : hdr.paramVariations) resp.back().responses.push_back(1.);
   }
 
   // reweighting for the corresponding q0 bin
-  SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIdx_q0bin[q0_bin_index]];
+  SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIndices[q0_bin_index]];
   unsigned i_var = 0;
   for (double var : hdr.paramVariations) {
     double this_reweight = ccqeTemplateReweightCalculator->GetTemplateReweight( 
@@ -239,16 +276,16 @@ std::string CCQETemplateReweight::AsString() { return ""; }
 
 int CCQETemplateReweight::GetQ0BinIndex(double q0_value) const {
 
-  double q0_cutoff = (q0_value > q0_bin_boundaries[kNumQ0Bins]) ? q0_bin_boundaries[kNumQ0Bins] : q0_value;
+  double q0_cutoff = (q0_value > q0BinEdges[Nq0Bins]) ? q0BinEdges[Nq0Bins] : q0_value;
   
-  for (size_t i = 0; i < kNumQ0Bins; ++i) {
-    if (q0_cutoff >= q0_bin_boundaries[i] && q0_cutoff < q0_bin_boundaries[i + 1]) {
+  for (size_t i = 0; i < Nq0Bins; ++i) {
+    if (q0_cutoff >= q0BinEdges[i] && q0_cutoff < q0BinEdges[i + 1]) {
       return static_cast<int>(i);
     }
   }
   
-  if (q0_cutoff >= q0_bin_boundaries[kNumQ0Bins]) {
-    return kNumQ0Bins;
+  if (q0_cutoff >= q0BinEdges[Nq0Bins]) {
+    return Nq0Bins;
   }
   
   // Fallback 

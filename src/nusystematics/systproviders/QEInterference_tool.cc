@@ -12,10 +12,6 @@ QEInterference::QEInterference(ParameterSet const & ps) :
   QEIntfResponseCalculator(nullptr)/*,
 				     ResponseParameterIdx(kParamUnhandled<size_t>) {}*/
 {
-  for( std::vector<std::string>::iterator it_desc = descriptors.begin();
-       it_desc != descriptors.end(); ++it_desc ) {
-    ResponseParameterIndices.emplace_back( kParamUnhandled<size_t> );
-  }
 }
 
 QEInterference::~QEInterference() {}
@@ -27,43 +23,34 @@ bool QEInterference::SetupResponseCalculator(ParameterSet const & tool_options)
 
   verbosity_level = tool_options.get<int>("verbosity_level", 0);
 
-  std::string bedges = tool_options.get<std::string>("q0_bin_edges");
+  q0BinEdges = tool_options.get<std::vector<double>>("q0_bin_edges");
   if( verbosity_level > 3 ) {
-    std::cout << "[INFO]: Using bin edges " << bedges.c_str() << std::endl;
+    std::cout << "[INFO]: Using bin edges: ";
+    for(const auto q0BinEdge: q0BinEdges) std::cout << q0BinEdge << ", ";
+    std::cout << std::endl;
   }
 
-  bedges.erase(std::remove_if(bedges.begin(), bedges.end(), 
-			      [](char c){ return (static_cast<int>(c) == static_cast<int>('[') || 
-						  static_cast<int>(c) == static_cast<int>(']')); }),
-	       bedges.end());
-  std::stringstream ists(bedges);
-  std::string token;
-
-  while (std::getline(ists, token, ',')) {
-    try {
-      q0BinEdges.emplace_back(std::stod(token));
-    } catch (...) {
-      continue;
-    }
-  }
+  Nq0Bins = q0BinEdges.size()-1;
+  ResponseParameterIndices.resize(Nq0Bins);
 
   // Check the metadata makes sense
   SystMetaData const & md = GetSystMetaData();
+  for(unsigned int i_q0bin=0; i_q0bin<Nq0Bins; i_q0bin++){
+  
+    std::string desc = "QEIntf_dial_"+std::to_string(i_q0bin);
 
-  for( std::vector<std::string>::iterator it_desc = descriptors.begin();
-       it_desc != descriptors.end(); ++it_desc ) {
-    if( !HasParam( md, *it_desc ) ) {
+    if( !HasParam( md, desc ) ) {
       throw incorrectly_configured()
 	<< "[ERROR]: Expected to find parameter named "
-	<< std::quoted(*it_desc);
+	<< std::quoted(desc);
     } // Problem: Parameter not found.
     
     // Get the parameter index
-    ResponseParameterIndices[it_desc - descriptors.begin()] = GetParamIndex(md, *it_desc);
+    ResponseParameterIndices[i_q0bin] = GetParamIndex(md, desc);
     if( verbosity_level > 1 ) {
       std::ostringstream asts;
-      std::vector<double> param_variations = md[GetParamIndex(md, *it_desc)].paramVariations;
-      asts << "[INFO]: Configured parameter " << *it_desc << " with variations:\n\t[";
+      std::vector<double> param_variations = md[GetParamIndex(md, desc)].paramVariations;
+      asts << "[INFO]: Configured parameter " << desc << " with variations:\n\t[";
       for( double & var: param_variations ) asts << " " << var << ",";
       asts << " ]";
       std::cout << asts.str() << std::endl;
@@ -97,29 +84,39 @@ bool QEInterference::SetupResponseCalculator(ParameterSet const & tool_options)
 SystMetaData QEInterference::BuildSystMetaData(ParameterSet const & cfg,
 						     paramId_t id) 
 {
+
   SystMetaData smd;
 
-  // Obtain each named parameter from the descriptors in the fcl
-  for( std::vector<std::string>::iterator it_desc = descriptors.begin();
-       it_desc != descriptors.end(); ++it_desc ) {
+  std::vector<double> this_q0BinEdges = cfg.get<std::vector<double>>("q0_bin_edges");
+  unsigned int this_Nq0Bins = this_q0BinEdges.size()-1;
+
+  int this_verbosity_level = cfg.get<int>("verbosity_level", 0);
+  if( this_verbosity_level > 3 ) {
+    std::cout << "[INFO]: Using bin edges: ";
+    for(const auto q0BinEdge: this_q0BinEdges) std::cout << q0BinEdge << ", ";
+    std::cout << std::endl;
+  }
+
+  for(unsigned int i_q0bin=0; i_q0bin<this_Nq0Bins; i_q0bin++){
+
+    std::string desc = "QEIntf_dial_"+std::to_string(i_q0bin);
+
     SystParamHeader phdr;
-    std::string pname = *it_desc;
+    std::string pname = desc;
     if( ParseFhiclToolConfigurationParameter(cfg, pname, phdr, id) ) {
-      if( verbosity_level > 4 ) {
-	std::cout << "[DEBUG]: Found parameter " << pname << " with id = " << id << std::endl;
+      if( this_verbosity_level > 4 ) {
+        std::cout << "[DEBUG]: Found parameter " << pname << " with id = " << id << std::endl;
       } // verbose output
       phdr.systParamId = id++; // increment id here
       smd.push_back(phdr);
     }
   } // loop over named parameters
 
-  std::string q0Bins = 
-    cfg.get<std::string>("q0_bin_edges");
+  tool_options.put("q0_bin_edges", this_q0BinEdges);
+
   if( !cfg.has_key("QEInterference_input_manifest") ) {
     throw invalid_ToolConfigurationFHiCL() << "No q0 bin edges!!!";
   }
-  tool_options.put("q0_bin_edges", q0Bins);
-
   ParameterSet templateManifest =
       cfg.get<ParameterSet>("QEInterference_input_manifest");
 
@@ -135,6 +132,8 @@ SystMetaData QEInterference::BuildSystMetaData(ParameterSet const & cfg,
   }
 
   tool_options.put("QEInterference_input_manifest", templateManifest);
+
+  tool_options.put("verbosity_level", this_verbosity_level);
 
   return smd;
 }
@@ -186,32 +185,25 @@ event_unit_response_t QEInterference::GetEventResponse(genie::EventRecord const 
 
   // Initialise response arrays
   // We'll be careful here. Use resize to construct the vectors
-  
-  SystParamHeader const & td0 = md[ResponseParameterIndices[0]];
-  SystParamHeader const & td1 = md[ResponseParameterIndices[1]];
-  SystParamHeader const & td2 = md[ResponseParameterIndices[2]];
-  SystParamHeader const & td3 = md[ResponseParameterIndices[3]];
-  SystParamHeader const & td4 = md[ResponseParameterIndices[4]];
-  SystParamHeader const & td5 = md[ResponseParameterIndices[5]];
 
-  std::vector<SystParamHeader> systs = { td0, td1, td2, td3, td4, td5 };
-  int iSyst = 0;
-  for( auto param : systs ) {
-    resp.push_back({param.systParamId, {}});
-    // Figure out if this is the correct q0 bin to use
-    if(q0BinEdges[iSyst+1] < Q0 || q0BinEdges[iSyst] >= Q0) { // Default response
-      std::vector<double> vec(param.paramVariations.size(), 1.0);
-      resp.back().responses = vec; 
+  for(unsigned int i_q0bin=0; i_q0bin<Nq0Bins; i_q0bin++){
+
+    SystParamHeader const & sph = md[ResponseParameterIndices[i_q0bin]];
+
+    resp.push_back({sph.systParamId, {}});
+
+    if(q0BinEdges[i_q0bin+1] < Q0 || q0BinEdges[i_q0bin] >= Q0) { // Default response
+      std::vector<double> vec(sph.paramVariations.size(), 1.0);
+      resp.back().responses = vec;
     } else {
       std::vector<double> vec;
-      for( const double & twk : param.paramVariations ) {
-	double this_reweight = std::max( 0.0, (1.0 - twk) + twk * raw_response );
-	vec.push_back(this_reweight);
+      for( const double & twk : sph.paramVariations ) {
+        double this_reweight = std::max( 0.0, (1.0 - twk) + twk * raw_response );
+        vec.push_back(this_reweight);
       }
-      resp.back().responses = vec; 
+      resp.back().responses = vec;
     }
-    iSyst++;
-  }  // loop over all systs 
+  }
 
   return resp;
 }
