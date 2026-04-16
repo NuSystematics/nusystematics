@@ -21,6 +21,8 @@ using namespace systtools;
 using namespace nusyst;
 using namespace fhicl;
 
+NEW_SYSTTOOLS_EXCEPT(invalid_QECorr_DataBaseDir_FILEPATH);
+
 // ---------------------------------------------------------------------------
 // Flavor string used in the ROOT file naming convention
 static std::string FlavorTag(int pdg) {
@@ -80,6 +82,15 @@ bool CCQEXSecCorr::SetupResponseCalculator(
           "reweight_data_v3_04_02a_to_v3_06_02_sbn2_CCQE_%FLAVOR%_%ENERGY%_flat.root");
   std::string histName =
       manifest.get<std::string>("histogram_name", "h_weights_map");
+
+  if (dataBaseDir.find("/") != 0) {
+    if( std::getenv("nusystematics_ROOT") == "" ) {
+      throw invalid_QECorr_DataBaseDir_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set!\n"
+        << "Given path: " << dataBaseDir << "\n"
+        << "Expect absolute path (starts with '/'), or file relative to ${nusystematics_ROOT}/data/";
+    }
+    dataBaseDir = std::string(std::getenv("nusystematics_ROOT")) + "/data/" + dataBaseDir;
+  }
 
   // Energy grid
   fEgrid = manifest.get<std::vector<double>>("EnergyGrid");
