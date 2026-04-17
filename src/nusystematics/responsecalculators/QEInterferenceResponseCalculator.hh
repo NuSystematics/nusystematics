@@ -15,6 +15,7 @@
 #include <algorithm>
 #include "systematicstools/interface/types.hh"
 #include "systematicstools/utility/ROOTUtility.hh"
+#include "systematicstools/utility/string_parsers.hh"
 #include "systematicstools/utility/exceptions.hh"
 #include "fhiclcpp/ParameterSet.h"
 #include "TH1D.h"
@@ -129,15 +130,7 @@ namespace nusyst {
 					 << " ; check inputs:name " << config_name.c_str();
       }
 
-      // If input_file is not given as an absolute path seatch ${NUSYSTEMATICS_FQ_DIR}/data/
-      if( input_file.find("/") != 0 ) {
-	if( std::getenv("nusystematics_ROOT") == "" ) {
-	  throw invalid_QEIntf_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set!\n"
-					  << "Given path: " << input_file << "\n"
-					  << "Expect absolute path (starts with '/'), or file relative to ${nusystematics_ROOT}/data/";
-	}
-	input_file = std::string(std::getenv("nusystematics_ROOT")) + "/data/" + input_file;
-      } // absolute path not given
+      input_file = systtools::expand_env_vars(input_file);
 
       int nu_pdg = -1;
       int current = -1;

@@ -18,6 +18,7 @@
 
 // SystematicsTools helper
 #include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/string_parsers.hh"
 
 // GENIE
 #include "Framework/GHEP/GHepParticle.h"
@@ -234,15 +235,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   // Read DataBaseDir for auto-generation (model already read earlier for outOfRangeWeight)
   std::string dataBaseDir = manifest.get<std::string>("DataBaseDir", "");
 
-  // if DataBaseDir is not given as an absolute path seatch ${NUSYSTEMATICS_FQ_DIR}/data/
-  if (dataBaseDir.find("/") != 0) {
-    if( std::getenv("nusystematics_ROOT") == "" ) {
-      throw invalid_MEC_DataBaseDir_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set!\n"
-        << "Given path: " << dataBaseDir << "\n"
-        << "Expect absolute path (starts with '/'), or file relative to ${nusystematics_ROOT}/data/";
-    }
-    dataBaseDir = std::string(std::getenv("nusystematics_ROOT")) + "/data/" + dataBaseDir;
-  }
+  dataBaseDir = systtools::expand_env_vars(dataBaseDir);
 
   std::vector<std::string> np_files, nn_files;
   
