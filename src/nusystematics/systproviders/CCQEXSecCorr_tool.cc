@@ -3,6 +3,7 @@
 #include "nusystematics/utility/exceptions.hh"
 
 #include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/string_parsers.hh"
 
 #include "Framework/GHEP/GHepParticle.h"
 #include "Framework/GHEP/GHepUtils.h"
@@ -83,14 +84,7 @@ bool CCQEXSecCorr::SetupResponseCalculator(
   std::string histName =
       manifest.get<std::string>("histogram_name", "h_weights_map");
 
-  if (dataBaseDir.find("/") != 0) {
-    if( std::getenv("nusystematics_ROOT") == "" ) {
-      throw invalid_QECorr_DataBaseDir_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set!\n"
-        << "Given path: " << dataBaseDir << "\n"
-        << "Expect absolute path (starts with '/'), or file relative to ${nusystematics_ROOT}/data/";
-    }
-    dataBaseDir = std::string(std::getenv("nusystematics_ROOT")) + "/data/" + dataBaseDir;
-  }
+  dataBaseDir = systtools::expand_env_vars(dataBaseDir);
 
   // Energy grid
   fEgrid = manifest.get<std::vector<double>>("EnergyGrid");
