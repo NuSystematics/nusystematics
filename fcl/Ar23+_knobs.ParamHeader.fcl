@@ -1,13 +1,27 @@
 generated_systematic_provider_configuration: {
-   CCQETemplateReweight_SBNNuSyst_multisigma_CRPA: {
-      instance_name: "SBNNuSyst_multisigma_CRPA"
+   CCQETemplateReweight_LFGToCRPA_SBN_v3: {
+      instance_name: "LFGToCRPA_SBN_v3"
       parameter_headers: [
+         "q0bin0",
          "q0bin1",
          "q0bin2",
          "q0bin3",
-         "q0bin4",
-         "q0bin5"
+         "q0bin4"
       ]
+      q0bin0: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "q0bin0"
+         systParamId: 10
+      }
       q0bin1: {
          centralParamValue: 0
          isSplineable: true
@@ -20,7 +34,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin1"
-         systParamId: 18
+         systParamId: 11
       }
       q0bin2: {
          centralParamValue: 0
@@ -34,7 +48,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin2"
-         systParamId: 19
+         systParamId: 12
       }
       q0bin3: {
          centralParamValue: 0
@@ -48,7 +62,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin3"
-         systParamId: 20
+         systParamId: 13
       }
       q0bin4: {
          centralParamValue: 0
@@ -62,27 +76,13 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin4"
-         systParamId: 21
-      }
-      q0bin5: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "q0bin5"
-         systParamId: 22
+         systParamId: 14
       }
       tool_options: {
          CCQETemplateReweight_input_manifest: {
             ENuBoundary: 1
             RWMode: "q3q0"
-            input_file: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/QE/CCQEReweight_templates_Ar23+.root"
+            input_file: "$SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root"
             inputs: [
                {
                   input_hist: "LowE/h_ENuq3q0_G21_HF-CRPA"
@@ -95,18 +95,41 @@ generated_systematic_provider_configuration: {
             ]
          }
          fill_valid_tree: false
+         q0_bin_edges: [
+            0,
+            5.00000000000000027756e-2,
+            1.00000000000000005551e-1,
+            2.00000000000000011102e-1,
+            6.99999999999999955591e-1,
+            10
+         ]
+         verbosity_level: 0
       }
       tool_type: "CCQETemplateReweight"
    }
-   CCQETemplateReweight_SBNNuSyst_multisigma_HF: {
-      instance_name: "SBNNuSyst_multisigma_HF"
+   CCQETemplateReweight_LFGToHF_SBN_v3: {
+      instance_name: "LFGToHF_SBN_v3"
       parameter_headers: [
+         "q0bin0",
          "q0bin1",
          "q0bin2",
          "q0bin3",
-         "q0bin4",
-         "q0bin5"
+         "q0bin4"
       ]
+      q0bin0: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "q0bin0"
+         systParamId: 5
+      }
       q0bin1: {
          centralParamValue: 0
          isSplineable: true
@@ -119,7 +142,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin1"
-         systParamId: 13
+         systParamId: 6
       }
       q0bin2: {
          centralParamValue: 0
@@ -133,7 +156,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin2"
-         systParamId: 14
+         systParamId: 7
       }
       q0bin3: {
          centralParamValue: 0
@@ -147,7 +170,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin3"
-         systParamId: 15
+         systParamId: 8
       }
       q0bin4: {
          centralParamValue: 0
@@ -161,27 +184,13 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin4"
-         systParamId: 16
-      }
-      q0bin5: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "q0bin5"
-         systParamId: 17
+         systParamId: 9
       }
       tool_options: {
          CCQETemplateReweight_input_manifest: {
             ENuBoundary: 1
             RWMode: "q3q0"
-            input_file: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/QE/CCQEReweight_templates_Ar23+.root"
+            input_file: "$SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root"
             inputs: [
                {
                   input_hist: "LowE/h_ENuq3q0_G21_HF"
@@ -194,18 +203,41 @@ generated_systematic_provider_configuration: {
             ]
          }
          fill_valid_tree: false
+         q0_bin_edges: [
+            0,
+            5.00000000000000027756e-2,
+            1.00000000000000005551e-1,
+            2.00000000000000011102e-1,
+            6.99999999999999955591e-1,
+            10
+         ]
+         verbosity_level: 0
       }
       tool_type: "CCQETemplateReweight"
    }
-   CCQETemplateReweight_SBNNuSyst_multisigma_SF: {
-      instance_name: "SBNNuSyst_multisigma_SF"
+   CCQETemplateReweight_LFGToSF_SBN_v3: {
+      instance_name: "LFGToSF_SBN_v3"
       parameter_headers: [
+         "q0bin0",
          "q0bin1",
          "q0bin2",
          "q0bin3",
-         "q0bin4",
-         "q0bin5"
+         "q0bin4"
       ]
+      q0bin0: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "q0bin0"
+         systParamId: 0
+      }
       q0bin1: {
          centralParamValue: 0
          isSplineable: true
@@ -218,7 +250,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin1"
-         systParamId: 8
+         systParamId: 1
       }
       q0bin2: {
          centralParamValue: 0
@@ -232,7 +264,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin2"
-         systParamId: 9
+         systParamId: 2
       }
       q0bin3: {
          centralParamValue: 0
@@ -246,7 +278,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin3"
-         systParamId: 10
+         systParamId: 3
       }
       q0bin4: {
          centralParamValue: 0
@@ -260,27 +292,13 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "q0bin4"
-         systParamId: 11
-      }
-      q0bin5: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "q0bin5"
-         systParamId: 12
+         systParamId: 4
       }
       tool_options: {
          CCQETemplateReweight_input_manifest: {
             ENuBoundary: 10
             RWMode: "q3q0"
-            input_file: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/QE/CCQEReweight_templates_Ar23+.root"
+            input_file: "$SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root"
             inputs: [
                {
                   input_hist: "h_ENuq3q0_AR25_SF"
@@ -293,24 +311,33 @@ generated_systematic_provider_configuration: {
             ]
          }
          fill_valid_tree: false
+         q0_bin_edges: [
+            0,
+            5.00000000000000027756e-2,
+            1.00000000000000005551e-1,
+            2.00000000000000011102e-1,
+            6.99999999999999955591e-1,
+            10
+         ]
+         verbosity_level: 0
       }
       tool_type: "CCQETemplateReweight"
    }
-   CCQEXSecCorr_CCQEXSecCorr: {
+   CCQEXSecCorr_SBN_v3: {
       CCQEXSecCorr: {
          centralParamValue: 1
          isCorrection: true
          isSplineable: true
          prettyName: "CCQEXSecCorr"
-         systParamId: 63
+         systParamId: 47
       }
-      instance_name: "CCQEXSecCorr"
+      instance_name: "SBN_v3"
       parameter_headers: [
          "CCQEXSecCorr"
       ]
       tool_options: {
          CCQEXSecCorr_input_manifest: {
-            DataBaseDir: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/QE-Fix"
+            DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/QE-Fix"
             EdgeClamp: true
             EnergyGrid: [
                2e-1,
@@ -386,7 +413,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "CCQEXSecCorr"
    }
-   GENIEReWeight_SBNNuSyst_multisigma_EDepFSI: {
+   GENIEReWeight_EDepFSI_SBN_v3: {
       CoulombCCQE: {
          centralParamValue: 0
          isSplineable: true
@@ -399,7 +426,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "CoulombCCQE"
-         systParamId: 30
+         systParamId: 22
       }
       DecayAngMEC: {
          centralParamValue: 0
@@ -413,7 +440,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "DecayAngMEC"
-         systParamId: 33
+         systParamId: 25
       }
       FrAbs_pi: {
          centralParamValue: 0
@@ -427,7 +454,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "FrAbs_pi"
-         systParamId: 37
+         systParamId: 29
       }
       FrCEx_pi: {
          centralParamValue: 0
@@ -441,147 +468,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "FrCEx_pi"
-         systParamId: 35
-      }
-      FrG4HiE_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrG4HiE_N"
-         systParamId: 47
-      }
-      FrG4LoE_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrG4LoE_N"
-         systParamId: 41
-      }
-      FrG4M1E_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrG4M1E_N"
-         systParamId: 43
-      }
-      FrG4M2E_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrG4M2E_N"
-         systParamId: 45
-      }
-      FrG4_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrG4_N"
-         systParamId: 39
-      }
-      FrINCLHiE_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrINCLHiE_N"
-         systParamId: 48
-      }
-      FrINCLLoE_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrINCLLoE_N"
-         systParamId: 42
-      }
-      FrINCLM1E_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrINCLM1E_N"
-         systParamId: 44
-      }
-      FrINCLM2E_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrINCLM2E_N"
-         systParamId: 46
-      }
-      FrINCL_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrINCL_N"
-         systParamId: 40
+         systParamId: 27
       }
       FrInel_pi: {
          centralParamValue: 0
@@ -595,35 +482,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "FrInel_pi"
-         systParamId: 36
-      }
-      FrKin_PiProBias_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrKin_PiProBias_N"
-         systParamId: 54
-      }
-      FrKin_PiProFix_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrKin_PiProFix_N"
-         systParamId: 53
+         systParamId: 28
       }
       FrPiProd_pi: {
          centralParamValue: 0
@@ -637,63 +496,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "FrPiProd_pi"
-         systParamId: 38
-      }
-      MFPHiE_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "MFPHiE_N"
-         systParamId: 52
-      }
-      MFPLoE_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "MFPLoE_N"
-         systParamId: 49
-      }
-      MFPM1E_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "MFPM1E_N"
-         systParamId: 50
-      }
-      MFPM2E_N: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "MFPM2E_N"
-         systParamId: 51
+         systParamId: 30
       }
       MFP_pi: {
          centralParamValue: 0
@@ -707,7 +510,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MFP_pi"
-         systParamId: 34
+         systParamId: 26
       }
       NormCCMEC: {
          centralParamValue: 0
@@ -721,7 +524,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "NormCCMEC"
-         systParamId: 31
+         systParamId: 23
       }
       NormNCMEC: {
          centralParamValue: 0
@@ -735,7 +538,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "NormNCMEC"
-         systParamId: 32
+         systParamId: 24
       }
       VecFFCCQEshape: {
          centralParamValue: 0
@@ -749,9 +552,9 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "VecFFCCQEshape"
-         systParamId: 29
+         systParamId: 21
       }
-      instance_name: "SBNNuSyst_multisigma_EDepFSI"
+      instance_name: "EDepFSI_SBN_v3"
       parameter_headers: [
          "VecFFCCQEshape",
          "CoulombCCQE",
@@ -762,23 +565,7 @@ generated_systematic_provider_configuration: {
          "FrCEx_pi",
          "FrInel_pi",
          "FrAbs_pi",
-         "FrPiProd_pi",
-         "FrG4_N",
-         "FrINCL_N",
-         "FrG4LoE_N",
-         "FrINCLLoE_N",
-         "FrG4M1E_N",
-         "FrINCLM1E_N",
-         "FrG4M2E_N",
-         "FrINCLM2E_N",
-         "FrG4HiE_N",
-         "FrINCLHiE_N",
-         "MFPLoE_N",
-         "MFPM1E_N",
-         "MFPM2E_N",
-         "MFPHiE_N",
-         "FrKin_PiProFix_N",
-         "FrKin_PiProBias_N"
+         "FrPiProd_pi"
       ]
       tool_options: {
          AxFFCCQEDipoleToZExp: false
@@ -794,7 +581,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "GENIEReWeight"
    }
-   MECq0q3InterpWeighting_SuSAv2ToMartini_q0binned: {
+   MECq0q3InterpWeighting_SuSAv2ToMartini_SBN_v3: {
       MECResponse_q0bin0: {
          centralParamValue: 0
          isSplineable: true
@@ -807,7 +594,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin0"
-         systParamId: 59
+         systParamId: 43
       }
       MECResponse_q0bin1: {
          centralParamValue: 0
@@ -821,7 +608,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin1"
-         systParamId: 60
+         systParamId: 44
       }
       MECResponse_q0bin2: {
          centralParamValue: 0
@@ -835,7 +622,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin2"
-         systParamId: 61
+         systParamId: 45
       }
       MECResponse_q0bin3: {
          centralParamValue: 0
@@ -849,9 +636,9 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin3"
-         systParamId: 62
+         systParamId: 46
       }
-      instance_name: "SuSAv2ToMartini_q0binned"
+      instance_name: "SuSAv2ToMartini_SBN_v3"
       parameter_headers: [
          "MECResponse_q0bin0",
          "MECResponse_q0bin1",
@@ -860,7 +647,7 @@ generated_systematic_provider_configuration: {
       ]
       tool_options: {
          MECResponse_input_manifest: {
-            DataBaseDir: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/MEC"
+            DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/MEC"
             EdgeClamp: true
             EnergyGrid: [
                4e-1,
@@ -935,7 +722,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "MECq0q3InterpWeighting"
    }
-   MECq0q3InterpWeighting_SuSAv2ToValenica_q0binned: {
+   MECq0q3InterpWeighting_SuSAv2ToValencia_SBN_v3: {
       MECResponse_q0bin0: {
          centralParamValue: 0
          isSplineable: true
@@ -948,7 +735,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin0"
-         systParamId: 55
+         systParamId: 39
       }
       MECResponse_q0bin1: {
          centralParamValue: 0
@@ -962,7 +749,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin1"
-         systParamId: 56
+         systParamId: 40
       }
       MECResponse_q0bin2: {
          centralParamValue: 0
@@ -976,7 +763,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin2"
-         systParamId: 57
+         systParamId: 41
       }
       MECResponse_q0bin3: {
          centralParamValue: 0
@@ -990,9 +777,9 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin3"
-         systParamId: 58
+         systParamId: 42
       }
-      instance_name: "SuSAv2ToValenica_q0binned"
+      instance_name: "SuSAv2ToValencia_SBN_v3"
       parameter_headers: [
          "MECResponse_q0bin0",
          "MECResponse_q0bin1",
@@ -1001,7 +788,7 @@ generated_systematic_provider_configuration: {
       ]
       tool_options: {
          MECResponse_input_manifest: {
-            DataBaseDir: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/MEC"
+            DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/MEC"
             EdgeClamp: true
             EnergyGrid: [
                4e-1,
@@ -1076,7 +863,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "MECq0q3InterpWeighting"
    }
-   QEInterference_SBNNuSyst_multisigma_INT: {
+   QEInterference_SBN_v3: {
       QEIntf_dial_0: {
          isSplineable: true
          paramVariations: [
@@ -1088,7 +875,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "QEIntf_dial_0"
-         systParamId: 23
+         systParamId: 15
       }
       QEIntf_dial_1: {
          isSplineable: true
@@ -1101,7 +888,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "QEIntf_dial_1"
-         systParamId: 24
+         systParamId: 16
       }
       QEIntf_dial_2: {
          isSplineable: true
@@ -1114,7 +901,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "QEIntf_dial_2"
-         systParamId: 25
+         systParamId: 17
       }
       QEIntf_dial_3: {
          isSplineable: true
@@ -1127,7 +914,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "QEIntf_dial_3"
-         systParamId: 26
+         systParamId: 18
       }
       QEIntf_dial_4: {
          isSplineable: true
@@ -1140,7 +927,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "QEIntf_dial_4"
-         systParamId: 27
+         systParamId: 19
       }
       QEIntf_dial_5: {
          isSplineable: true
@@ -1153,9 +940,9 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "QEIntf_dial_5"
-         systParamId: 28
+         systParamId: 20
       }
-      instance_name: "SBNNuSyst_multisigma_INT"
+      instance_name: "SBN_v3"
       parameter_headers: [
          "QEIntf_dial_0",
          "QEIntf_dial_1",
@@ -1166,7 +953,7 @@ generated_systematic_provider_configuration: {
       ]
       tool_options: {
          QEInterference_input_manifest: {
-            input_file: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/INT/ACHILLES_weights.root"
+            input_file: "$SBNDATA_DIR/systematics/AR23Plus/ACHILLES_weights.root"
             inputs: [
                {
                   input_enu_bins: "numu_cc_enu_bins"
@@ -1198,11 +985,20 @@ generated_systematic_provider_configuration: {
                }
             ]
          }
-         q0_bin_edges: "[0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 3.0]"
+         q0_bin_edges: [
+            0,
+            2.5e-1,
+            5e-1,
+            7.5e-1,
+            1,
+            2,
+            3
+         ]
+         verbosity_level: 5
       }
       tool_type: "QEInterference"
    }
-   ZExpPCAWeighter_SBNNuSyst_multisigma_D_ZExp: {
+   ZExpPCAWeighter_Deuterium_SBN_v3: {
       b1: {
          isSplineable: true
          paramVariations: [
@@ -1215,7 +1011,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b1"
-         systParamId: 0
+         systParamId: 31
       }
       b2: {
          isSplineable: true
@@ -1229,7 +1025,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b2"
-         systParamId: 1
+         systParamId: 32
       }
       b3: {
          isSplineable: true
@@ -1243,7 +1039,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b3"
-         systParamId: 2
+         systParamId: 33
       }
       b4: {
          isSplineable: true
@@ -1257,9 +1053,9 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b4"
-         systParamId: 3
+         systParamId: 34
       }
-      instance_name: "SBNNuSyst_multisigma_D_ZExp"
+      instance_name: "Deuterium_SBN_v3"
       parameter_headers: [
          "b1",
          "b2",
@@ -1273,7 +1069,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "ZExpPCAWeighter"
    }
-   ZExpPCAWeighter_SBNNuSyst_multisigma_MvA_ZExp: {
+   ZExpPCAWeighter_MINERvA_SBN_v3: {
       b1: {
          isSplineable: true
          paramVariations: [
@@ -1286,7 +1082,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b1"
-         systParamId: 4
+         systParamId: 35
       }
       b2: {
          isSplineable: true
@@ -1300,7 +1096,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b2"
-         systParamId: 5
+         systParamId: 36
       }
       b3: {
          isSplineable: true
@@ -1314,7 +1110,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b3"
-         systParamId: 6
+         systParamId: 37
       }
       b4: {
          isSplineable: true
@@ -1328,9 +1124,9 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b4"
-         systParamId: 7
+         systParamId: 38
       }
-      instance_name: "SBNNuSyst_multisigma_MvA_ZExp"
+      instance_name: "MINERvA_SBN_v3"
       parameter_headers: [
          "b1",
          "b2",
@@ -1345,16 +1141,16 @@ generated_systematic_provider_configuration: {
       tool_type: "ZExpPCAWeighter"
    }
    syst_providers: [
-      "ZExpPCAWeighter_SBNNuSyst_multisigma_D_ZExp",
-      "ZExpPCAWeighter_SBNNuSyst_multisigma_MvA_ZExp",
-      "CCQETemplateReweight_SBNNuSyst_multisigma_SF",
-      "CCQETemplateReweight_SBNNuSyst_multisigma_HF",
-      "CCQETemplateReweight_SBNNuSyst_multisigma_CRPA",
-      "QEInterference_SBNNuSyst_multisigma_INT",
-      "GENIEReWeight_SBNNuSyst_multisigma_EDepFSI",
-      "MECq0q3InterpWeighting_SuSAv2ToValenica_q0binned",
-      "MECq0q3InterpWeighting_SuSAv2ToMartini_q0binned",
-      "CCQEXSecCorr_CCQEXSecCorr"
+      "CCQETemplateReweight_LFGToSF_SBN_v3",
+      "CCQETemplateReweight_LFGToHF_SBN_v3",
+      "CCQETemplateReweight_LFGToCRPA_SBN_v3",
+      "QEInterference_SBN_v3",
+      "GENIEReWeight_EDepFSI_SBN_v3",
+      "ZExpPCAWeighter_Deuterium_SBN_v3",
+      "ZExpPCAWeighter_MINERvA_SBN_v3",
+      "MECq0q3InterpWeighting_SuSAv2ToValencia_SBN_v3",
+      "MECq0q3InterpWeighting_SuSAv2ToMartini_SBN_v3",
+      "CCQEXSecCorr_SBN_v3"
    ]
 }
 

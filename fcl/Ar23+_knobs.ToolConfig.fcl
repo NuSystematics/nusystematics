@@ -1,11 +1,14 @@
 # PRE MEC binning update
 #
-CCQETemplateSF_toolconfig: {
+CCQETemplateSF_Tool_Config: {
 
     tool_type: "CCQETemplateReweight"
-    instance_name: "SBNNuSyst_multisigma_SF"
+    instance_name: "LFGToSF_SBN_v3"
+    q0_bin_edges: "[0.0, 0.05, 0.10, 0.20, 0.7, 10.0]"
 
-    // weight in four q0 bins
+    # weight in four q0 bins
+    q0bin0_central_value: 0
+    q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
     q0bin1_central_value: 0
     q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
     q0bin2_central_value: 0
@@ -14,13 +17,11 @@ CCQETemplateSF_toolconfig: {
     q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
     q0bin4_central_value: 0
     q0bin4_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    q0bin5_central_value: 0
-    q0bin5_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
 
     CCQETemplateReweight_input_manifest: {
       RWMode: "q3q0"
       ENuBoundary: 10.0
-      input_file: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/QE/CCQEReweight_templates_Ar23+.root"
+      input_file: "$SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root"
       inputs: [
           {
             name: "LowE_WithTemplate"
@@ -34,10 +35,10 @@ CCQETemplateSF_toolconfig: {
     }
 }
 
-CCQETemplateHF_toolconfig: @local::CCQETemplateSF_toolconfig
-CCQETemplateHF_toolconfig.instance_name: "SBNNuSyst_multisigma_HF"
-CCQETemplateHF_toolconfig.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
-CCQETemplateHF_toolconfig.CCQETemplateReweight_input_manifest.inputs: [
+CCQETemplateHF_Tool_Config: @local::CCQETemplateSF_Tool_Config
+CCQETemplateHF_Tool_Config.instance_name: "LFGToHF_SBN_v3"
+CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
+CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
           {
             name: "LowE_WithTemplate"
             input_hist: "LowE/h_ENuq3q0_G21_HF"
@@ -48,10 +49,10 @@ CCQETemplateHF_toolconfig.CCQETemplateReweight_input_manifest.inputs: [
           }
 ]
 
-CCQETemplateCRPA_toolconfig: @local::CCQETemplateSF_toolconfig
-CCQETemplateCRPA_toolconfig.instance_name: "SBNNuSyst_multisigma_CRPA"
-CCQETemplateCRPA_toolconfig.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
-CCQETemplateCRPA_toolconfig.CCQETemplateReweight_input_manifest.inputs: [
+CCQETemplateCRPA_Tool_Config: @local::CCQETemplateSF_Tool_Config
+CCQETemplateCRPA_Tool_Config.instance_name: "LFGToCRPA_SBN_v3"
+CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
+CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
   {
     name: "LowE_WithTemplate"
     input_hist: "LowE/h_ENuq3q0_G21_HF-CRPA"
@@ -62,9 +63,9 @@ CCQETemplateCRPA_toolconfig.CCQETemplateReweight_input_manifest.inputs: [
   }
 ]
 
- QEInterference_toolconfig: {
+ QEInterference_Tool_Config: {
     tool_type: "QEInterference"
-    instance_name: "SBNNuSyst_multisigma_INT"
+    instance_name: "SBN_v3"
 
     QEIntf_dial_0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
     QEIntf_dial_1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
@@ -78,7 +79,7 @@ CCQETemplateCRPA_toolconfig.CCQETemplateReweight_input_manifest.inputs: [
     verbosity_level: 5
 
     QEInterference_input_manifest: {
-      input_file: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/INT/ACHILLES_weights.root"
+      input_file: "$SBNDATA_DIR/systematics/AR23Plus/ACHILLES_weights.root"
       inputs: [
           {
             name: "numu_cc"
@@ -112,10 +113,10 @@ CCQETemplateCRPA_toolconfig.CCQETemplateReweight_input_manifest.inputs: [
     }
 }
 
-GENIEFSIReWeight_Multisigma_toolconfig: {
+GENIEFSIReWeight_Multisigma_Tool_Config: {
     tool_type: "GENIEReWeight"
 
-    instance_name: "SBNNuSyst_multisigma_EDepFSI"
+    instance_name: "EDepFSI_SBN_v3"
 
     # Keep one GENIEReWeight instance per discrete dial tweak in memory
     # Requires no reconfigures within the event loop
@@ -190,9 +191,9 @@ GENIEFSIReWeight_Multisigma_toolconfig: {
     MFPHiE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
 }
 
-zexpansion_weighter_toolconfig_MINERvA: {
+zexpansion_weighter_MINERvA_Tool_Config: {
     tool_type: "ZExpPCAWeighter"
-    instance_name: "SBNNuSyst_multisigma_MvA_ZExp"
+    instance_name: "MINERvA_SBN_v3"
 
     b1_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
     b2_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
@@ -203,9 +204,9 @@ zexpansion_weighter_toolconfig_MINERvA: {
     RWtoPub: "Nature_614_102522"
 }
 
-zexpansion_weighter_toolconfig_Deuterium: {
+zexpansion_weighter_Deuterium_Tool_Config: {
     tool_type: "ZExpPCAWeighter"
-    instance_name: "SBNNuSyst_multisigma_D_ZExp"
+    instance_name: "Deuterium_SBN_v3"
 
     b1_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
     b2_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
@@ -216,10 +217,10 @@ zexpansion_weighter_toolconfig_Deuterium: {
     RWtoPub: "PRD_93_113015"
 }
 
-SuSAv2ToValenica_MECInterp_q0binned: {
+SuSAv2ToValencia_MECInterp_q0binned_Tool_Config: {
 
   tool_type: "MECq0q3InterpWeighting"
-  instance_name: "SuSAv2ToValenica_q0binned"
+  instance_name: "SuSAv2ToValencia_SBN_v3"
 
   # ============================================================
   # Q0-BINNED MODE: Multiple independent dials per q0 bin
@@ -255,7 +256,7 @@ SuSAv2ToValenica_MECInterp_q0binned: {
     Model: "valencia"  # Options: "valencia" or "martini"
     
     # Base data directory
-    DataBaseDir: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/MEC"
+    DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/MEC"
 
     # ============================================================
     # Q0 BINNING: Define bin edges for multiple dials
@@ -305,10 +306,10 @@ SuSAv2ToValenica_MECInterp_q0binned: {
 
 }
 
-SuSAv2ToMartini_MECInterp_q0binned: {
+SuSAv2ToMartini_MECInterp_q0binned_Tool_Config: {
 
   tool_type: "MECq0q3InterpWeighting"
-  instance_name: "SuSAv2ToMartini_q0binned"
+  instance_name: "SuSAv2ToMartini_SBN_v3"
 
   # ============================================================
   # Q0-BINNED MODE: Multiple independent dials per q0 bin
@@ -344,7 +345,7 @@ SuSAv2ToMartini_MECInterp_q0binned: {
     Model: "martini"  # Options: "valencia" or "martini"
     
     # Base data directory
-    DataBaseDir: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/MEC"
+    DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/MEC"
 
     # ============================================================
     # Q0 BINNING: Define bin edges for multiple dials
@@ -395,14 +396,14 @@ SuSAv2ToMartini_MECInterp_q0binned: {
 CCQEXSecCorr_Tool_Config: {
 
     tool_type: "CCQEXSecCorr"
-    instance_name: "CCQEXSecCorr"
+    instance_name: "SBN_v3"
 
     # Correction dial: central_value only, no variation_descriptor
     CCQEXSecCorr_central_value: 1
 
     CCQEXSecCorr_input_manifest: {
 
-      DataBaseDir: "/pnfs/sbn/persistent/users/gputnam/Ar23+_files/v5/QE-Fix"
+      DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/QE-Fix"
       file_pattern: "reweight_data_v3_04_02a_to_v3_06_02_sbn2_CCQE_%FLAVOR%_%ENERGY%GeV_flat.root"
       histogram_name: "h_weights_map"
 
@@ -430,9 +431,16 @@ CCQEXSecCorr_Tool_Config: {
 
 
 syst_providers: [
-    zexpansion_weighter_toolconfig_Deuterium, zexpansion_weighter_toolconfig_MINERvA,
-    CCQETemplateSF_toolconfig, CCQETemplateHF_toolconfig, CCQETemplateCRPA_toolconfig, QEInterference_toolconfig, GENIEFSIReWeight_Multisigma_toolconfig,
-    SuSAv2ToValenica_MECInterp_q0binned, SuSAv2ToMartini_MECInterp_q0binned, CCQEXSecCorr_Tool_Config
+    CCQETemplateSF_Tool_Config,
+    CCQETemplateHF_Tool_Config,
+    CCQETemplateCRPA_Tool_Config,
+    QEInterference_Tool_Config,
+    GENIEFSIReWeight_Multisigma_Tool_Config,
+    zexpansion_weighter_Deuterium_Tool_Config,
+    zexpansion_weighter_MINERvA_Tool_Config,
+    SuSAv2ToValencia_MECInterp_q0binned_Tool_Config,
+    SuSAv2ToMartini_MECInterp_q0binned_Tool_Config,
+    CCQEXSecCorr_Tool_Config
 ]
 
 
