@@ -429,6 +429,23 @@ CCQEXSecCorr_Tool_Config: {
     fill_valid_tree: false
 }
 
+PionAbsProvider_toolconfig: {
+    tool_type: "PionAbsWeighter"
+    instance_name: "SBN_v3"
+
+    QuasiDeuteronFraction_variation_descriptor: "(-3,3,1)"
+
+    verbosity_level: 5
+
+  PionAbs_input_manifest: {
+      # Not needed, as we don't include multiplicity reweights
+      input_file: ""
+      inputs: []
+   }
+}
+
+syst_providers: [PionAbsProvider_toolconfig]
+
 
 syst_providers: [
     CCQETemplateSF_Tool_Config,
@@ -440,7 +457,8 @@ syst_providers: [
     zexpansion_weighter_MINERvA_Tool_Config,
     SuSAv2ToValencia_MECInterp_q0binned_Tool_Config,
     SuSAv2ToMartini_MECInterp_q0binned_Tool_Config,
-    CCQEXSecCorr_Tool_Config
+    CCQEXSecCorr_Tool_Config,
+    PionAbsProvider_toolconfig
 ]
 
 

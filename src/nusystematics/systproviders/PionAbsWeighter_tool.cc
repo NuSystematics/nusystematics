@@ -120,9 +120,7 @@ bool PionAbsWeighter::SetupResponseCalculator(
     for( std::vector<std::string>::iterator it_desc = descriptors.begin();
        it_desc != descriptors.end(); ++it_desc ) {
     if( !HasParam( md, *it_desc ) ) {
-      throw incorrectly_configured()
-	<< "[ERROR]: Expected to find parameter named "
-	<< std::quoted(*it_desc);
+      continue;
     }
 
     //pidx_Params[i] = GetParamIndex(md, ParamPrettyNames[i]);
