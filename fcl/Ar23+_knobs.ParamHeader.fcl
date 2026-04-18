@@ -863,6 +863,34 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "MECq0q3InterpWeighting"
    }
+   PionAbsWeighter_SBN_v3: {
+      QuasiDeuteronFraction: {
+         isSplineable: true
+         paramVariations: [
+            -3,
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3
+         ]
+         prettyName: "QuasiDeuteronFraction"
+         systParamId: 48
+      }
+      instance_name: "SBN_v3"
+      parameter_headers: [
+         "QuasiDeuteronFraction"
+      ]
+      tool_options: {
+         PionAbs_input_manifest: {
+            input_file: ""
+            inputs: []
+         }
+         verbosity_level: 5
+      }
+      tool_type: "PionAbsWeighter"
+   }
    QEInterference_SBN_v3: {
       QEIntf_dial_0: {
          isSplineable: true
@@ -1150,7 +1178,8 @@ generated_systematic_provider_configuration: {
       "ZExpPCAWeighter_MINERvA_SBN_v3",
       "MECq0q3InterpWeighting_SuSAv2ToValencia_SBN_v3",
       "MECq0q3InterpWeighting_SuSAv2ToMartini_SBN_v3",
-      "CCQEXSecCorr_SBN_v3"
+      "CCQEXSecCorr_SBN_v3",
+      "PionAbsWeighter_SBN_v3"
    ]
 }
 
