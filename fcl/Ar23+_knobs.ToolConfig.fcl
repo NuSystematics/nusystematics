@@ -124,32 +124,6 @@ GENIEFSIReWeight_Multisigma_Tool_Config: {
 
     ignore_parameter_dependence: true
 
-    # Old MEC
-    NormCCMEC_central_value: 0
-    NormCCMEC_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    NormNCMEC_central_value: 0
-    NormNCMEC_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    DecayAngMEC_central_value: 0
-    DecayAngMEC_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-
-    # Old QE
-    VecFFCCQEshape_central_value: 0
-    VecFFCCQEshape_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    CoulombCCQE_central_value: 0
-    CoulombCCQE_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    
-    # Old (pi) FSI
-    MFP_pi_central_value: 0
-    MFP_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    FrCEx_pi_central_value: 0
-    FrCEx_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    FrInel_pi_central_value: 0
-    FrInel_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    FrAbs_pi_central_value: 0
-    FrAbs_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    FrPiProd_pi_central_value: 0
-    FrPiProd_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-
     FrG4_N_central_value: 0
     FrG4_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
     FrINCL_N_central_value: 0

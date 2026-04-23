@@ -12,7 +12,7 @@
 // https://github.com/GENIE-MC/Reweight/pull/45
 // Assuming these are activated for GENIE>=3.08.00 for now (01/12/2026),
 // but need to be updated
-#if BUILD_AR25_FSI_DIALS
+#ifdef BUILD_AR25_FSI_DIALS
 #include "RwCalculators/GReWeightINukeExtra.h"
 #include "RwCalculators/GReWeightINukeKinematics.h"
 #endif
@@ -482,7 +482,7 @@ ConfigureFSIWeightEngine(systtools::SystMetaData const &FSImd,
        kINukeTwkDial_FrAbs_N, kINukeTwkDial_FrPiProd_N},
       "INuke_N", []() { return new GReWeightINuke; }, UseFullHERG, param_map);
 
-#if BUILD_AR25_FSI_DIALS
+#ifdef BUILD_AR25_FSI_DIALS
   // Fates
   AddIndependentParameters(
       FSImd, {kINukeTwkDial_G4_N, kINukeTwkDial_INCL_N,
