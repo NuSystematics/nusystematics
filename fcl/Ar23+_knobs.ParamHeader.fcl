@@ -329,7 +329,7 @@ generated_systematic_provider_configuration: {
          isCorrection: true
          isSplineable: true
          prettyName: "CCQEXSecCorr"
-         systParamId: 47
+         systParamId: 53
       }
       instance_name: "SBN_v3"
       parameter_headers: [
@@ -414,7 +414,7 @@ generated_systematic_provider_configuration: {
       tool_type: "CCQEXSecCorr"
    }
    GENIEReWeight_EDepFSI_SBN_v3: {
-      CoulombCCQE: {
+      FrG4HiE_N: {
          centralParamValue: 0
          isSplineable: true
          paramVariations: [
@@ -425,38 +425,10 @@ generated_systematic_provider_configuration: {
             3,
             -3
          ]
-         prettyName: "CoulombCCQE"
-         systParamId: 22
-      }
-      DecayAngMEC: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "DecayAngMEC"
-         systParamId: 25
-      }
-      FrAbs_pi: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrAbs_pi"
+         prettyName: "FrG4HiE_N"
          systParamId: 29
       }
-      FrCEx_pi: {
+      FrG4LoE_N: {
          centralParamValue: 0
          isSplineable: true
          paramVariations: [
@@ -467,66 +439,10 @@ generated_systematic_provider_configuration: {
             3,
             -3
          ]
-         prettyName: "FrCEx_pi"
-         systParamId: 27
-      }
-      FrInel_pi: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrInel_pi"
-         systParamId: 28
-      }
-      FrPiProd_pi: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "FrPiProd_pi"
-         systParamId: 30
-      }
-      MFP_pi: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "MFP_pi"
-         systParamId: 26
-      }
-      NormCCMEC: {
-         centralParamValue: 0
-         isSplineable: true
-         paramVariations: [
-            1,
-            -1,
-            2,
-            -2,
-            3,
-            -3
-         ]
-         prettyName: "NormCCMEC"
+         prettyName: "FrG4LoE_N"
          systParamId: 23
       }
-      NormNCMEC: {
+      FrG4M1E_N: {
          centralParamValue: 0
          isSplineable: true
          paramVariations: [
@@ -537,10 +453,66 @@ generated_systematic_provider_configuration: {
             3,
             -3
          ]
-         prettyName: "NormNCMEC"
+         prettyName: "FrG4M1E_N"
+         systParamId: 25
+      }
+      FrG4M2E_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "FrG4M2E_N"
+         systParamId: 27
+      }
+      FrG4_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "FrG4_N"
+         systParamId: 21
+      }
+      FrINCLHiE_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "FrINCLHiE_N"
+         systParamId: 30
+      }
+      FrINCLLoE_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "FrINCLLoE_N"
          systParamId: 24
       }
-      VecFFCCQEshape: {
+      FrINCLM1E_N: {
          centralParamValue: 0
          isSplineable: true
          paramVariations: [
@@ -551,21 +523,139 @@ generated_systematic_provider_configuration: {
             3,
             -3
          ]
-         prettyName: "VecFFCCQEshape"
-         systParamId: 21
+         prettyName: "FrINCLM1E_N"
+         systParamId: 26
+      }
+      FrINCLM2E_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "FrINCLM2E_N"
+         systParamId: 28
+      }
+      FrINCL_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "FrINCL_N"
+         systParamId: 22
+      }
+      FrKin_PiProBias_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "FrKin_PiProBias_N"
+         systParamId: 36
+      }
+      FrKin_PiProFix_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "FrKin_PiProFix_N"
+         systParamId: 35
+      }
+      MFPHiE_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "MFPHiE_N"
+         systParamId: 34
+      }
+      MFPLoE_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "MFPLoE_N"
+         systParamId: 31
+      }
+      MFPM1E_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "MFPM1E_N"
+         systParamId: 32
+      }
+      MFPM2E_N: {
+         centralParamValue: 0
+         isSplineable: true
+         paramVariations: [
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3
+         ]
+         prettyName: "MFPM2E_N"
+         systParamId: 33
       }
       instance_name: "EDepFSI_SBN_v3"
       parameter_headers: [
-         "VecFFCCQEshape",
-         "CoulombCCQE",
-         "NormCCMEC",
-         "NormNCMEC",
-         "DecayAngMEC",
-         "MFP_pi",
-         "FrCEx_pi",
-         "FrInel_pi",
-         "FrAbs_pi",
-         "FrPiProd_pi"
+         "FrG4_N",
+         "FrINCL_N",
+         "FrG4LoE_N",
+         "FrINCLLoE_N",
+         "FrG4M1E_N",
+         "FrINCLM1E_N",
+         "FrG4M2E_N",
+         "FrINCLM2E_N",
+         "FrG4HiE_N",
+         "FrINCLHiE_N",
+         "MFPLoE_N",
+         "MFPM1E_N",
+         "MFPM2E_N",
+         "MFPHiE_N",
+         "FrKin_PiProFix_N",
+         "FrKin_PiProBias_N"
       ]
       tool_options: {
          AxFFCCQEDipoleToZExp: false
@@ -594,7 +684,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin0"
-         systParamId: 43
+         systParamId: 49
       }
       MECResponse_q0bin1: {
          centralParamValue: 0
@@ -608,7 +698,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin1"
-         systParamId: 44
+         systParamId: 50
       }
       MECResponse_q0bin2: {
          centralParamValue: 0
@@ -622,7 +712,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin2"
-         systParamId: 45
+         systParamId: 51
       }
       MECResponse_q0bin3: {
          centralParamValue: 0
@@ -636,7 +726,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin3"
-         systParamId: 46
+         systParamId: 52
       }
       instance_name: "SuSAv2ToMartini_SBN_v3"
       parameter_headers: [
@@ -735,7 +825,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin0"
-         systParamId: 39
+         systParamId: 45
       }
       MECResponse_q0bin1: {
          centralParamValue: 0
@@ -749,7 +839,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin1"
-         systParamId: 40
+         systParamId: 46
       }
       MECResponse_q0bin2: {
          centralParamValue: 0
@@ -763,7 +853,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin2"
-         systParamId: 41
+         systParamId: 47
       }
       MECResponse_q0bin3: {
          centralParamValue: 0
@@ -777,7 +867,7 @@ generated_systematic_provider_configuration: {
             -3
          ]
          prettyName: "MECResponse_q0bin3"
-         systParamId: 42
+         systParamId: 48
       }
       instance_name: "SuSAv2ToValencia_SBN_v3"
       parameter_headers: [
@@ -876,7 +966,7 @@ generated_systematic_provider_configuration: {
             3
          ]
          prettyName: "QuasiDeuteronFraction"
-         systParamId: 48
+         systParamId: 54
       }
       instance_name: "SBN_v3"
       parameter_headers: [
@@ -1039,7 +1129,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b1"
-         systParamId: 31
+         systParamId: 37
       }
       b2: {
          isSplineable: true
@@ -1053,7 +1143,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b2"
-         systParamId: 32
+         systParamId: 38
       }
       b3: {
          isSplineable: true
@@ -1067,7 +1157,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b3"
-         systParamId: 33
+         systParamId: 39
       }
       b4: {
          isSplineable: true
@@ -1081,7 +1171,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b4"
-         systParamId: 34
+         systParamId: 40
       }
       instance_name: "Deuterium_SBN_v3"
       parameter_headers: [
@@ -1110,7 +1200,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b1"
-         systParamId: 35
+         systParamId: 41
       }
       b2: {
          isSplineable: true
@@ -1124,7 +1214,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b2"
-         systParamId: 36
+         systParamId: 42
       }
       b3: {
          isSplineable: true
@@ -1138,7 +1228,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b3"
-         systParamId: 37
+         systParamId: 43
       }
       b4: {
          isSplineable: true
@@ -1152,7 +1242,7 @@ generated_systematic_provider_configuration: {
             0
          ]
          prettyName: "b4"
-         systParamId: 38
+         systParamId: 44
       }
       instance_name: "MINERvA_SBN_v3"
       parameter_headers: [
