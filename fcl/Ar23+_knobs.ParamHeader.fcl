@@ -1,6 +1,6 @@
 generated_systematic_provider_configuration: {
-   CCQETemplateReweight_LFGToCRPA_SBN_v3: {
-      instance_name: "LFGToCRPA_SBN_v3"
+   CCQETemplateReweight_SBN_v3_HFToCRPA: {
+      instance_name: "SBN_v3_HFToCRPA"
       parameter_headers: [
          "q0bin0",
          "q0bin1",
@@ -107,8 +107,8 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "CCQETemplateReweight"
    }
-   CCQETemplateReweight_LFGToHF_SBN_v3: {
-      instance_name: "LFGToHF_SBN_v3"
+   CCQETemplateReweight_SBN_v3_LFGToHF: {
+      instance_name: "SBN_v3_LFGToHF"
       parameter_headers: [
          "q0bin0",
          "q0bin1",
@@ -215,8 +215,8 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "CCQETemplateReweight"
    }
-   CCQETemplateReweight_LFGToSF_SBN_v3: {
-      instance_name: "LFGToSF_SBN_v3"
+   CCQETemplateReweight_SBN_v3_LFGToSF: {
+      instance_name: "SBN_v3_LFGToSF"
       parameter_headers: [
          "q0bin0",
          "q0bin1",
@@ -413,7 +413,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "CCQEXSecCorr"
    }
-   GENIEReWeight_EDepFSI_SBN_v3: {
+   GENIEReWeight_SBN_v3: {
       FrG4HiE_N: {
          centralParamValue: 0
          isSplineable: true
@@ -638,7 +638,7 @@ generated_systematic_provider_configuration: {
          prettyName: "MFPM2E_N"
          systParamId: 33
       }
-      instance_name: "EDepFSI_SBN_v3"
+      instance_name: "SBN_v3"
       parameter_headers: [
          "FrG4_N",
          "FrINCL_N",
@@ -671,7 +671,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "GENIEReWeight"
    }
-   MECq0q3InterpWeighting_SuSAv2ToMartini_SBN_v3: {
+   MECq0q3InterpWeighting_SBN_v3_SuSAToMar: {
       MECResponse_q0bin0: {
          centralParamValue: 0
          isSplineable: true
@@ -728,7 +728,7 @@ generated_systematic_provider_configuration: {
          prettyName: "MECResponse_q0bin3"
          systParamId: 52
       }
-      instance_name: "SuSAv2ToMartini_SBN_v3"
+      instance_name: "SBN_v3_SuSAToMar"
       parameter_headers: [
          "MECResponse_q0bin0",
          "MECResponse_q0bin1",
@@ -812,7 +812,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "MECq0q3InterpWeighting"
    }
-   MECq0q3InterpWeighting_SuSAv2ToValencia_SBN_v3: {
+   MECq0q3InterpWeighting_SBN_v3_SuSAToVal: {
       MECResponse_q0bin0: {
          centralParamValue: 0
          isSplineable: true
@@ -869,7 +869,7 @@ generated_systematic_provider_configuration: {
          prettyName: "MECResponse_q0bin3"
          systParamId: 48
       }
-      instance_name: "SuSAv2ToValencia_SBN_v3"
+      instance_name: "SBN_v3_SuSAToVal"
       parameter_headers: [
          "MECResponse_q0bin0",
          "MECResponse_q0bin1",
@@ -1116,7 +1116,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "QEInterference"
    }
-   ZExpPCAWeighter_Deuterium_SBN_v3: {
+   ZExpPCAWeighter_SBN_v3_Deut: {
       b1: {
          isSplineable: true
          paramVariations: [
@@ -1173,7 +1173,7 @@ generated_systematic_provider_configuration: {
          prettyName: "b4"
          systParamId: 40
       }
-      instance_name: "Deuterium_SBN_v3"
+      instance_name: "SBN_v3_Deut"
       parameter_headers: [
          "b1",
          "b2",
@@ -1187,7 +1187,7 @@ generated_systematic_provider_configuration: {
       }
       tool_type: "ZExpPCAWeighter"
    }
-   ZExpPCAWeighter_MINERvA_SBN_v3: {
+   ZExpPCAWeighter_SBN_v3_MvA: {
       b1: {
          isSplineable: true
          paramVariations: [
@@ -1244,7 +1244,7 @@ generated_systematic_provider_configuration: {
          prettyName: "b4"
          systParamId: 44
       }
-      instance_name: "MINERvA_SBN_v3"
+      instance_name: "SBN_v3_MvA"
       parameter_headers: [
          "b1",
          "b2",
@@ -1259,15 +1259,15 @@ generated_systematic_provider_configuration: {
       tool_type: "ZExpPCAWeighter"
    }
    syst_providers: [
-      "CCQETemplateReweight_LFGToSF_SBN_v3",
-      "CCQETemplateReweight_LFGToHF_SBN_v3",
-      "CCQETemplateReweight_LFGToCRPA_SBN_v3",
+      "CCQETemplateReweight_SBN_v3_LFGToSF",
+      "CCQETemplateReweight_SBN_v3_LFGToHF",
+      "CCQETemplateReweight_SBN_v3_HFToCRPA",
       "QEInterference_SBN_v3",
-      "GENIEReWeight_EDepFSI_SBN_v3",
-      "ZExpPCAWeighter_Deuterium_SBN_v3",
-      "ZExpPCAWeighter_MINERvA_SBN_v3",
-      "MECq0q3InterpWeighting_SuSAv2ToValencia_SBN_v3",
-      "MECq0q3InterpWeighting_SuSAv2ToMartini_SBN_v3",
+      "GENIEReWeight_SBN_v3",
+      "ZExpPCAWeighter_SBN_v3_Deut",
+      "ZExpPCAWeighter_SBN_v3_MvA",
+      "MECq0q3InterpWeighting_SBN_v3_SuSAToVal",
+      "MECq0q3InterpWeighting_SBN_v3_SuSAToMar",
       "CCQEXSecCorr_SBN_v3",
       "PionAbsWeighter_SBN_v3"
    ]
