@@ -281,7 +281,12 @@ struct TweakSummaryTree {
 namespace cliopts {
 std::string fclname = "";
 std::string genie_input = "";
-std::string genie_branch_name = "gmcrec";
+// gevgen outupt
+//std::string genie_tree_name = "gtree";
+//std::string genie_branch_name = "gmcrec";
+// DUNE CAF
+std::string genie_tree_name = "genieEvt";
+std::string genie_branch_name = "genie_record";
 std::string outputfile = "";
 std::string envvar = "FHICL_FILE_PATH";
 std::string fhicl_key = "generated_systematic_provider_configuration";
@@ -366,7 +371,7 @@ int main(int argc, char const *argv[]) {
     phh = response_helper(cliopts::fclname);
   }
 
-  TChain *gevs = new TChain("gtree");
+  TChain *gevs = new TChain(cliopts::genie_tree_name.c_str());
   if (!gevs->Add(cliopts::genie_input.c_str())) {
     std::cout << "[ERROR]: Failed to find any TTrees named "
               << std::quoted("gtree") << ", from TChain::Add descriptor: "
