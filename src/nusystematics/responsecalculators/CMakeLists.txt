@@ -21,6 +21,7 @@ SET(RSPC_HDRFILES
   FSIReweightCalculator.hh
   QEInterferenceResponseCalculator.hh
   MECq0q3ResponseCalc.hh
+  DUNEDAS2026ExampleReweighter_calculator.hh
 )
 
 

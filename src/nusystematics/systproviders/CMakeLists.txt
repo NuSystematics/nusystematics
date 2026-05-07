@@ -15,6 +15,7 @@ SET(SYSTP_IMPLFILES
   WSReweight_tool.cc
   QEInterference_tool.cc
   MECq0q3InterpWeighting_tool.cc
+  DUNEDAS2026ExampleReweighter_tool.cc
   )
 
 if(GENIEReWeight_ENABLED)
@@ -43,6 +44,7 @@ SET(SYSTP_HDRFILES
   WSReweight_tool.hh
   QEInterference_tool.hh
   MECq0q3InterpWeighting_tool.hh
+  DUNEDAS2026ExampleReweighter_tool.hh
 )
 
 if(GENIEReWeight_ENABLED)
