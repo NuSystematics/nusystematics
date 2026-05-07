@@ -99,7 +99,6 @@ DUNEDAS2026ExampleReweighter::GetEventResponse(genie::EventRecord const &ev) {
   systtools::event_unit_response_t resp;
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  //------ DDAS Exercise 1-3 START
   // If pidx_DialA is found and set from SetupResponseCalculator,
   // it must be different from systtools::kParamUnhandled<size_t>.
   // Then we evaluate the reweight for DialA
@@ -117,7 +116,6 @@ DUNEDAS2026ExampleReweighter::GetEventResponse(genie::EventRecord const &ev) {
       resp.back().responses.push_back( GetReweight_DialB(Q2, var) );
     }
   }
-  //------ DDAS Exercise 1-3 END
 
   return resp;
 }
