@@ -89,9 +89,9 @@ DUNEDAS2026ExampleReweighter::GetEventResponse(genie::EventRecord const &ev) {
   genie::GHepParticle *ISLep = ev.Probe();
 
   //------ DDAS Exercise 1-2 START
-  TLorentzVector FSLepP4 = *FSLep->P4();
   TLorentzVector ISLepP4 = *ISLep->P4();
-  TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
+  TLorentzVector FSLepP4 = *FSLep->P4();
+  double Q2 = 0;
   //------ DDAS Exercise 1-2 END
 
   // now make the output
@@ -107,13 +107,14 @@ DUNEDAS2026ExampleReweighter::GetEventResponse(genie::EventRecord const &ev) {
     resp.push_back( {md[pidx_DialA].systParamId, {}} );
     for (double var : md[pidx_DialA].paramVariations) {
       // var is pariations (e.g., -1, 0, 1...)
-      resp.back().responses.push_back( GetReweight_DialA(FSLepP4.E(), var) );
+      resp.back().responses.push_back( GetReweight_DialA(Q2, var) );
     } 
   }
+  // Same for DialB
   if (pidx_DialB != systtools::kParamUnhandled<size_t>) {
     resp.push_back( {md[pidx_DialB].systParamId, {}} );
     for (double var : md[pidx_DialB].paramVariations) {
-      resp.back().responses.push_back( GetReweight_DialB(FSLepP4.E(), var) );
+      resp.back().responses.push_back( GetReweight_DialB(Q2, var) );
     }
   }
   //------ DDAS Exercise 1-3 END
