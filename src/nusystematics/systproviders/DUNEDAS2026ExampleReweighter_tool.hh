@@ -23,6 +23,7 @@ public:
 
   bool SetupResponseCalculator(fhicl::ParameterSet const &);
 
+  // Extra options are saved in tool_options
   fhicl::ParameterSet GetExtraToolOptions() { return tool_options; }
 
   systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const &,
