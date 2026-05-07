@@ -15,7 +15,8 @@ using namespace fhicl;
 
 DUNEDAS2026ExampleReweighter::DUNEDAS2026ExampleReweighter(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-      pidx_DDAS(systtools::kParamUnhandled<size_t>){
+      pidx_DialA(systtools::kParamUnhandled<size_t>),
+      pidx_DialB(systtools::kParamUnhandled<size_t>){
 
 }
 
@@ -55,7 +56,7 @@ bool DUNEDAS2026ExampleReweighter::SetupResponseCalculator(
   //------ DDAS TASK START
   // Check if the Dial 
   if(HasParam(md, "DIALNAME")){
-    pidx_DDAS = GetParamIndex(md, "DIALNAME");
+    pidx_DialA = GetParamIndex(md, "DIALNAME");
   }
   //------ DDAS TASK END
 
@@ -68,21 +69,28 @@ DUNEDAS2026ExampleReweighter::GetEventResponse(genie::EventRecord const &ev) {
   genie::GHepParticle *FSLep = ev.FinalStatePrimaryLepton();
   genie::GHepParticle *ISLep = ev.Probe();
 
+  //------ DDAS TASK START
   TLorentzVector FSLepP4 = *FSLep->P4();
   TLorentzVector ISLepP4 = *ISLep->P4();
   TLorentzVector emTransfer = (ISLepP4 - FSLepP4);
+  //------ DDAS TASK START
 
   // now make the output
   // 1) Make an empty object
   systtools::event_unit_response_t resp;
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  if (pidx_DDAS != systtools::kParamUnhandled<size_t>) {
-    resp.push_back( {md[pidx_DDAS].systParamId, {}} );
-    for (double var : md[pidx_DDAS].paramVariations) {
+  //------ DDAS TASK START
+  // If pidx_DialA is found and set from SetupResponseCalculator,
+  // it must be different from systtools::kParamUnhandled<size_t>.
+  // Then we evaluate the reweight for DialA
+  if (pidx_DialA != systtools::kParamUnhandled<size_t>) {
+    resp.push_back( {md[pidx_DialA].systParamId, {}} );
+    for (double var : md[pidx_DialA].paramVariations) {
       resp.back().responses.push_back( GetMyWeight(FSLepP4.E()) );
     } 
   }
+  //------ DDAS TASK END
 
   return resp;
 }

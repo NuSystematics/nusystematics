@@ -37,7 +37,7 @@ public:
 private:
 
   fhicl::ParameterSet tool_options;
-  size_t pidx_DDAS;
+  size_t pidx_DialA, pidx_DialB;
 
 };
 
