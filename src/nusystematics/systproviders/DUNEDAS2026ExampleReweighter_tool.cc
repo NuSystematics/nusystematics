@@ -78,6 +78,12 @@ bool DUNEDAS2026ExampleReweighter::SetupResponseCalculator(
   std::string OPT_STRING = tool_options.get<std::string>("OPT_STRING", "");
   bool OPT_BOOL = tool_options.get<bool>("OPT_BOOL", false);
   fhicl::ParameterSet OPT_PSET = tool_options.get<fhicl::ParameterSet>("OPT_PSET");
+  std::string OPT_ROOTFileName = OPT_PSET.get<std::string>("ROOTFileName", "");
+  std::string OPT_HistName = OPT_PSET.get<std::string>("HistName", "");
+  if(OPT_ROOTFileName!="" && OPT_HistName!=""){
+    printf("[DUNEDAS2026ExampleReweighter::SetupResponseCalculator] ROOTFileName: %s\n", OPT_ROOTFileName.c_str());
+    printf("[DUNEDAS2026ExampleReweighter::SetupResponseCalculator] HistName: %s\n", OPT_HistName.c_str());
+  }
 
   return true;
 }
