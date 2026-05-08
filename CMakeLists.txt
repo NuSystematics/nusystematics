@@ -27,7 +27,7 @@ find_package(ROOT 6.10 REQUIRED)
 
 CPMFindPackage(
     NAME systematicstools
-    GIT_TAG v02_00_04
+    GIT_TAG DDAS2026
     GITHUB_REPOSITORY NuSystematics/systematicstools
 )
 
