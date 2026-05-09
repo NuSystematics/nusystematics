@@ -91,14 +91,25 @@ bool DUNEDAS2026ExampleReweighter::SetupResponseCalculator(
 event_unit_response_t
 DUNEDAS2026ExampleReweighter::GetEventResponse(genie::EventRecord const &ev) {
 
+  // Process info
+  genie::ProcessInfo const& procinfo = ev.Summary()->ProcInfo();
+  //------ DDAS Exercise 1-2 START
+  bool IsCC = true;
+  bool IsQE = true;
+  if(!IsCC || !IsQE){
+    // This is a pre-defined function that fills 1.0
+    return this->GetDefaultEventResponse();
+  }
+  //------ DDAS Exercise 1-2 END
+
+  //------ DDAS Exercise 1-3 START
   genie::GHepParticle *FSLep = ev.FinalStatePrimaryLepton();
   genie::GHepParticle *ISLep = ev.Probe();
 
-  //------ DDAS Exercise 1-2 START
   TLorentzVector ISLepP4 = *ISLep->P4();
   TLorentzVector FSLepP4 = *FSLep->P4();
   double Q2 = 0;
-  //------ DDAS Exercise 1-2 END
+  //------ DDAS Exercise 1-3 END
 
   // now make the output
   // 1) Make an empty object

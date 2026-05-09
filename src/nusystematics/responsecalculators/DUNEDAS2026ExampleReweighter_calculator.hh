@@ -7,16 +7,16 @@
 
 namespace nusyst {
 
-//------ DDAS Exercise 1-3 START
+//------ DDAS Exercise 1-4 START
 inline double GetReweight_DialA(double Q2, double var){
   return 1.0;
 }
-//------ DDAS Exercise 1-3 END
+//------ DDAS Exercise 1-4 END
 
-//------ DDAS Exercise 1-4 START
+//------ DDAS Hemework START
 inline double GetReweight_DialB(double Q2, double var){
   return 1.0;
 }
-//------ DDAS Exercise 1-4 START
+//------ DDAS Homework END
 
 } // namespace nusyst
