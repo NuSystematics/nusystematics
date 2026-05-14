@@ -13,7 +13,7 @@ inline double GetReweight_DialA(double Q2, double var){
 }
 //------ DDAS Exercise 1-4 END
 
-//------ DDAS Hemework START
+//------ DDAS Homework START
 inline double GetReweight_DialB(double Q2, double var){
   return 1.0;
 }
