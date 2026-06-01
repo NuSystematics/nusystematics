@@ -20,6 +20,7 @@ SET(RSPC_HDRFILES
   CCQETemplateReweightCalculator.hh
   FSIReweightCalculator.hh
   FSIReweightCalculatorMult.hh
+  PionAbsResponseCalculator.hh 
   QEInterferenceResponseCalculator.hh
   MECq0q3ResponseCalc.hh
 )

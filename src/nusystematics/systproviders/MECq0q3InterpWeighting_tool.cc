@@ -18,6 +18,7 @@
 
 // SystematicsTools helper
 #include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/string_parsers.hh"
 
 // GENIE
 #include "Framework/GHEP/GHepParticle.h"
@@ -29,6 +30,8 @@
 
 using namespace nusyst;
 using namespace systtools;
+
+NEW_SYSTTOOLS_EXCEPT(invalid_MEC_DataBaseDir_FILEPATH);
 
 MECq0q3InterpWeighting::MECq0q3InterpWeighting(
     const fhicl::ParameterSet& p)
@@ -231,7 +234,9 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   
   // Read DataBaseDir for auto-generation (model already read earlier for outOfRangeWeight)
   std::string dataBaseDir = manifest.get<std::string>("DataBaseDir", "");
-  
+
+  dataBaseDir = systtools::expand_env_vars(dataBaseDir);
+
   std::vector<std::string> np_files, nn_files;
   
   // If Model is specified, auto-generate file paths

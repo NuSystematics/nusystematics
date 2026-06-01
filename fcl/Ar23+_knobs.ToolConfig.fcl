@@ -1,0 +1,438 @@
+# PRE MEC binning update
+#
+CCQETemplateSF_Tool_Config: {
+
+    tool_type: "CCQETemplateReweight"
+    instance_name: "SBN_v3_LFGToSF"
+    q0_bin_edges: "[0.0, 0.05, 0.10, 0.20, 0.7, 10.0]"
+
+    # weight in four q0 bins
+    q0bin0_central_value: 0
+    q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    q0bin1_central_value: 0
+    q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    q0bin2_central_value: 0
+    q0bin2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    q0bin3_central_value: 0
+    q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    q0bin4_central_value: 0
+    q0bin4_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    CCQETemplateReweight_input_manifest: {
+      RWMode: "q3q0"
+      ENuBoundary: 10.0
+      input_file: "$SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root"
+      inputs: [
+          {
+            name: "LowE_WithTemplate"
+            input_hist: "h_ENuq3q0_AR25_SF"
+          },
+          {
+            name: "LowE_WithoutTemplate"
+            input_hist: "h_ENuq3q0_AR23"
+          }
+      ]
+    }
+}
+
+CCQETemplateHF_Tool_Config: @local::CCQETemplateSF_Tool_Config
+CCQETemplateHF_Tool_Config.instance_name: "SBN_v3_LFGToHF"
+CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
+CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
+          {
+            name: "LowE_WithTemplate"
+            input_hist: "LowE/h_ENuq3q0_G21_HF"
+          },
+          {
+            name: "LowE_WithoutTemplate"
+            input_hist: "LowE/h_ENuq3q0_AR23"
+          }
+]
+
+CCQETemplateCRPA_Tool_Config: @local::CCQETemplateSF_Tool_Config
+CCQETemplateCRPA_Tool_Config.instance_name: "SBN_v3_HFToCRPA"
+CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
+CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
+  {
+    name: "LowE_WithTemplate"
+    input_hist: "LowE/h_ENuq3q0_G21_HF-CRPA"
+  },
+  {
+    name: "LowE_WithoutTemplate"
+    input_hist: "LowE/h_ENuq3q0_G21_HF"
+  }
+]
+
+ QEInterference_Tool_Config: {
+    tool_type: "QEInterference"
+    instance_name: "SBN_v3"
+
+    QEIntf_dial_0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    QEIntf_dial_1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    QEIntf_dial_2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    QEIntf_dial_3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    QEIntf_dial_4_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    QEIntf_dial_5_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    q0_bin_edges: "[0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 3.0]"
+
+    verbosity_level: 5
+
+    QEInterference_input_manifest: {
+      input_file: "$SBNDATA_DIR/systematics/AR23Plus/ACHILLES_weights.root"
+      inputs: [
+          {
+            name: "numu_cc"
+            input_hist: "numu_cc_weights"
+            input_enu_bins: "numu_cc_enu_bins"
+            input_q0_bins: "numu_cc_q0_bins"
+            input_q3_bins: "numu_cc_q3_bins"
+          },
+          {
+            name: "nue_cc"
+            input_hist: "nue_cc_weights"
+            input_enu_bins: "nue_cc_enu_bins"
+            input_q0_bins: "nue_cc_q0_bins"
+            input_q3_bins: "nue_cc_q3_bins"
+          },
+          {
+            name: "numu_nc"
+            input_hist: "numu_nc_weights"
+            input_enu_bins: "numu_nc_enu_bins"
+            input_q0_bins: "numu_nc_q0_bins"
+            input_q3_bins: "numu_nc_q3_bins"
+          },
+          {
+            name: "nue_nc"
+            input_hist: "nue_nc_weights"
+            input_enu_bins: "nue_nc_enu_bins"
+            input_q0_bins: "nue_nc_q0_bins"
+            input_q3_bins: "nue_nc_q3_bins"
+          }
+      ]
+    }
+}
+
+GENIEFSIReWeight_Multisigma_Tool_Config: {
+    tool_type: "GENIEReWeight"
+
+    instance_name: "SBN_v3"
+
+    # Keep one GENIEReWeight instance per discrete dial tweak in memory
+    # Requires no reconfigures within the event loop
+    UseFullHERG: true
+
+    ignore_parameter_dependence: true
+
+    FrG4_N_central_value: 0
+    FrG4_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    FrINCL_N_central_value: 0
+    FrINCL_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    FrG4LoE_N_central_value: 0
+    FrG4LoE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    FrINCLLoE_N_central_value: 0
+    FrINCLLoE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    FrG4M1E_N_central_value: 0
+    FrG4M1E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    FrINCLM1E_N_central_value: 0
+    FrINCLM1E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    FrG4M2E_N_central_value: 0
+    FrG4M2E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    FrINCLM2E_N_central_value: 0
+    FrINCLM2E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    FrG4HiE_N_central_value: 0
+    FrG4HiE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    FrINCLHiE_N_central_value: 0
+    FrINCLHiE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    FrKin_PiProFix_N_central_value: 0
+    FrKin_PiProFix_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    FrKin_PiProBias_N_central_value: 0
+    FrKin_PiProBias_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+    MFPLoE_N_central_value: 0
+    MFPLoE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    MFPM1E_N_central_value: 0
+    MFPM1E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    MFPM2E_N_central_value: 0
+    MFPM2E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+    MFPHiE_N_central_value: 0
+    MFPHiE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+}
+
+zexpansion_weighter_MINERvA_Tool_Config: {
+    tool_type: "ZExpPCAWeighter"
+    instance_name: "SBN_v3_MvA"
+
+    b1_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+    b2_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+    b3_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+    b4_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+
+    verbosity_level: 5
+    RWtoPub: "Nature_614_102522"
+}
+
+zexpansion_weighter_Deuterium_Tool_Config: {
+    tool_type: "ZExpPCAWeighter"
+    instance_name: "SBN_v3_Deut"
+
+    b1_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+    b2_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+    b3_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+    b4_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+
+    verbosity_level: 5
+    RWtoPub: "PRD_93_113015"
+}
+
+SuSAv2ToValencia_MECInterp_q0binned_Tool_Config: {
+
+  tool_type: "MECq0q3InterpWeighting"
+  instance_name: "SBN_v3_SuSAToVal"
+
+  # ============================================================
+  # Q0-BINNED MODE: Multiple independent dials per q0 bin
+  # 
+  # This configuration creates 4 independent dials:
+  #   dial0: q0 [0.0, 0.2) GeV
+  #   dial1: q0 [0.2, 0.4) GeV
+  #   dial2: q0 [0.4, 0.6) GeV
+  #   dial3: q0 [0.6, 1.0) GeV
+  #
+  # EFFICIENCY: Weight templates are read ONCE and shared across
+  # all dials. Each event activates only the dial for its q0 bin.
+  # ============================================================
+
+  # Define multiple q0-binned dials (one per bin)
+  MECResponse_q0bin0_central_value: 0
+  MECResponse_q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  
+  MECResponse_q0bin1_central_value: 0
+  MECResponse_q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  
+  MECResponse_q0bin2_central_value: 0
+  MECResponse_q0bin2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  
+  MECResponse_q0bin3_central_value: 0
+  MECResponse_q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+  MECResponse_input_manifest: {
+
+    # ============================================================
+    # MODEL SELECTION
+    # ============================================================
+    Model: "valencia"  # Options: "valencia" or "martini"
+    
+    # Base data directory
+    DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/MEC"
+
+    # ============================================================
+    # Q0 BINNING: Define bin edges for multiple dials
+    # Format: [edge0, edge1, edge2, ..., edgeN]
+    # Creates N-1 bins: [edge0,edge1), [edge1,edge2), ..., [edgeN-1,edgeN]
+    # 
+    # Example: [0.0, 0.2, 0.4, 0.6, 1.0] creates 4 bins:
+    #   bin0: [0.0, 0.2)  -> dial MECResponse_q0bin0
+    #   bin1: [0.2, 0.4)  -> dial MECResponse_q0bin1
+    #   bin2: [0.4, 0.6)  -> dial MECResponse_q0bin2
+    #   bin3: [0.6, 1.0]  -> dial MECResponse_q0bin3
+    # 
+    # Events outside all bins receive weight=1.0 (no reweighting)
+    # ============================================================
+    Q0Bins: [0.0, 0.2, 0.4, 0.6, 10.0]  # GeV
+
+    # Full energy grid (0.4 to 2.5 GeV, 0.05 GeV step)
+    EnergyGrid : [ 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+                   1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55,
+                   1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0, 2.05, 2.1, 2.15,
+                   2.2, 2.25, 2.3, 2.35, 2.4, 2.45, 2.5 ]
+
+    # Weight limits (min, max)
+    WeightLimits : [0.1, 1000.0]
+
+    # Apply window for q0 and q3 (outside these ranges, weight=1.0)
+    # Valencia: q0 up to 1.2 GeV, q3 up to 1.2 GeV (both limited)
+    Q0ApplyMin: 0.0
+    Q0ApplyMax: 1.2
+    Q3ApplyMin: 0.0
+    Q3ApplyMax: 1.2
+
+    # Energy window
+    EnuMin:       0.4
+    EnuMax:       2.5
+    EnuSnapTol:   0.005
+
+    HistNameNP: "h_weights_map;1"
+    HistNameNN: "h_weights_map;1"
+    MapIsQ3xQ0: true
+
+    UseNearestBin: false
+    EdgeClamp: true
+    OutOfRangeWeight: 0.0
+
+  }
+
+}
+
+SuSAv2ToMartini_MECInterp_q0binned_Tool_Config: {
+
+  tool_type: "MECq0q3InterpWeighting"
+  instance_name: "SBN_v3_SuSAToMar"
+
+  # ============================================================
+  # Q0-BINNED MODE: Multiple independent dials per q0 bin
+  # 
+  # This configuration creates 4 independent dials:
+  #   dial0: q0 [0.0, 0.2) GeV
+  #   dial1: q0 [0.2, 0.4) GeV
+  #   dial2: q0 [0.4, 0.6) GeV
+  #   dial3: q0 [0.6, 1.0) GeV
+  #
+  # EFFICIENCY: Weight templates are read ONCE and shared across
+  # all dials. Each event activates only the dial for its q0 bin.
+  # ============================================================
+
+  # Define multiple q0-binned dials (one per bin)
+  MECResponse_q0bin0_central_value: 0
+  MECResponse_q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  
+  MECResponse_q0bin1_central_value: 0
+  MECResponse_q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  
+  MECResponse_q0bin2_central_value: 0
+  MECResponse_q0bin2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  
+  MECResponse_q0bin3_central_value: 0
+  MECResponse_q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+
+  MECResponse_input_manifest: {
+
+    # ============================================================
+    # MODEL SELECTION
+    # ============================================================
+    Model: "martini"  # Options: "valencia" or "martini"
+    
+    # Base data directory
+    DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/MEC"
+
+    # ============================================================
+    # Q0 BINNING: Define bin edges for multiple dials
+    # Format: [edge0, edge1, edge2, ..., edgeN]
+    # Creates N-1 bins: [edge0,edge1), [edge1,edge2), ..., [edgeN-1,edgeN]
+    # 
+    # Example: [0.0, 0.2, 0.4, 0.6, 1.0] creates 4 bins:
+    #   bin0: [0.0, 0.2)  -> dial MECResponse_q0bin0
+    #   bin1: [0.2, 0.4)  -> dial MECResponse_q0bin1
+    #   bin2: [0.4, 0.6)  -> dial MECResponse_q0bin2
+    #   bin3: [0.6, 1.0]  -> dial MECResponse_q0bin3
+    # 
+    # Events outside all bins receive weight=1.0 (no reweighting)
+    # ============================================================
+    Q0Bins: [0.0, 0.2, 0.4, 0.6, 10.0]  # GeV
+
+    # Full energy grid (0.4 to 2.5 GeV, 0.05 GeV step)
+    EnergyGrid : [ 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+                   1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55,
+                   1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0, 2.05, 2.1, 2.15,
+                   2.2, 2.25, 2.3, 2.35, 2.4, 2.45, 2.5 ]
+
+    # Weight limits (min, max)
+    WeightLimits : [0.1, 1000.0]
+
+    # Apply window for q0 and q3 (outside these ranges, weight=1.0)
+    # Martini: q0 up to 0.995 GeV, q3 up to ~2.0 GeV
+    Q0ApplyMin: 0.0
+    Q0ApplyMax: 0.995
+    Q3ApplyMin: 0.0
+    Q3ApplyMax: 2.0
+
+    # Energy window
+    EnuMin:       0.4
+    EnuMax:       2.5
+    EnuSnapTol:   0.005
+
+    HistNameNP: "h_weights_map;1"
+    HistNameNN: "h_weights_map;1"
+    MapIsQ3xQ0: true
+
+    UseNearestBin: false
+    EdgeClamp: true
+    OutOfRangeWeight: 0.0
+  }
+}
+
+CCQEXSecCorr_Tool_Config: {
+
+    tool_type: "CCQEXSecCorr"
+    instance_name: "SBN_v3"
+
+    # Correction dial: central_value only, no variation_descriptor
+    CCQEXSecCorr_central_value: 1
+
+    CCQEXSecCorr_input_manifest: {
+
+      DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/QE-Fix"
+      file_pattern: "reweight_data_v3_04_02a_to_v3_06_02_sbn2_CCQE_%FLAVOR%_%ENERGY%GeV_flat.root"
+      histogram_name: "h_weights_map"
+
+      EnergyGrid: [
+        0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65,
+        0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15,
+        1.20, 1.25, 1.30, 1.35, 1.40, 1.45, 1.50, 1.55, 1.60, 1.65,
+        1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2.00, 2.05, 2.10, 2.15,
+        2.20, 2.25, 2.30, 2.35, 2.40, 2.45, 2.50, 2.55, 2.60, 2.65,
+        2.70, 2.75, 2.80, 2.85, 2.90, 2.95, 3.00
+      ]
+
+      WeightLimits: [0.0, 30.0]
+
+      EnuMin: 0.20
+      EnuMax: 3.00
+      EnuSnapTol: 0.005
+
+      UseNearestBin: true
+      EdgeClamp: true
+    }
+
+    fill_valid_tree: false
+}
+
+PionAbsProvider_toolconfig: {
+    tool_type: "PionAbsWeighter"
+    instance_name: "SBN_v3"
+
+    QuasiDeuteronFraction_variation_descriptor: "(-3,3,1)"
+
+    verbosity_level: 5
+
+  PionAbs_input_manifest: {
+      # Not needed, as we don't include multiplicity reweights
+      input_file: ""
+      inputs: []
+   }
+}
+
+syst_providers: [PionAbsProvider_toolconfig]
+
+
+syst_providers: [
+    CCQETemplateSF_Tool_Config,
+    CCQETemplateHF_Tool_Config,
+    CCQETemplateCRPA_Tool_Config,
+    QEInterference_Tool_Config,
+    GENIEFSIReWeight_Multisigma_Tool_Config,
+    zexpansion_weighter_Deuterium_Tool_Config,
+    zexpansion_weighter_MINERvA_Tool_Config,
+    SuSAv2ToValencia_MECInterp_q0binned_Tool_Config,
+    SuSAv2ToMartini_MECInterp_q0binned_Tool_Config,
+    CCQEXSecCorr_Tool_Config,
+    PionAbsProvider_toolconfig
+]
+
+

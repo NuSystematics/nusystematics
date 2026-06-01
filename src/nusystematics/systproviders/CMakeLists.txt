@@ -11,9 +11,11 @@ SET(SYSTP_IMPLFILES
   DIRT2_Emiss_tool.cc
   CCQERPAReweight_tool.cc
   CCQETemplateReweight_tool.cc
+  CCQEXSecCorr_tool.cc
   FSIReweight_tool.cc
   FSIReweightMult_tool.cc
   WSReweight_tool.cc
+  PionAbsWeighter_tool.cc
   QEInterference_tool.cc
   MECq0q3InterpWeighting_tool.cc
   )
@@ -43,7 +45,9 @@ SET(SYSTP_HDRFILES
   FSIReweight_tool.hh
   FSIReweightMult_tool.hh
   WSReweight_tool.hh
+  PionAbsWeighter_tool.hh
   QEInterference_tool.hh
+  CCQEXSecCorr_tool.hh
   MECq0q3InterpWeighting_tool.hh
 )
 

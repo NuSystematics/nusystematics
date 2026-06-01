@@ -1,0 +1,42 @@
+ PionAbsProvider_toolconfig: {
+    tool_type: "PionAbsWeighter"
+    instance_name: "PionAbsWeighter"
+
+    MultiplicityDiffG4_variation_descriptor:   "(0,1,0.2)"
+    MultiplicityDiffINCL_variation_descriptor: "(0,1,0.2)"
+    QuasiDeuteronFraction_variation_descriptor: "(-3,3,1)"
+
+    verbosity_level: 5
+  
+
+  PionAbs_input_manifest: {
+      input_file: "/exp/sbnd/app/users/mking/nusystematics/histograms/reweights_TH2D_1000180400.root"
+      inputs: [
+          {
+	    name: "PiPlus_G4_Diff"
+	    input_hist: "PiPlus_G4Reweightdiff"
+	  },
+	  { 
+            name: "PiPlus_INCL_Diff"
+            input_hist: "PiPlus_INCLReweightdiff"
+          },
+          { 
+            name: "PiMinus_G4_Diff"
+            input_hist: "PiMinus_G4Reweightdiff"
+          },
+          { 
+            name: "PiMinus_INCL_Diff"
+            input_hist: "PiMinus_INCLReweightdiff"
+          },          { 
+            name: "Pi0_G4_Diff"
+            input_hist: "Pi0_G4Reweightdiff"
+          },
+          { 
+            name: "Pi0_INCL_Diff"
+            input_hist: "Pi0_INCLReweightdiff"
+          }
+      ]
+   }
+}
+
+syst_providers: [PionAbsProvider_toolconfig]
