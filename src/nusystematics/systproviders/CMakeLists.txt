@@ -13,6 +13,7 @@ SET(SYSTP_IMPLFILES
   CCQETemplateReweight_tool.cc
   CCQEXSecCorr_tool.cc
   FSIReweight_tool.cc
+  FSIReweightMult_tool.cc
   WSReweight_tool.cc
   PionAbsWeighter_tool.cc
   QEInterference_tool.cc
@@ -42,6 +43,7 @@ SET(SYSTP_HDRFILES
   CCQERPAReweight_tool.hh
   CCQETemplateReweight_tool.hh
   FSIReweight_tool.hh
+  FSIReweightMult_tool.hh
   WSReweight_tool.hh
   PionAbsWeighter_tool.hh
   QEInterference_tool.hh

@@ -1,6 +1,6 @@
 // Relevent reweighting files and the code underpinning it are found at github.com/rdiurba/genieFSIStudies/hadStudies
 
-#include "nusystematics/systproviders/FSIReweight_tool.hh"
+#include "nusystematics/systproviders/FSIReweightMult_tool.hh"
 
 #include "nusystematics/utility/exceptions.hh"
 
@@ -14,29 +14,29 @@ using namespace systtools;
 using namespace nusyst;
 using namespace fhicl;
 
-FSIReweight::FSIReweight(ParameterSet const &params)
+FSIReweightMult::FSIReweightMult(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-      fsiReweightCalculator(nullptr),
+      fsiReweightCalculatorMult(nullptr),
       ResponseParameterIdx(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
-SystMetaData FSIReweight::BuildSystMetaData(ParameterSet const &cfg,
+SystMetaData FSIReweightMult::BuildSystMetaData(ParameterSet const &cfg,
                                                      paramId_t firstId) {
 
-  std::cout << "[FSIReweight::BuildSystMetaData] called" << std::endl;
+  std::cout << "[FSIReweightMult::BuildSystMetaData] called" << std::endl;
 
   SystMetaData smd;
 
   systtools::SystParamHeader phdr;
-  if (ParseFhiclToolConfigurationParameter(cfg, "FSIReweight",
+  if (ParseFhiclToolConfigurationParameter(cfg, "FSIReweightMult",
                                                  phdr, firstId)) {
     phdr.systParamId = firstId++;
     smd.push_back(phdr);
   }
 
   fhicl::ParameterSet templateManifest =
-      cfg.get<fhicl::ParameterSet>("FSIReweight_input_manifest");
-  tool_options.put("FSIReweight_input_manifest", templateManifest);
+      cfg.get<fhicl::ParameterSet>("FSIReweightMult_input_manifest");
+  tool_options.put("FSIReweightMult_input_manifest", templateManifest);
 
   // OPTION_IN_CONF_FILE can be defined in the configuration file
   // then it is copied to tool_option when running "GenerateSystProviderConfig" to generation paramHeader
@@ -50,18 +50,18 @@ SystMetaData FSIReweight::BuildSystMetaData(ParameterSet const &cfg,
   return smd;
 }
 
-bool FSIReweight::SetupResponseCalculator(
+bool FSIReweightMult::SetupResponseCalculator(
     fhicl::ParameterSet const &tool_options) {
 
-  std::cout << "[FSIReweight::SetupResponseCalculator] called" << std::endl;
+  std::cout << "[FSIReweightMult::SetupResponseCalculator] called" << std::endl;
 
   fhicl::ParameterSet templateManifest =
-      tool_options.get<fhicl::ParameterSet>("FSIReweight_input_manifest");
+      tool_options.get<fhicl::ParameterSet>("FSIReweightMult_input_manifest");
 
-  fsiReweightCalculator = std::make_unique<FSIReweightCalculator>( templateManifest );
+  fsiReweightCalculatorMult = std::make_unique<nusyst::FSIReweightCalculatorMult>( templateManifest );
 
   ResponseParameterIdx =
-      GetParamIndex(GetSystMetaData(), "FSIReweight");
+      GetParamIndex(GetSystMetaData(), "FSIReweightMult");
 
   fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
   if (fill_valid_tree) {
@@ -70,9 +70,7 @@ bool FSIReweight::SetupResponseCalculator(
 
   save_map = tool_options.get<bool>("save_map", false);
   if (save_map) {
-    std::cout << "[[FSIReweight::SetupResponseCalculator] save_map is True" << std::endl;
-    outfile_map = new TFile("FSI_2Dmap.root", "recreate");
-    h_KEini_Ebias = new TH2D("h_KEini_Ebias", "Ebias vs KEini; KEini [GeV]; Ebias [GeV]", 40, 0, 2, 40, -0.9, 1.1);
+
   }
 
 
@@ -80,8 +78,7 @@ bool FSIReweight::SetupResponseCalculator(
 }
 
 event_unit_response_t
-FSIReweight::GetEventResponse(genie::EventRecord const &ev) {
-
+FSIReweightMult::GetEventResponse(genie::EventRecord const &ev) {
   // when the event is not applicable for this type of reweighting,
   // use GetDefaultEventResponse() to return an auto-1.-filled vector
 
@@ -130,6 +127,7 @@ FSIReweight::GetEventResponse(genie::EventRecord const &ev) {
 
   // now make the output
   systtools::event_unit_response_t resp;
+
   SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIdx];
   resp.push_back( {hdr.systParamId, {}} );
   vector<int> npar_sel = {1, 0, 0, 0, 0}; // edit the number of {p, n, pip, pi0, pim} (temporarily added inline for test, should be added as parameters in fcl file)
@@ -146,84 +144,27 @@ FSIReweight::GetEventResponse(genie::EventRecord const &ev) {
       //weight = 1; // do not reweight events with no pre-FSI particles at all
     }
     else {
-      double KEini_0, KEini_1;
-      double Ehad_tot = 0;
-      int idx = 0;
-      bool rewei = true;
-      for (auto IShad : preFSIhadron_list) {
-        //if (!(IShad->Pdg()==2212||IShad->Pdg()==211)) { // selection on proton-only for test
-        //  weight = -99;
-        //  rewei = false;
-        //  break;
-        //}
-        int had_pdg = npar_idx[ IShad->Pdg() ];
-        ++npar[had_pdg];
-        if ((!allevents)&&(npar[had_pdg] > npar_sel[had_pdg])) {
-          weight = -99;
-          rewei = false;
-          break;
-        }
-        
-        if (IShad->FirstDaughter()==-1) {
-          //cout<<"No daughter particle for this pre-FSI hadron..."<<endl; // due to no daughter info in INCL and G4BC
-          continue;
-        }
-        vector<genie::GHepParticle*> FSdaughter_list;
-        get_FS_daughters(IShad, FSdaughter_list, ev);
-        double Eini = IShad->E();
-        double KEini = IShad->KinE();
-        double Ehad = 0;
-        for (auto FSpar : FSdaughter_list) {
-          int pdg = FSpar->Pdg();
-          double totE = FSpar->E();
-          double kinE = FSpar->KinE();
-          if ( pdg==211 || pdg==-211 || pdg==111) // pion
-            Ehad += totE;
-          else if ( pdg==2212 ) // proton
-            Ehad += kinE;
-          else if ( pdg==2112 ) // neutron
-            ;
-          else if ( pdg==22 ) // gamma
-            Ehad += totE;
-          //else cout<<"$#@ "<<FSpar->Name()<<endl;
-        }
-        double Ebias = 0;
-        if (idx==0) {
-          KEini_0 = KEini;
-          idx++;
-        }
-        else {
-          KEini_1 = KEini;
-        }
 
-        if (IShad->RescatterCode()==1 ) { // non-FSI
-          //weight = 1.6;
-          continue;
-        }
-        Ehad_tot += Ehad;
-        switch (IShad->Pdg()) {
-          case 2212:
-            Ebias = (KEini - Ehad) / KEini;
-            break;
-          case 2112:
-            Ebias = (KEini - Ehad) / KEini;
-            break;
-          case 211:
-            Ebias = (Eini - Ehad) / Eini;
-            break;
-          case 111:
-            Ebias = (Eini - Ehad) / Eini;
-            break;
-          case -211:
-            Ebias = (Eini - Ehad) / Eini;
-            break;
-          default:
-            //weight = -99;
-            //break;
-            weight = 1;
-            continue;
-        }
+  for (auto IShad : preFSIhadron_list) {
 
+    int had_pdg = npar_idx[IShad->Pdg()];
+    double KEini=IShad->KinE();
+    ++npar[had_pdg];
+
+    if ((!allevents)&&(npar[had_pdg] > npar_sel[had_pdg])) {
+      weight = 1;
+
+      break;
+    }
+
+    // FSI selection
+
+
+    if (IShad->FirstDaughter()==-1)
+      continue;
+
+    vector<genie::GHepParticle*> FSdaughter_list;
+    get_FS_daughters(IShad, FSdaughter_list, ev);
     int n_protons  = 0;
     int n_neutrons = 0;
     int n_pions=0;
@@ -261,33 +202,22 @@ FSIReweight::GetEventResponse(genie::EventRecord const &ev) {
     int fsi = IShad->RescatterCode();
 
     bool accept = false;
-    if ((pdg == 211 || pdg == -211 || pdg == 111) && n_protons+n_neutrons+n_pions>1)
+    if ((pdg == 211 || pdg == -211 || pdg == 111) && n_protons+n_neutrons>1 && n_pions==0)
       accept = true;
-    else if ((pdg == 2212 || pdg == 2112) && n_protons+n_neutrons+n_pions>1)
+    else if ((pdg == 2212 || pdg == 2112) && n_protons+n_neutrons>2 && n_pions==0)
       accept = true;
 
     if (!accept) continue;
-
-
-        if (save_map) h_KEini_Ebias->Fill( KEini, Ebias );
         //cout<<IShad->Name()<<": KEini "<<KEini<<"; Ehad "<<Ehad<<"; Ebias "<<Ebias<<endl;
-        double this_reweight = fsiReweightCalculator->GetFSIReweight(KEini, Ebias, var, IShad->Pdg());
-        weight *= this_reweight;
-        //cout<<IShad->Name()<<": KEini "<<KEini<<"; Ebias "<<Ebias<<"; weight "<<this_reweight<<endl;
-      }
-      //if (rewei) {
-      //  double tmp = KEini_0;
-      //  if (tmp<KEini_1) {
-      //    KEini_0 = KEini_1;
-      //    KEini_1 = tmp;
-      //  }
-      //  double Ebias = (KEini_0+KEini_1-Ehad_tot)/(KEini_0+KEini_1);
-      //  weight = fsiReweightCalculator->GetFSIReweight_2par(KEini_0, KEini_1, Ebias, var, 2);
-      //}
+        double this_reweight = fsiReweightCalculatorMult->GetFSIReweightMultSum(KEini, n_protons+n_neutrons, var, IShad->Pdg());
+        double this_reweight2 = fsiReweightCalculatorMult->GetFSIReweightMultDiff(KEini, n_protons-n_neutrons, var, IShad->Pdg());
+        
+        weight *= this_reweight*this_reweight2;
+
+    }
     }
     resp.back().responses.push_back( weight );
   }
-
   if (fill_valid_tree) {
 
     pdgfslep = ev.FinalStatePrimaryLepton()->Pdg();
@@ -314,14 +244,13 @@ FSIReweight::GetEventResponse(genie::EventRecord const &ev) {
 
     valid_tree->Fill();
   }
-
   return resp;
 
 }
 
-std::string FSIReweight::AsString() { return ""; }
+std::string FSIReweightMult::AsString() { return ""; }
 
-void FSIReweight::InitValidTree() {
+void FSIReweightMult::InitValidTree() {
 
   valid_file = new TFile("MINERvAq3q0WeightValid.root", "RECREATE");
   valid_tree = new TTree("valid_tree", "");
@@ -339,7 +268,7 @@ void FSIReweight::InitValidTree() {
   valid_tree->Branch("q3", &q3);
 }
 
-FSIReweight::~FSIReweight() {
+FSIReweightMult::~FSIReweightMult() {
   if (save_map) {
     h_KEini_Ebias->Write("hA2018_proton_KEini_vs_Ebias");
     outfile_map->Write();

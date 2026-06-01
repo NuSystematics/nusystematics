@@ -7,6 +7,7 @@
 
 #include "systematicstools/utility/ROOTUtility.hh"
 #include "systematicstools/utility/exceptions.hh"
+#include "systematicstools/utility/string_parsers.hh"
 
 #include "fhiclcpp/ParameterSet.h"
 
@@ -24,21 +25,21 @@ namespace nusyst {
 
     enum ENuRange {
       LowE = 0,
-      HighE = 1,
+      HighE = 20,
     };
 
   protected:
 
-    TH2D *hist_nom_proton;
-    TH2D *hist_alt_proton;
+    TH2D *hist_nom_protonPlus;
+    TH2D *hist_alt_protonPlus;
     TH2D *hist_nom_neutron;
     TH2D *hist_alt_neutron;
-    TH2D *hist_nom_pionp;
-    TH2D *hist_alt_pionp;
-    TH2D *hist_nom_pion0;
-    TH2D *hist_alt_pion0;
-    TH2D *hist_nom_pionm;
-    TH2D *hist_alt_pionm;
+    TH2D *hist_nom_piPlus;
+    TH2D *hist_alt_piPlus;
+    TH2D *hist_nom_pi0;
+    TH2D *hist_alt_pi0;
+    TH2D *hist_nom_piMinus;
+    TH2D *hist_alt_piMinus;
     TH3D *hist_nom_2p;
     TH3D *hist_alt_2p;
 
@@ -62,24 +63,24 @@ namespace nusyst {
   inline double FSIReweightCalculator::GetFSIReweight(double KEini, double Ebias, double parameter_value, int parpdg){
     TH2D *hist_nom, *hist_alt;
     if (parpdg == 2212) {
-      hist_nom = hist_nom_proton;
-      hist_alt = hist_alt_proton;
+      hist_nom = hist_nom_protonPlus;
+      hist_alt = hist_alt_protonPlus;
     }
     else if (parpdg == 2112) {
       hist_nom = hist_nom_neutron;
       hist_alt = hist_alt_neutron;
     }
     else if (parpdg == 211) {
-      hist_nom = hist_nom_pionp;
-      hist_alt = hist_alt_pionp;
+      hist_nom = hist_nom_piPlus;
+      hist_alt = hist_alt_piPlus;
     }
     else if (parpdg == 111) {
-      hist_nom = hist_nom_pion0;
-      hist_alt = hist_alt_pion0;
+      hist_nom = hist_nom_pi0;
+      hist_alt = hist_alt_pi0;
     }
     else if (parpdg == -211) {
-      hist_nom = hist_nom_pionm;
-      hist_alt = hist_alt_pionm;
+      hist_nom = hist_nom_piMinus;
+      hist_alt = hist_alt_piMinus;
     }
     else {
       return 1.;
@@ -93,13 +94,15 @@ namespace nusyst {
     //cout<<"weight_alt "<<weight_alt<<endl;
 
     if(weight_nom==0.){
-      //cout<<"weight_nom==0."<<endl;
       return 1.;
     }
 
     double weight = ( weight_nom * (1.-parameter_value) + weight_alt * parameter_value ) / weight_nom;
     //cout<<"weight "<<weight<<endl;
-
+     if(weight<0.001){
+    //cout<<"weight_nom==0."<<endl;
+    return 0.001;
+  }
     return weight;
 
   }
@@ -133,28 +136,19 @@ inline double FSIReweightCalculator::GetFSIReweight_2par(double KEini_0, double 
 
   inline void FSIReweightCalculator::LoadInputHistograms(fhicl::ParameterSet const &ps) {
 
-    std::string const &default_root_file = ps.get<std::string>("input_file", "");
+    std::string const &default_root_file = systtools::expand_env_vars( ps.get<std::string>("input_file", "") );
 
     for (fhicl::ParameterSet const &val_config :
          ps.get<std::vector<fhicl::ParameterSet>>("inputs")) {
       std::string hName = val_config.get<std::string>("name");
       std::string input_hist = val_config.get<std::string>("input_hist");
-      std::string input_file = val_config.get<std::string>("input_file", default_root_file); // If specified per hist, replace it
+      std::string input_file = systtools::expand_env_vars( val_config.get<std::string>("input_file", default_root_file) ); // If specified per hist, replace it
 
-      // if it does not start with "/", find it under ${NUSYSTEMATICS_FQ_DIR}/data/
-      if(input_file.find("/")!=0){
-        std::string tmp_NUSYSTEMATICS_ROOT = std::getenv("nusystematics_ROOT");
-        if(tmp_NUSYSTEMATICS_ROOT==""){
-          throw invalid_FSI_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set but put relative path:" << input_file;
-        }
-        input_file = tmp_NUSYSTEMATICS_ROOT+"/data/"+input_file;
+      if(hName=="hist_nom_protonPlus"){
+        hist_nom_protonPlus = GetHistogram<TH2D>(input_file, input_hist);
       }
-
-      if(hName=="hist_nom_proton"){
-        hist_nom_proton = GetHistogram<TH2D>(input_file, input_hist);
-      }
-      else if(hName=="hist_alt_proton"){
-        hist_alt_proton = GetHistogram<TH2D>(input_file, input_hist);
+      else if(hName=="hist_alt_protonPlus"){
+        hist_alt_protonPlus = GetHistogram<TH2D>(input_file, input_hist);
       }
       else if(hName=="hist_nom_neutron"){
         hist_nom_neutron = GetHistogram<TH2D>(input_file, input_hist);
@@ -162,30 +156,25 @@ inline double FSIReweightCalculator::GetFSIReweight_2par(double KEini_0, double 
       else if(hName=="hist_alt_neutron"){
         hist_alt_neutron = GetHistogram<TH2D>(input_file, input_hist);
       }
-      else if(hName=="hist_nom_pionp"){
-        hist_nom_pionp = GetHistogram<TH2D>(input_file, input_hist);
+      else if(hName=="hist_nom_piPlus"){
+        hist_nom_piPlus = GetHistogram<TH2D>(input_file, input_hist);
       }
-      else if(hName=="hist_alt_pionp"){
-        hist_alt_pionp = GetHistogram<TH2D>(input_file, input_hist);
+      else if(hName=="hist_alt_piPlus"){
+        hist_alt_piPlus = GetHistogram<TH2D>(input_file, input_hist);
       }
-      else if(hName=="hist_nom_pion0"){
-        hist_nom_pion0 = GetHistogram<TH2D>(input_file, input_hist);
+      else if(hName=="hist_nom_pi0"){
+        hist_nom_pi0 = GetHistogram<TH2D>(input_file, input_hist);
       }
-      else if(hName=="hist_alt_pion0"){
-        hist_alt_pion0 = GetHistogram<TH2D>(input_file, input_hist);
+      else if(hName=="hist_alt_pi0"){
+        hist_alt_pi0 = GetHistogram<TH2D>(input_file, input_hist);
       }
-      else if(hName=="hist_nom_pionm"){
-        hist_nom_pionm = GetHistogram<TH2D>(input_file, input_hist);
+      else if(hName=="hist_nom_piMinus"){
+        hist_nom_piMinus = GetHistogram<TH2D>(input_file, input_hist);
       }
-      else if(hName=="hist_alt_pionm"){
-        hist_alt_pionm = GetHistogram<TH2D>(input_file, input_hist);
+      else if(hName=="hist_alt_piMinus"){
+        hist_alt_piMinus = GetHistogram<TH2D>(input_file, input_hist);
       }
-      else if(hName=="hist_nom_2p"){
-        hist_nom_2p = GetHistogram<TH3D>(input_file, input_hist);
-      }
-      else if(hName=="hist_alt_2p"){
-        hist_alt_2p = GetHistogram<TH3D>(input_file, input_hist);
-      }
+
     }
   }
 } // namespace nusyst
