@@ -190,7 +190,7 @@ FSIReweightMult::GetEventResponse(genie::EventRecord const &ev) {
                 if (FSpar->KinE() <= 0.005*A) continue;
 
 
-                n_protons+=Z; n_neutrons+=A;
+                n_protons+=Z; n_neutrons+=N;
 
             }
 
