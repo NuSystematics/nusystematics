@@ -635,7 +635,7 @@ int main(int argc, char const *argv[]) {
 
   // Resolve fcl-dir default
   if (cliopts::fcl_dir.empty()) {
-    char const *nusyst_env = std::getenv("NUSYST");
+    char const *nusyst_env = std::getenv("nusystematics_ROOT");
     if (nusyst_env) cliopts::fcl_dir = std::string(nusyst_env) + "/fcl";
   }
 
