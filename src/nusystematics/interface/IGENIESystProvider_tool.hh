@@ -176,12 +176,6 @@ public:
             << hdr.paramVariations.size() << " parameter variations, returned "
             << pr.responses.size() << " responses.";
       }
-      // make sure correction dial has zero paramVariations.size()
-      if( hdr.isCorrection && hdr.paramVariations.size() != 0 ){
-        throw invalid_response()
-            << "[ERROR]: Parameter: " << hdr.prettyName << " is a correction but has non-zero parameter variations ("
-            << hdr.paramVariations.size() << ").";
-      }
       // make sure correction dial has exactly one response
       if( hdr.isCorrection && pr.responses.size() != 1 ){
         throw invalid_response()
