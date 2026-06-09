@@ -1,0 +1,9 @@
+#include "FSI_NuclMult_G4BC.ToolConfig.fcl"
+#include "FSI_NuclMult_INCL.ToolConfig.fcl"
+#include "FSI_NuclMult_hN.ToolConfig.fcl"
+
+syst_providers: [
+FSI_NuclMult_hN_Tool_Config,
+FSI_NuclMult_INCL_Tool_Config,
+FSI_NuclMult_G4BC_Tool_Config
+]

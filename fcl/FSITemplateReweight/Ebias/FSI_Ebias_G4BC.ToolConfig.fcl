@@ -1,0 +1,57 @@
+FSI_Ebias_G4BC_Tool_Config: {
+
+    tool_type: "FSIReweight"
+    instance_name: "SBNNuSyst_FSI_Ebias_G4BCReweight_multisigma"
+
+    FSIReweight_central_value: 0
+    FSIReweight_variation_descriptor: "[0, 1]"
+
+    FSIReweight_input_manifest: {
+      input_file: "${NUSYST_FSI_TEMPLATE_DIR}/FSI_Evis_reweight_template.root"
+      inputs: [
+        {
+          input_hist: "hA2018_protonPlus_KEini_vs_Ebias"
+          name: "hist_nom_protonPlus"
+        },
+        {
+          input_hist: "Geant4_protonPlus_KEini_vs_Ebias"
+          name: "hist_alt_protonPlus"
+        },
+        {
+          input_hist: "hA2018_neutron_KEini_vs_Ebias"
+          name: "hist_nom_neutron"
+        },
+        {
+          input_hist: "Geant4_neutron_KEini_vs_Ebias"
+          name: "hist_alt_neutron"
+        },
+        {
+          input_hist: "hA2018_piPlus_KEini_vs_Ebias"
+          name: "hist_nom_piPlus"
+        },
+        {
+          input_hist: "Geant4_piPlus_KEini_vs_Ebias"
+          name: "hist_alt_piPlus"
+        },
+        {
+          input_hist: "hA2018_pi0_KEini_vs_Ebias"
+          name: "hist_nom_pi0"
+        },
+        {
+          input_hist: "Geant4_pi0_KEini_vs_Ebias"
+          name: "hist_alt_pi0"
+        },
+        {
+          input_hist: "hA2018_piMinus_KEini_vs_Ebias"
+          name: "hist_nom_piMinus"
+        },
+        {
+          input_hist: "Geant4_piMinus_KEini_vs_Ebias"
+          name: "hist_alt_piMinus"
+        }
+      ]
+    }
+
+  }
+
+syst_providers: [FSI_Ebias_G4BC_Tool_Config]
