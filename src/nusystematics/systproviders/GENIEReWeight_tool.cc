@@ -295,6 +295,7 @@ GENIEReWeight::GetEventGENIEParameterResponse(genie::EventRecord const &gev,
   GENIEResponseParameter &GENIEResponse = ResponseToGENIEParameters[idx];
   systtools::SystParamHeader const &hdr = GetSystMetaData()[GENIEResponse.pidx];
 
+  // Backward-compatibility; isCorrection header used to have empty paramVariations
   size_t NVars = hdr.isCorrection ? 1 : hdr.paramVariations.size();
 #ifdef GENIEREWEIGHT_GETEVENTRESPONSE_DEBUG
   std::cout << "[INFO]: Resp dial: " << hdr.prettyName << " with " << NVars
@@ -325,6 +326,7 @@ GENIEReWeight::GetEventGENIEParameterResponse(genie::EventRecord const &gev,
     if (IsReducedHERG) { // Need a reconfigure for each variation
       for (auto const &dep : GENIEResponse.dependents) {
         SystParamHeader const &hdr = GetSystMetaData()[dep.pidx];
+        // Backward-compatibility; isCorrection header used to have empty paramVariations
         GENIEResponse.Herg.front()->Systematics().Set(
             dep.gdial, hdr.isCorrection ? hdr.centralParamValue
                                         : hdr.paramVariations[var_it]);

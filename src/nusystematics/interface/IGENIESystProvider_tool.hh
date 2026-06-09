@@ -176,12 +176,6 @@ public:
             << hdr.paramVariations.size() << " parameter variations, returned "
             << pr.responses.size() << " responses.";
       }
-      // make sure correction dial has zero paramVariations.size()
-      if( hdr.isCorrection && hdr.paramVariations.size() != 0 ){
-        throw invalid_response()
-            << "[ERROR]: Parameter: " << hdr.prettyName << " is a correction but has non-zero parameter variations ("
-            << hdr.paramVariations.size() << ").";
-      }
       // make sure correction dial has exactly one response
       if( hdr.isCorrection && pr.responses.size() != 1 ){
         throw invalid_response()
@@ -213,7 +207,8 @@ public:
             pr.responses[idx] -= CVResp;
           }
         }
-        // For a correction dial, we have NVars=0, so manually update CVResp and responses
+        // Backward-compatibility; isCorrection header used to have empty paramVariations (here, NVars=0),
+        // so manually update CVResp and responses
         if( hdr.isCorrection ){
           CVResp = pr.responses[0];
           pr.responses[0] = 1.;
