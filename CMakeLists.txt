@@ -23,11 +23,16 @@ endif()
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 include(CPM)
 
+option(nusyst_DUNETDRv1_ENABLED "Build DUNETDRv1" OFF)
+if(nusyst_DUNETDRv1_ENABLED)
+  message(STATUS "Building DUNE TDR v1 dials")
+endif()
+
 find_package(ROOT 6.10 REQUIRED)
 
 CPMFindPackage(
     NAME systematicstools
-    GIT_TAG v02_00_04
+    GIT_TAG v02_00_05
     GITHUB_REPOSITORY NuSystematics/systematicstools
 )
 

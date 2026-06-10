@@ -82,7 +82,7 @@ void SayUsage(char const *argv[]) {
     "    --mode <m>             genierw | providers | all (default: all)\n"
     "    -o <output.fcl>        Output file (default: stdout)\n"
     "    --fcl-dir <dir>        Tool-config fcl directory\n"
-    "                           (default: $NUSYST/fcl)\n"
+    "                           (default: $nusystematics_ROOT/fcl)\n"
     "    --variation-descriptor \"[-3,-2,-1,0,1,2,3]\"\n"
     "                           Variation descriptor used for every GENIE RW\n"
     "                           dial (default shown).\n"
