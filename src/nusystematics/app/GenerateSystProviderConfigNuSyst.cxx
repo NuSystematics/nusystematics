@@ -10,6 +10,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -42,6 +43,54 @@ void SetAllSequencesToFlow(YAML::Node node) {
       SetAllSequencesToFlow(kv.second);
     }
   }
+}
+
+// Recursively load a YAML file, merging any files listed under an
+// "includes" key (paths resolved relative to the including file).
+// Keys from the including file overwrite keys from included files.
+// The "includes" key itself is consumed and not forwarded.
+YAML::Node LoadYAMLWithIncludes(std::string const &filepath) {
+  YAML::Node node = YAML::LoadFile(filepath);
+
+  if (!node["includes"]) {
+    return node;
+  }
+
+  // base_dir: the directory containing the current file, used to resolve
+  // relative paths in "includes". E.g. if filepath is "/a/b/top.yaml",
+  // base_dir is "/a/b", so "sub/foo.yaml" resolves to "/a/b/sub/foo.yaml".
+  std::filesystem::path base_dir =
+      std::filesystem::path(filepath).parent_path();
+
+  // Start with merged content from all included files (in order).
+  YAML::Node merged;
+  for (auto const &inc : node["includes"]) {
+    // inc_path: path to the included file as written in the YAML.
+    // Environment variables in ${VAR} syntax are expanded first, then if the
+    // result is still a relative path it is resolved against base_dir so the
+    // lookup is always relative to the including file, not the working directory.
+    std::filesystem::path inc_path(systtools::expand_env_vars(inc.as<std::string>()));
+    if (inc_path.is_relative()) {
+      inc_path = base_dir / inc_path;
+    }
+    YAML::Node inc_node = LoadYAMLWithIncludes(inc_path.string());
+    for (auto const &kv : inc_node) {
+      std::string key = kv.first.as<std::string>();
+      if (key == "includes") continue;
+      merged[key] = kv.second;
+    }
+  }
+
+  // Overlay the top-level file's own keys (except "includes").
+  // This lets the top-level file override anything from included files,
+  // including "syst_providers".
+  for (auto const &kv : node) {
+    std::string key = kv.first.as<std::string>();
+    if (key == "includes") continue;
+    merged[key] = kv.second;
+  }
+
+  return merged;
 }
 
 } // namespace
@@ -102,7 +151,7 @@ int main(int argc, char const *argv[]) {
     std::make_unique<cet::filepath_lookup>(ev));
   */
 
-  YAML::Node in_yaml = YAML::LoadFile(cliopts::yamlname);
+  YAML::Node in_yaml = LoadYAMLWithIncludes(cliopts::yamlname);
 
   std::cout << "[GenerateSystProviderConfigNuSyst] input" << std::endl;
   std::cout << in_yaml << std::endl;
