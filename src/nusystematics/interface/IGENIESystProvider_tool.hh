@@ -3,6 +3,7 @@
 #include <numeric>
 
 #include "nusystematics/utility/exceptions.hh"
+#include "systematicstools/utility/string_parsers.hh"
 #include "systematicstools/interface/ISystProviderTool.hh"
 
 // GENIE
@@ -20,34 +21,7 @@ protected:
   // -- S. Gardiner, 20 December 2018
   void CheckTune(const std::string &tune_name) {
 
-    std::string yaml_tune_name = tune_name;
-
-    // The default tune name is ${GENIE_XSEC_TUNE}, which
-    // should be converted into the value of the corresponding
-    // enviornment variable, as is done below.
-    if (yaml_tune_name.front() == '$') {
-      // need to remove ${}'s
-      std::string tuneEnvVar = yaml_tune_name;
-      std::string rmchars("$(){} ");
-      // std::remove_if removes characters in [first,last) that are found
-      //   within the rmchars string. It returns returns a past-the-end
-      //   iterator for the new end of the range [funky!]
-      // std::string::erase actually trims the string
-      tuneEnvVar.erase(std::remove_if(tuneEnvVar.begin(), tuneEnvVar.end(),
-                                      [&rmchars](const char &c) -> bool {
-                                        return rmchars.find(c) !=
-                                               std::string::npos;
-                                      }),
-                       tuneEnvVar.end());
-
-      const char *tune = std::getenv(tuneEnvVar.c_str());
-      if (tune) {
-        yaml_tune_name = std::string(tune);
-      } else {
-        throw systtools::invalid_ToolConfigurationYAML()
-            << "can't resolve TuneName: " << yaml_tune_name;
-      }
-    }
+    std::string yaml_tune_name = systtools::expand_env_vars(tune_name);
 
     // If the XSecSplineList returns a non-empty string as the current tune
     // name, then genie::RunOpt::BuildTune() has already been called.
