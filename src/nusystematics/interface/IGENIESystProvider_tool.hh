@@ -184,7 +184,7 @@ public:
       }
 
       double CVResp = hdr.isWeightSystematicVariation ? 1 : 0;
-      size_t NVars = hdr.paramVariations.size(); // note: NVars is zero for correction dial
+      size_t NVars = hdr.paramVariations.size();
 
       // If CV is different from default, find it from paramVariations and get the CV weight,
       // then divide all the weights by this CV weight.
@@ -209,7 +209,7 @@ public:
         }
         // Backward-compatibility; isCorrection header used to have empty paramVariations (here, NVars=0),
         // so manually update CVResp and responses
-        if( hdr.isCorrection ){
+        if( hdr.isCorrection && NVars==0 ){
           CVResp = pr.responses[0];
           pr.responses[0] = 1.;
         }
