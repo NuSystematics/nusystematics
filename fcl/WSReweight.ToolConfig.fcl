@@ -1,0 +1,18 @@
+WSReweight_toolconfig: {
+  tool_type: "WSReweight"
+  instance_name: "WS"
+
+  # Woods-Saxon nuclear-density parameters: radius and surface-thickness.
+  # Reweights events from one density profile to another.
+  nucleus_radius_variation_descriptor:    "[-3,-2,-1,0,1,2,3]"
+  surface_thickness_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  # Optional pass-through scalars consumed by SetupResponseCalculator.
+  OPT_STRING:     ""
+  OPT_BOOL:       false
+  estimate_emiss: false
+
+  fill_valid_tree: false
+}
+
+syst_providers: [WSReweight_toolconfig]

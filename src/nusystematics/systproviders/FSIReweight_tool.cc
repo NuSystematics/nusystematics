@@ -18,6 +18,9 @@ FSIReweight::FSIReweight(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
       fsiReweightCalculator(nullptr),
       ResponseParameterIdx(systtools::kParamUnhandled<size_t>),
+      save_map(false),
+      outfile_map(nullptr),
+      h_KEini_Ebias(nullptr),
       valid_file(nullptr), valid_tree(nullptr) {}
 
 SystMetaData FSIReweight::BuildSystMetaData(ParameterSet const &cfg,

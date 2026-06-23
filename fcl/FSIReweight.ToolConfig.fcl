@@ -1,0 +1,37 @@
+FSIReweight_toolconfig: {
+  tool_type: "FSIReweight"
+  instance_name: "FSIRW"
+
+  # Single dial driving the FSI 2D-map reweight.
+  FSIReweight_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  # Histogram manifest. FSIReweightCalculator expects a flat inputs array
+  # whose entries each carry a `name:` key matching one of the calculator's
+  # known histogram slots (hist_nom_proton / hist_alt_proton /
+  # hist_nom_neutron / hist_alt_neutron / hist_nom_pion[p|0|m] /
+  # hist_alt_pion[p|0|m]). At least one of nom+alt is required.
+  #
+  # Replace input_file with a real ROOT file; the fcl is structurally valid
+  # even if the file is missing, the provider will then [SKIP] with
+  # "missing external data file".
+  FSIReweight_input_manifest: {
+    input_file: "${NUSYST}/data/FSIReweight_templates.root"
+    inputs: [
+      { name: "hist_nom_proton"   input_hist: "hA2018_proton_KEini_vs_Ebias"  },
+      { name: "hist_alt_proton"   input_hist: "hN2018_proton_KEini_vs_Ebias"  },
+      { name: "hist_nom_neutron"  input_hist: "hA2018_neutron_KEini_vs_Ebias" },
+      { name: "hist_alt_neutron"  input_hist: "hN2018_neutron_KEini_vs_Ebias" },
+      { name: "hist_nom_pionp"    input_hist: "hA2018_pionp_KEini_vs_Ebias"   },
+      { name: "hist_alt_pionp"    input_hist: "hN2018_pionp_KEini_vs_Ebias"   },
+      { name: "hist_nom_pion0"    input_hist: "hA2018_pion0_KEini_vs_Ebias"   },
+      { name: "hist_alt_pion0"    input_hist: "hN2018_pion0_KEini_vs_Ebias"   },
+      { name: "hist_nom_pionm"    input_hist: "hA2018_pionm_KEini_vs_Ebias"   },
+      { name: "hist_alt_pionm"    input_hist: "hN2018_pionm_KEini_vs_Ebias"   }
+    ]
+  }
+
+  save_map:        false
+  fill_valid_tree: false
+}
+
+syst_providers: [FSIReweight_toolconfig]

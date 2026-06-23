@@ -19,6 +19,7 @@
 #include "nusystematics/systproviders/CCQETemplateReweight_tool.hh"
 #include "nusystematics/systproviders/QEInterference_tool.hh"
 #include "nusystematics/systproviders/FSIReweight_tool.hh"
+#include "nusystematics/systproviders/FSIReweightMult_tool.hh"
 #include "nusystematics/systproviders/WSReweight_tool.hh"
 #include "nusystematics/systproviders/MECq0q3InterpWeighting_tool.hh"
 
@@ -66,6 +67,8 @@ make_instance(fhicl::ParameterSet const &paramset) {
     return std::make_unique<CCQETemplateReweight>(paramset);
   } else if (tool_type == "FSIReweight"){
     return std::make_unique<FSIReweight>(paramset);
+  } else if (tool_type == "FSIReweightMult"){
+    return std::make_unique<FSIReweightMult>(paramset);
   } else if (tool_type == "WSReweight") {
     return std::make_unique<WSReweight>(paramset);
   } else if (tool_type == "QEInterference") {
@@ -76,6 +79,34 @@ make_instance(fhicl::ParameterSet const &paramset) {
     throw unknown_nusyst_systprovider()
         << "[ERROR]: Unknown tool type: " << std::quoted(tool_type);
   }
+}
+
+// Single source of truth for what tool_type strings the dispatch above
+// knows about. Used by GenerateAllDialsConfigNuSyst to emit a "registered
+// but no tool config found" report, and by `nusyst inventory` to surface
+// it. Keep in sync with the if/else if chain above.
+inline std::vector<std::string> RegisteredToolTypes() {
+  return {
+    "GENIEReWeight",
+    "MKSinglePiTemplate",
+    "MINERvAq0q3Weighting",
+    "NOvAStyleNonResPionNorm",
+    "MiscInteractionSysts",
+    "BeRPAWeight",
+    "MINERvAE2p2h",
+    "EbLepMomShift",
+    "FSILikeEAvailSmearing",
+    "SkeleWeighter",
+    "ZExpPCAWeighter",
+    "DIRT2_Emiss",
+    "ResIso",
+    "CCQERPAReweight",
+    "CCQETemplateReweight",
+    "FSIReweight",
+    "WSReweight",
+    "QEInterference",
+    "MECq0q3InterpWeighting",
+  };
 }
 
 } // namespace nusyst

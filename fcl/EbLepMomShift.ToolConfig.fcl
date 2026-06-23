@@ -1,0 +1,28 @@
+EbLepMomShift_toolconfig: {
+  tool_type: "EbLepMomShift"
+  instance_name: "EbLepShift"
+
+  # Single dial driving the Eb final-state-lepton momentum shift.
+  EbFSLepMomShift_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  # Histogram manifest required by TemplateResponseCalculatorBase. Replace
+  # input_file with a real ROOT file holding the per-knot histograms. The
+  # fcl is structurally valid even if the file is missing; the provider
+  # will then [SKIP] with "missing external data file".
+  EbLepMomShift_Template_input_manifest: {
+    input_file: "${NUSYST}/data/EbLepMomShift_templates.root"
+    inputs: [
+      { value: -3.0  input_hist: "EbLep_m3sigma" },
+      { value: -2.0  input_hist: "EbLep_m2sigma" },
+      { value: -1.0  input_hist: "EbLep_m1sigma" },
+      { value:  0.0  input_hist: "EbLep_CV"      },
+      { value:  1.0  input_hist: "EbLep_p1sigma" },
+      { value:  2.0  input_hist: "EbLep_p2sigma" },
+      { value:  3.0  input_hist: "EbLep_p3sigma" }
+    ]
+  }
+
+  fill_valid_tree: false
+}
+
+syst_providers: [EbLepMomShift_toolconfig]

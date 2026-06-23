@@ -1,0 +1,25 @@
+BeRPAWeight_toolconfig: {
+  tool_type: "BeRPAWeight"
+  instance_name: "BeRPA"
+
+  # BeRPA RPA-suppression knobs (A, B, D, E coefficients of the response).
+  # See nusystematics/responsecalculators/BeRPA.h for the parameterisation.
+  BeRPA_A_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  BeRPA_B_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  BeRPA_D_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  BeRPA_E_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  # When true, the four parameters are exposed as independent splineable
+  # dials. When false, they collapse into a single BeRPA_Response response
+  # parameter -- useful for random-throw fits but not splineable.
+  ignore_parameter_dependence: true
+
+  # Multiply the central-value weight by the BeRPA function (typically false
+  # for kitchen-sink configs; flip to true if your event generation does NOT
+  # already include the BeRPA tune.)
+  ApplyCV: false
+
+  fill_valid_tree: false
+}
+
+syst_providers: [BeRPAWeight_toolconfig]

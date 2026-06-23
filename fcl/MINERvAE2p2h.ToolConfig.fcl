@@ -1,0 +1,23 @@
+MINERvAE2p2h_toolconfig: {
+  tool_type: "MINERvAE2p2h"
+  instance_name: "MnvE2p2h"
+
+  # MINERvA empirical 2p2h energy-dependence dials, separate for neutrinos
+  # and antineutrinos. (A, B) are the two parameters of the empirical fit.
+  E2p2h_A_nu_variation_descriptor:    "[-3,-2,-1,0,1,2,3]"
+  E2p2h_B_nu_variation_descriptor:    "[-3,-2,-1,0,1,2,3]"
+  E2p2h_A_nubar_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  E2p2h_B_nubar_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  # When true, the (A, B) pair per species is exposed as two independent
+  # splineable dials. When false, they collapse into single response
+  # parameters (E2p2hResponse_nu, E2p2hResponse_nubar) -- random-throw mode.
+  ignore_parameter_dependence: true
+
+  # Optional weight clamp (min, max). Defaults shown.
+  LimitWeights: [0.0, 1.0e6]
+
+  fill_valid_tree: false
+}
+
+syst_providers: [MINERvAE2p2h_toolconfig]

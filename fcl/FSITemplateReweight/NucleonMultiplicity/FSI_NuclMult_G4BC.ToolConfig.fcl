@@ -1,0 +1,97 @@
+FSI_NuclMult_G4BC_Tool_Config: {
+
+    tool_type: "FSIReweightMult"
+    instance_name: "SBNNuSyst_FSI_NuclMult_G4BCReweight_multisigma"
+
+    FSIReweightMult_central_value: 0
+    FSIReweightMult_variation_descriptor: "[0, 1]"
+
+    FSIReweightMult_input_manifest: {
+      input_file: "${NUSYST_FSI_TEMPLATE_DIR}/FSI_KOAbs_reweight_template.root"
+      inputs: [
+        {
+          input_hist: "hA2018_protonPlus_NuclMult"
+          name: "hist_nom_protonPlus"
+        },
+        {
+          input_hist: "Geant4_protonPlus_NuclMult"
+          name: "hist_alt_protonPlus"
+        },
+        {
+          input_hist: "hA2018_neutron_NuclMult"
+          name: "hist_nom_neutron"
+        },
+        {
+          input_hist: "Geant4_neutron_NuclMult"
+          name: "hist_alt_neutron"
+        },
+        {
+          input_hist: "hA2018_piPlus_NuclMult"
+          name: "hist_nom_piPlus"
+        },
+        {
+          input_hist: "Geant4_piPlus_NuclMult"
+          name: "hist_alt_piPlus"
+        },
+        {
+          input_hist: "hA2018_pi0_NuclMult"
+          name: "hist_nom_pi0"
+        },
+        {
+          input_hist: "Geant4_pi0_NuclMult"
+          name: "hist_alt_pi0"
+        },
+        {
+          input_hist: "hA2018_piMinus_NuclMult"
+          name: "hist_nom_piMinus"
+        },
+        {
+          input_hist: "Geant4_piMinus_NuclMult"
+          name: "hist_alt_piMinus"
+        },
+        {
+          input_hist: "hA2018_protonPlus_NuclDiff"
+          name: "hist_nomDiff_protonPlus"
+        },
+        {
+          input_hist: "Geant4_protonPlus_NuclDiff"
+          name: "hist_altDiff_protonPlus"
+        },
+        {
+          input_hist: "hA2018_neutron_NuclDiff"
+          name: "hist_nomDiff_neutron"
+        },
+        {
+          input_hist: "Geant4_neutron_NuclDiff"
+          name: "hist_altDiff_neutron"
+        },
+        {
+          input_hist: "hA2018_piPlus_NuclDiff"
+          name: "hist_nomDiff_piPlus"
+        },
+        {
+          input_hist: "Geant4_piPlus_NuclDiff"
+          name: "hist_altDiff_piPlus"
+        },
+        {
+          input_hist: "hA2018_pi0_NuclDiff"
+          name: "hist_nomDiff_pi0"
+        },
+        {
+          input_hist: "Geant4_pi0_NuclDiff"
+          name: "hist_altDiff_pi0"
+        },
+        {
+          input_hist: "hA2018_piMinus_NuclDiff"
+          name: "hist_nomDiff_piMinus"
+        },
+        {
+          input_hist: "Geant4_piMinus_NuclDiff"
+          name: "hist_altDiff_piMinus"
+        }
+      ]
+    }
+
+  }
+
+syst_providers: [FSI_NuclMult_G4BC_Tool_Config]

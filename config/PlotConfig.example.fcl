@@ -1,0 +1,161 @@
+# Example plot-config file for `nusyst plots --plot-config <this file>`.
+#
+# ============================================================================
+# What you can do with this file
+# ============================================================================
+#
+#   1. Override binning / labels for a built-in variable.
+#      Without restating the formula, the built-in branch is reused.
+#
+#   2. Disable a built-in variable: { enabled: false }
+#
+#   3. Add a new formula-backed variable. The formula is a TTreeFormula
+#      expression evaluated against the events tree produced by
+#      `nusyst tweaks`. The flat tree carries per-particle 4-vectors at
+#      three interaction stages via these index-aligned vectors:
+#
+#         isparticles_*        initial state (probe + target + struck nucleon)
+#         prefsi_particles_*   pre-FSI hadrons (primary interaction products,
+#                              before INTRANUKE propagates them)
+#         fsparticles_*        stable final state (after FSI)
+#
+#      Each `*` group is the five branches (pdg, px, py, pz, E).
+#
+#      Plus scalar branches: xsec, q0, Q2, q3, w, Enu_true, plep, EAvail_GeV,
+#      Ereco_cal, Emiss, pmiss, is_cc, is_qe, is_mec, is_res, is_dis,
+#      nproton, npip, npim, npi0, nneutron, fsi_pdgs, fsi_codes,
+#      fsprotons_KE, deltaPT, deltaalphaT, etc.
+#
+#   4. Tune top-level layout knobs (plots_per_page, ratio_min_cv_count).
+#
+# Resolution order, highest priority first:
+#   1. CLI `-v "name:formula:xmin,xmax[,nbins]"` (inline one-off)
+#   2. Entry here, in plot_config
+#   3. Built-in entry in kPredefinedVars
+#   4. Unknown -> error with available list
+#
+# ============================================================================
+# Variables plotted by default (the built-in kPredefinedVars set)
+# ============================================================================
+#
+#   key           branch              label              units      range
+#   ------------- ------------------- ------------------ ---------- -----------
+#   Enu           Enu_true            E_{#nu}            GeV        [0, 10]
+#   q0            q0                  q_{0}              GeV        [0, 5]
+#   Q2            Q2                  Q^{2}              GeV^{2}    [0, 5]
+#   q3            q3                  |#vec{q}|          GeV        [0, 5]
+#   W             w                   W                  GeV        [0, 3]
+#   plep          plep                p_{lep}            GeV        [0, 5]
+#   coslep        coslep              cos#theta_{lep}    (none)     [-1, 1]
+#   EAvail        EAvail_GeV          E_{avail}          GeV        [0, 3]
+#   Tp            leading_proton_KE   T_{p}              GeV        [0, 1.5]
+#   pLeadProton   leading_proton_p    p_{p}^{lead}       GeV        [0, 2.0]
+#   Ereco         Ereco_cal           E_{reco}^{cal}     GeV        [0, 10]
+#   nproton       nproton             N_{proton}         (none)     [0, 6]
+#   npip          npip                N_{#pi^{+}}        (none)     [0, 5]
+#   npim          npim                N_{#pi^{-}}        (none)     [0, 5]
+#   npi0          npi0                N_{#pi^{0}}        (none)     [0, 5]
+#   nneutron      nneutron            N_{neutron}        (none)     [0, 6]
+#
+# X-axis title is rendered as "<label> (<units>)" (no units = bare label).
+# Y-axis title is rendered as "d#sigma/d<label> (cm^{2}/<units>/nucleus)".
+# Override `diff_label` if you need a non-default numerator on the y-axis.
+#
+# To change binning, add an entry below with `xmin`, `xmax`, `nbins` and
+# optionally `label`/`units`/`diff_label`. To remove from the plotted set,
+# add `{ enabled: false }`.
+# ============================================================================
+
+plot_config: {
+
+  # ---- Top-level layout knobs ----------------------------------------------
+  # Number of (variable, channel) panels per PDF page. Default: 6 (3x2 grid).
+  plots_per_page: 6
+
+  # Ratio-panel low-statistics suppression as a FRACTION OF PEAK CV.
+  # Bins whose CV is below ratio_min_cv_count * peak_CV are blanked in the
+  # (var/CV - 1) ratio panel so a near-zero denominator doesn't spike the
+  # y-axis. Scale-invariant (the histograms are scaled to differential
+  # xsec, so an absolute event-count threshold would never trigger).
+  # Default 0 (no suppression). 0.01 = blank tail bins below 1% of peak.
+  ratio_min_cv_count: 0.01
+
+  # ---- 1. Override the built-in Q2 binning ---------------------------------
+  Q2: {
+    xmin:    0.0
+    xmax:    3.0
+    nbins:   60
+    # branch, label, units inherit from the built-in if omitted
+  }
+
+  # ---- 2. Disable a built-in -----------------------------------------------
+  # Emiss and pmiss are not in the default set; uncomment to bring them in.
+  # Emiss: { xmin: 0.0  xmax: 0.5  nbins: 50  label: "E_{miss}"  units: "GeV" }
+  # pmiss: { xmin: 0.0  xmax: 1.0  nbins: 50  label: "p_{miss}"  units: "GeV" }
+
+  # ---- 3. New formula-backed variables -------------------------------------
+  # Leading FS charged pion (sum across pi+ and pi-).
+  pLeadCpi: {
+    formula: "Max$( sqrt(fsparticles_px*fsparticles_px + fsparticles_py*fsparticles_py + fsparticles_pz*fsparticles_pz) * (abs(fsparticles_pdg)==211) )"
+    xmin:    0.0
+    xmax:    1.5
+    nbins:   30
+    label:   "p_{#pi^{#pm}}^{lead}"
+    units:   "GeV"
+  }
+
+  # Leading FS pi0.
+  pLeadPi0: {
+    formula: "Max$( sqrt(fsparticles_px*fsparticles_px + fsparticles_py*fsparticles_py + fsparticles_pz*fsparticles_pz) * (fsparticles_pdg==111) )"
+    xmin:    0.0
+    xmax:    1.5
+    nbins:   30
+    label:   "p_{#pi^{0}}^{lead}"
+    units:   "GeV"
+  }
+
+  # Total FS hadronic energy = sum of E for all hadrons (everything except the
+  # FS lepton, which is the first non-nuclear entry that isn't a hadron).
+  # Use abs(pdg)>=100 to grab mesons + baryons; tighten as needed.
+  EHadTotal: {
+    formula: "Sum$( fsparticles_E * (abs(fsparticles_pdg)>=100) )"
+    xmin:    0.0
+    xmax:    5.0
+    nbins:   50
+    label:   "E_{had}^{total}"
+    units:   "GeV"
+  }
+
+  # Highest-momentum proton transverse momentum.
+  pTLeadProton: {
+    formula: "Max$( sqrt(fsparticles_px*fsparticles_px + fsparticles_py*fsparticles_py) * (fsparticles_pdg==2212) )"
+    xmin:    0.0
+    xmax:    1.5
+    nbins:   30
+    label:   "p_{T,p}^{lead}"
+    units:   "GeV"
+  }
+
+  # ---- Pre-FSI quantities (using prefsi_particles_*) -----------------------
+  # Leading-momentum proton BEFORE INTRANUKE -- compare with pLeadProton above
+  # to see FSI's effect on the leading proton.
+  pLeadProton_preFSI: {
+    formula: "Max$( sqrt(prefsi_particles_px*prefsi_particles_px + prefsi_particles_py*prefsi_particles_py + prefsi_particles_pz*prefsi_particles_pz) * (prefsi_particles_pdg==2212) )"
+    xmin:    0.0
+    xmax:    2.0
+    nbins:   40
+    label:   "p_{p}^{lead, pre-FSI}"
+    units:   "GeV"
+  }
+
+  # ---- Initial state quantities (using isparticles_*) ----------------------
+  # Struck-nucleon momentum magnitude -- captures off-shell motion.
+  pIS_Nucleon: {
+    formula: "Max$( sqrt(isparticles_px*isparticles_px + isparticles_py*isparticles_py + isparticles_pz*isparticles_pz) * (abs(isparticles_pdg)==2112 || abs(isparticles_pdg)==2212) )"
+    xmin:    0.0
+    xmax:    0.5
+    nbins:   25
+    label:   "|p_{N}^{IS}|"
+    units:   "GeV"
+  }
+}

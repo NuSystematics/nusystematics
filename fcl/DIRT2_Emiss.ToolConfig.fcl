@@ -1,0 +1,30 @@
+DIRT2_Emiss_toolconfig: {
+  tool_type: "DIRT2_Emiss"
+  instance_name: "DIRT2"
+
+  # Missing-energy spectral-function dials for argon and carbon targets,
+  # split by struck-nucleon flavour (p, n). Three per-target shape knobs:
+  #   CorrTail   - correction to the high-Emiss tail
+  #   Linear     - linear shift across Emiss
+  #   ShiftPeak  - peak-position shift
+  Emiss_CorrTail_Ar_p_variation_descriptor:   "[-3,-2,-1,0,1,2,3]"
+  Emiss_CorrTail_Ar_n_variation_descriptor:   "[-3,-2,-1,0,1,2,3]"
+  Emiss_Linear_Ar_p_variation_descriptor:     "[-3,-2,-1,0,1,2,3]"
+  Emiss_Linear_Ar_n_variation_descriptor:     "[-3,-2,-1,0,1,2,3]"
+  Emiss_ShiftPeak_Ar_p_variation_descriptor:  "[-3,-2,-1,0,1,2,3]"
+  Emiss_ShiftPeak_Ar_n_variation_descriptor:  "[-3,-2,-1,0,1,2,3]"
+  Emiss_CorrTail_C_p_variation_descriptor:    "[-3,-2,-1,0,1,2,3]"
+  Emiss_CorrTail_C_n_variation_descriptor:    "[-3,-2,-1,0,1,2,3]"
+  Emiss_Linear_C_p_variation_descriptor:      "[-3,-2,-1,0,1,2,3]"
+  Emiss_Linear_C_n_variation_descriptor:      "[-3,-2,-1,0,1,2,3]"
+  Emiss_ShiftPeak_C_p_variation_descriptor:   "[-3,-2,-1,0,1,2,3]"
+  Emiss_ShiftPeak_C_n_variation_descriptor:   "[-3,-2,-1,0,1,2,3]"
+
+  # Optional pass-through scalars consumed by SetupResponseCalculator.
+  OPT_STRING: ""
+  OPT_BOOL:   false
+
+  fill_valid_tree: false
+}
+
+syst_providers: [DIRT2_Emiss_toolconfig]

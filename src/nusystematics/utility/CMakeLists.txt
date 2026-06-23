@@ -3,11 +3,14 @@ SET(UTLY_IMPLFILES)
 
 SET(UTLY_HDRFILES
   GENIEUtils.hh
+  channel_classification.hh
   enumclass2int.hh
   exceptions.hh
+  genie_metadata.hh
   simbUtility.hh
   make_instance.hh
   response_helper.hh
+  silence_genie.hh
   KinVarUtils.hh
 )
 

@@ -1,0 +1,38 @@
+FSILikeEAvailSmearing_toolconfig: {
+  tool_type: "FSILikeEAvailSmearing"
+  instance_name: "FSISmear"
+
+  # Single dial driving the FSI-like EAvail smearing.
+  FSILikeEAvailSmearing_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  # Optional weight clamp.
+  LimitWeights: [0.0, 1.0e6]
+
+  # Histogram manifest. This provider expects a per-channel structure --
+  # one nested table per interaction channel listing its template knots.
+  # Recognised channels: CCQE, CCRes, CCDIS, CCMEC, CCQE_bar, CCRes_bar,
+  # CCDIS_bar, CCMEC_bar, NC. Each channel sub-table follows the layout
+  # consumed by TemplateResponseCalculatorBase (input_file + inputs).
+  #
+  # Replace the input_file paths with real ROOT files. The fcl is
+  # structurally valid even if the files are missing; the provider will
+  # then [SKIP] with "missing external data file".
+  FSILikeEAvailSmearing_input_manifest: {
+    CCQE: {
+      input_file: "${NUSYST}/data/FSILike_EAvail_smearing_CCQE.root"
+      inputs: [
+        { value: -3.0  input_hist: "CCQE_m3sigma" },
+        { value: -2.0  input_hist: "CCQE_m2sigma" },
+        { value: -1.0  input_hist: "CCQE_m1sigma" },
+        { value:  0.0  input_hist: "CCQE_CV"      },
+        { value:  1.0  input_hist: "CCQE_p1sigma" },
+        { value:  2.0  input_hist: "CCQE_p2sigma" },
+        { value:  3.0  input_hist: "CCQE_p3sigma" }
+      ]
+    }
+  }
+
+  fill_valid_tree: false
+}
+
+syst_providers: [FSILikeEAvailSmearing_toolconfig]

@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# nusyst — unified dispatcher for the nusystematics CLI tools.
+#
+# Usage:
+#   nusyst <subcommand> [args...]
+#   nusyst help | -h | --help            # list available subcommands
+#   nusyst <subcommand> -?               # tool-specific help (pass through)
+#
+# Each subcommand forwards its arguments verbatim to the underlying binary.
+
+set -e
+
+subcmd_map() {
+  case "$1" in
+    config)    echo "GenerateAllDialsConfigNuSyst" ;;
+    inventory) echo "DeclaredDialTestNuSyst" ;;
+    tweaks)    echo "DumpConfiguredTweaksNuSyst" ;;
+    response)  echo "DumpDialResponseNuSyst" ;;
+    plots)     echo "PlotSystVariationsNuSyst" ;;
+    *)         return 1 ;;
+  esac
+}
+
+print_help() {
+  cat <<'EOF'
+nusyst — unified dispatcher for the nusystematics CLI tools.
+
+Usage:
+  nusyst <subcommand> [args...]
+
+Subcommands:
+  config     Build a parameter-headers fhicl declaring every available dial
+             (forwards to GenerateAllDialsConfigNuSyst).
+  inventory  Print the declared dials + metadata from a parameter-headers
+             fhicl (forwards to DeclaredDialTestNuSyst).
+  tweaks     Run every configured dial on every event in a GHEP ntuple and
+             write a flat TTree of responses
+             (forwards to DumpConfiguredTweaksNuSyst).
+  response   Per-channel weight-vs-paramValue curves for every dial
+             (forwards to DumpDialResponseNuSyst).
+  plots      Differential-xsec plots with ratio panels, split by channel
+             (forwards to PlotSystVariationsNuSyst).
+
+Each subcommand accepts the underlying tool's flags unchanged. For per-tool
+help, run e.g.:
+  nusyst plots -?
+
+See doc/CLI_TOOLS.md for the end-to-end recipe.
+EOF
+}
+
+if [ $# -eq 0 ]; then
+  print_help
+  exit 0
+fi
+
+case "$1" in
+  -h|--help|help)
+    print_help
+    exit 0
+    ;;
+esac
+
+subcmd="$1"
+shift
+
+if ! binary=$(subcmd_map "$subcmd"); then
+  echo "nusyst: unknown subcommand '$subcmd'." >&2
+  echo >&2
+  print_help >&2
+  exit 2
+fi
+
+# Dispatch by absolute path -- resolve the binary in the same directory as
+# this wrapper. This makes `nusyst` immune to PATH ordering: if two installs
+# (e.g. a shared EOS one and a local dev one) are both on PATH, the wrapper
+# always invokes its own sibling, never a same-named binary from a different
+# install.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+binary_path="${SCRIPT_DIR}/${binary}"
+
+if [ ! -x "$binary_path" ]; then
+  echo "nusyst: expected sibling binary not found or not executable:" >&2
+  echo "  ${binary_path}" >&2
+  exit 127
+fi
+
+exec "$binary_path" "$@"

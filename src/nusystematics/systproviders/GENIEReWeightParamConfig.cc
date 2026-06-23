@@ -7,6 +7,7 @@
 #include "systematicstools/utility/string_parsers.hh"
 
 #include "RwFramework/GSyst.h"
+#include "RwFramework/GSystUncertainty.h"
 
 #include <iomanip>
 #include <iostream>
@@ -17,6 +18,25 @@ using namespace systtools;
 using namespace genie::rew;
 
 namespace nusyst {
+
+// Look up GENIE Reweight's stored 1-sigma uncertainty for `gdial` and stamp
+// it into `param.oneSigmaShifts = [-minus, +plus]`. GENIE returns magnitudes
+// (positive numbers) for each direction; we encode the sign on our side so
+// the inventory rendering at DeclaredDialTestNuSyst reads "-1sigma" as the
+// negative-direction shift and "+1sigma" as the positive-direction shift.
+//
+// If GENIE has no entry for this dial (returns 0), we leave oneSigmaShifts
+// at its default sentinel so the inventory renders `---` for that row,
+// matching the pre-existing "no declared uncertainty" display.
+inline void StampOneSigmaFromGENIE(systtools::SystParamHeader &param,
+                                   genie::rew::GSyst_t gdial) {
+  auto *unc = genie::rew::GSystUncertainty::Instance();
+  double sigma_plus  = unc->OneSigmaErr(gdial, +1);
+  double sigma_minus = unc->OneSigmaErr(gdial, -1);
+  if (sigma_plus == 0.0 && sigma_minus == 0.0) return;
+  param.oneSigmaShifts[0] = -sigma_minus;
+  param.oneSigmaShifts[1] = +sigma_plus;
+}
 
 SystMetaData
 ConfigureSetOfIndependentParameters(fhicl::ParameterSet const &cfg,
@@ -32,6 +52,7 @@ ConfigureSetOfIndependentParameters(fhicl::ParameterSet const &cfg,
     systtools::SystParamHeader param;
     ParseFhiclToolConfigurationParameter(cfg, pname, param, firstParamId);
     param.systParamId = firstParamId++;
+    StampOneSigmaFromGENIE(param, gdial);
     MD.push_back(std::move(param));
   }
   return MD;
@@ -64,6 +85,7 @@ SystMetaData ConfigureSetOfDependentShapeableParameters(
     ParseFhiclToolConfigurationParameter(cfg, pname, param, firstParamId);
     param.systParamId = firstParamId++;
     param.prettyName = GSyst::AsString(IsShape ? gdial.second : gdial.first);
+    StampOneSigmaFromGENIE(param, IsShape ? gdial.second : gdial.first);
     if (!ignore_parameter_dependence) {
       param.isResponselessParam = true;
       param.responseParamId = Response.systParamId;
@@ -124,6 +146,7 @@ SystMetaData ConfigureSetOfDependentParameters(
     systtools::SystParamHeader param;
     ParseFhiclToolConfigurationParameter(cfg, pname, param, firstParamId);
     param.systParamId = firstParamId++;
+    StampOneSigmaFromGENIE(param, gdial);
     if (!ignore_parameter_dependence) {
       param.isResponselessParam = true;
       param.responseParamId = Response.systParamId;
@@ -206,6 +229,7 @@ SystMetaData ConfigureQEParameterHeaders(fhicl::ParameterSet const &cfg,
       ParseFhiclToolConfigurationParameter(
           cfg, GSyst::AsString(kXSecTwkDial_NormCCQE), param, firstParamId);
       param.systParamId = firstParamId++;
+      StampOneSigmaFromGENIE(param, kXSecTwkDial_NormCCQE);
       QEmd.push_back(std::move(param));
     }
     if (DipoleMaCCQEIsUsed) {
@@ -215,6 +239,8 @@ SystMetaData ConfigureQEParameterHeaders(fhicl::ParameterSet const &cfg,
       param.systParamId = firstParamId++;
       param.prettyName = GSyst::AsString(
           DipoleIsShapeOnly ? kXSecTwkDial_MaCCQEshape : kXSecTwkDial_MaCCQE);
+      StampOneSigmaFromGENIE(
+          param, DipoleIsShapeOnly ? kXSecTwkDial_MaCCQEshape : kXSecTwkDial_MaCCQE);
       QEmd.push_back(std::move(param));
     }
   } else if (IsZExpReWeight) {
@@ -225,6 +251,7 @@ SystMetaData ConfigureQEParameterHeaders(fhicl::ParameterSet const &cfg,
       ParseFhiclToolConfigurationParameter(
           cfg, GSyst::AsString(kXSecTwkDial_ZNormCCQE), param, firstParamId);
       param.systParamId = firstParamId++;
+      StampOneSigmaFromGENIE(param, kXSecTwkDial_ZNormCCQE);
       QEmd.push_back(std::move(param));
     }
 
@@ -312,6 +339,7 @@ SystMetaData ConfigureRESParameterHeaders(fhicl::ParameterSet const &cfg,
     ParseFhiclToolConfigurationParameter(
         cfg, GSyst::AsString(kXSecTwkDial_NormCCRES), param, firstParamId);
     param.systParamId = firstParamId++;
+    StampOneSigmaFromGENIE(param, kXSecTwkDial_NormCCRES);
     RESmd.push_back(std::move(param));
   }
 
@@ -341,6 +369,7 @@ SystMetaData ConfigureRESParameterHeaders(fhicl::ParameterSet const &cfg,
     ParseFhiclToolConfigurationParameter(
         cfg, GSyst::AsString(kXSecTwkDial_NormNCRES), param, firstParamId);
     param.systParamId = firstParamId++;
+    StampOneSigmaFromGENIE(param, kXSecTwkDial_NormNCRES);
     RESmd.push_back(std::move(param));
   }
 

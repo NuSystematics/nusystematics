@@ -1,0 +1,60 @@
+NOvAStyleNonResPionNorm_toolconfig: {
+  tool_type: "NOvAStyleNonResPionNorm"
+  instance_name: "NRPiNorm"
+
+  # Non-resonant pion-norm dials per (probe, target nucleon, current, NPi)
+  # channel. The provider's BuildSystMetaData picks up each *_variation_descriptor
+  # key it finds; channels without a matching key are silently skipped, so a
+  # user can trim this list down to whichever channels they care about.
+
+  NR_nu_n_CC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_n_CC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_n_CC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_p_CC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_p_CC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_p_CC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_np_CC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_np_CC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_np_CC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  NR_nu_n_NC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_n_NC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_n_NC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_p_NC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_p_NC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_p_NC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_np_NC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_np_NC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nu_np_NC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  NR_nubar_n_CC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_n_CC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_n_CC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_p_CC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_p_CC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_p_CC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_np_CC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_np_CC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_np_CC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  NR_nubar_n_NC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_n_NC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_n_NC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_p_NC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_p_NC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_p_NC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_np_NC_1Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_np_NC_2Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  NR_nubar_np_NC_3Pi_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  # Scalar parameters of the W-dependent response shape.
+  WBegin:           0.0
+  WEnd:             5.0
+  WTransition:      3.0
+  OneSigmaResponse: 0.5
+  HighWResponse:    0.05
+
+  fill_valid_tree: false
+}
+
+syst_providers: [NOvAStyleNonResPionNorm_toolconfig]

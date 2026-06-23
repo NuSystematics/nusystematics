@@ -5,3 +5,7 @@
 *.bak
 *.log
 *.root
+build/
+install/
+validation/
+CLAUDE.md

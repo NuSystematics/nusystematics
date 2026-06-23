@@ -1,0 +1,36 @@
+MINERvAq0q3Weighting_toolconfig: {
+  tool_type: "MINERvAq0q3Weighting"
+  instance_name: "Mnvq0q3"
+
+  # Two opt-in knobs in this provider:
+  #   use_MINERvA_RPA_tunes  -> declares 'MINERvATune_RPA' dial
+  #   use_MINERvA_2p2h_tunes -> declares 'Mnv2p2hGaussEnhancement' (+ variants)
+  # Either can be turned off independently to slim the dial set.
+  use_MINERvA_RPA_tunes:  true
+  use_MINERvA_2p2h_tunes: true
+
+  # Mnv2p2h: single response param by default. Set parameter_per_2p2h_universe
+  # to true to expose CV/NN/np/QE as separate splineable dials instead.
+  parameter_per_2p2h_universe: false
+  Mnv2p2hGaussEnhancement_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+
+  # Optional weight clamp.
+  Mnv2p2hGaussEnhancement_LimitWeights: [0.0, 1.0e6]
+
+  # Histogram manifest required when use_MINERvA_RPA_tunes is true. Layout
+  # follows TemplateResponseCalculatorBase. Replace input_file with a real
+  # ROOT file; the fcl is structurally valid even if it's missing, the
+  # provider will then [SKIP] with "missing external data file".
+  MINERvATune_RPA_input_manifest: {
+    input_file: "${NUSYST}/data/MINERvA_RPA_q0q3.root"
+    inputs: [
+      { value: -1.0  input_hist: "RPA_m1sigma" },
+      { value:  0.0  input_hist: "RPA_CV"      },
+      { value:  1.0  input_hist: "RPA_p1sigma" }
+    ]
+  }
+
+  fill_valid_tree: false
+}
+
+syst_providers: [MINERvAq0q3Weighting_toolconfig]

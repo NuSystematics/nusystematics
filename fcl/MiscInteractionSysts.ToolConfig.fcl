@@ -1,0 +1,21 @@
+MiscInteractionSysts_toolconfig: {
+  tool_type: "MiscInteractionSysts"
+  instance_name: "MiscSysts"
+
+  # Cross-section scalings & ratios that don't fit cleanly into a single
+  # channel-specific provider. See responsecalculators/ for each one's
+  # implementation:
+  #   C12ToAr40_2p2hScaling_*  - extrapolate MEC C->Ar with nu / nubar dial
+  #   nuenuebar_xsec_ratio     - nue/nuebar cross-section ratio knob
+  #   nuenumu_xsec_ratio       - nue/numu cross-section ratio knob
+  #   SPPLowQ2Suppression      - low-Q^2 single-pion suppression (NEUT-like)
+  C12ToAr40_2p2hScaling_nu_variation_descriptor:    "[-3,-2,-1,0,1,2,3]"
+  C12ToAr40_2p2hScaling_nubar_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  nuenuebar_xsec_ratio_variation_descriptor:        "[-3,-2,-1,0,1,2,3]"
+  nuenumu_xsec_ratio_variation_descriptor:          "[-3,-2,-1,0,1,2,3]"
+  SPPLowQ2Suppression_variation_descriptor:         "[-3,-2,-1,0,1,2,3]"
+
+  fill_valid_tree: false
+}
+
+syst_providers: [MiscInteractionSysts_toolconfig]
