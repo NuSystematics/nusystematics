@@ -3,7 +3,7 @@
 
 #include "nusystematics/interface/IGENIESystProvider_tool.hh"
 
-#include "nusystematics/responsecalculators/FSIReweightCalculatorMult.hh"
+#include "nusystematics/responsecalculators/FSIReweightMultCalculator.hh"
 #include "nusystematics/utility/enumclass2int.hh"
 
 #include "nusystematics/utility/GENIEUtils.hh"
@@ -16,7 +16,7 @@
 
 class FSIReweightMult : public nusyst::IGENIESystProvider_tool {
 
-    std::unique_ptr<nusyst::FSIReweightCalculatorMult> fsiReweightCalculatorMult;
+    std::unique_ptr<nusyst::FSIReweightMultCalculator> fsiReweightMultCalculator;
 
 public:
   explicit FSIReweightMult(fhicl::ParameterSet const &);
