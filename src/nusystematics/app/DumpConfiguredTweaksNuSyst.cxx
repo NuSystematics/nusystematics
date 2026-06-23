@@ -17,7 +17,7 @@
 #include "nusystematics/utility/response_helper.hh"
 #include "nusystematics/utility/silence_genie.hh"
 
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 
 #include <map>
 
@@ -53,12 +53,12 @@ using namespace genie::rew;
 NEW_SYSTTOOLS_EXCEPT(unexpected_number_of_responses);
 
 namespace cliopts {
-std::string fclname = "";
+std::string yamlname = "";
 std::string genie_input = "";
 std::string genie_branch_name = "gmcrec";
 std::string outputfile = "";
-std::string envvar = "FHICL_FILE_PATH";
-std::string fhicl_key = "generated_systematic_provider_configuration";
+std::string envvar = "YAML_FILE_PATH";
+std::string yaml_key = "generated_systematic_provider_configuration";
 size_t NMax = std::numeric_limits<size_t>::max();
 size_t NSkip = 0;
 int n_threads = 1;     // -j / --threads N: spawn N worker processes via fork()
@@ -71,20 +71,20 @@ int lookup_policy = 1;
 
 // Cache-resolution constants mirror those in DeclaredDialTestNuSyst so the
 // two tools share the same auto-generation behaviour: if no -c is passed,
-// fall back to $NUSYST_INVENTORY_FCL and then $nusystematics_ROOT/fcl/
-// nusyst_inventory.fcl (then $NUSYST/fcl/..., then /tmp/...), auto-
+// fall back to $NUSYST_INVENTORY_YAML and then $nusystematics_ROOT/fcl/
+// nusyst_inventory.yaml (then $NUSYST/fcl/..., then /tmp/...), auto-
 // generating via GenerateAllDialsConfigNuSyst on first use.
-constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_FCL";
+constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_YAML";
 
 std::string InventoryDefaultPath() {
 #ifdef NUSYST_INSTALL_PREFIX
-  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.fcl";
+  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.yaml";
 #else
   for (char const *var : {"nusystematics_ROOT", "NUSYST"}) {
     char const *val = std::getenv(var);
-    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.fcl";
+    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.yaml";
   }
-  return "/tmp/nusyst_inventory.fcl";
+  return "/tmp/nusyst_inventory.yaml";
 #endif
 }
 
@@ -435,11 +435,11 @@ struct TweakSummaryTree {
 void SayUsage(char const *argv[]) {
   std::cout << "[USAGE]: " << argv[0] << "\n" << std::endl;
   std::cout << "\t-?|--help        : Show this message.\n"
-               "\t-c <config.fcl>  : fhicl file to read (parameter-headers\n"
+               "\t-c <config.yaml>  : YAML file to read (parameter-headers\n"
                "\t                   format, i.e. the output of\n"
                "\t                   `nusyst config`). Optional: if omitted,\n"
-               "\t                   resolves to $NUSYST_INVENTORY_FCL\n"
-               "\t                   then $NUSYST/fcl/nusyst_inventory.fcl,\n"
+               "\t                   resolves to $NUSYST_INVENTORY_YAML\n"
+               "\t                   then $NUSYST/fcl/nusyst_inventory.yaml,\n"
                "\t                   auto-generating via `nusyst config`\n"
                "\t                   if absent.\n"
                "\t-p <par1,par2,...>: Filter to dials whose prettyName\n"
@@ -450,7 +450,7 @@ void SayUsage(char const *argv[]) {
                "\t                   non-matching dials within a kept\n"
                "\t                   provider are still computed but not\n"
                "\t                   written to the output tree.\n"
-               "\t-k <list key>    : fhicl key to look for parameter headers,\n"
+               "\t-k <list key>    : YAML key to look for parameter headers,\n"
                "\t                   "
                "\"generated_systematic_provider_configuration\"\n"
                "\t                   by default.\n"
@@ -478,14 +478,14 @@ void HandleOpts(int argc, char const *argv[]) {
       SayUsage(argv);
       exit(0);
     } else if (std::string(argv[opt]) == "-c") {
-      cliopts::fclname = argv[++opt];
+      cliopts::yamlname = argv[++opt];
     } else if (std::string(argv[opt]) == "-p") {
       std::string tok;
       std::istringstream ss(argv[++opt]);
       while (std::getline(ss, tok, ','))
         if (!tok.empty()) cliopts::parameters.push_back(tok);
     } else if (std::string(argv[opt]) == "-k") {
-      cliopts::fhicl_key = argv[++opt];
+      cliopts::yaml_key = argv[++opt];
     } else if (std::string(argv[opt]) == "-i") {
       cliopts::genie_input = argv[++opt];
     } else if (std::string(argv[opt]) == "-b") {
@@ -510,39 +510,37 @@ void HandleOpts(int argc, char const *argv[]) {
 
 typedef IGENIESystProvider_tool SystProv;
 
-fhicl::ParameterSet ReadParameterSet(char const *[]) {
-  // TODO
-  std::unique_ptr<cet::filepath_maker> fm = std::make_unique<cet::filepath_maker>();
-  return fhicl::ParameterSet::make(cliopts::fclname, *fm);
+YAML::Node ReadParameterSet(char const *[]) {
+  return YAML::LoadFile(cliopts::yamlname);
 }
 
-// Re-parse the parameter-headers fhicl to extract per-provider
+// Re-parse the parameter-headers YAML to extract per-provider
 // `applies_to_channels` patterns (written by GenerateAllDialsConfigNuSyst's
 // per-bucket emission). Returns an empty map if no provider declares the key,
 // in which case no channel-aware skipping happens and behaviour matches the
 // pre-optimisation baseline.
 std::map<std::string, std::vector<std::string>>
-LoadAppliesToChannelsMap(const std::string &fclname,
+LoadAppliesToChannelsMap(const std::string &yamlname,
                          const std::string &top_key) {
   std::map<std::string, std::vector<std::string>> out;
   try {
-    std::unique_ptr<cet::filepath_maker> fm =
-        std::make_unique<cet::filepath_lookup_nonabsolute>("FHICL_FILE_PATH");
-    fhicl::ParameterSet raw = fhicl::ParameterSet::make(fclname, *fm);
-    fhicl::ParameterSet gen = raw.get<fhicl::ParameterSet>(top_key);
-    auto provider_names = gen.get<std::vector<std::string>>("syst_providers");
+    YAML::Node raw = YAML::LoadFile(yamlname);
+    YAML::Node gen = raw[top_key];
+    if (!gen) return out;
+    auto provider_names = gen["syst_providers"]
+                              ? gen["syst_providers"].as<std::vector<std::string>>()
+                              : std::vector<std::string>{};
     for (auto const &name : provider_names) {
-      fhicl::ParameterSet prov =
-          gen.get<fhicl::ParameterSet>(name, fhicl::ParameterSet{});
-      fhicl::ParameterSet topts =
-          prov.get<fhicl::ParameterSet>("tool_options", fhicl::ParameterSet{});
-      auto patterns =
-          topts.get<std::vector<std::string>>("applies_to_channels", {});
+      YAML::Node prov = gen[name];
+      YAML::Node topts = prov["tool_options"];
+      auto patterns = topts["applies_to_channels"]
+                          ? topts["applies_to_channels"].as<std::vector<std::string>>()
+                          : std::vector<std::string>{};
       if (!patterns.empty()) out[name] = patterns;
     }
   } catch (std::exception &e) {
     std::cerr << "[WARN]: Failed to load applies_to_channels map from "
-              << fclname << ": " << e.what()
+              << yamlname << ": " << e.what()
               << ". Falling back to evaluating every provider on every event."
               << std::endl;
     return {};
@@ -576,29 +574,29 @@ int DispatchWorkers();
 int RunSerial() {
   // Cache fallback: a `-p` filter implicitly says "I want some reweights,
   // configure them from the cached kitchen sink". Resolve fclname against
-  // $NUSYST_INVENTORY_FCL / /tmp/nusyst_inventory.fcl and auto-generate via
+  // $NUSYST_INVENTORY_YAML / /tmp/nusyst_inventory.yaml and auto-generate via
   // `nusyst config` if missing, mirroring DeclaredDialTestNuSyst's logic.
   // Plain `nusyst tweaks -i ghep.root -o out.root` (no -c, no -p) keeps the
   // pre-existing "no reweights" behaviour for backwards compatibility.
-  if (cliopts::fclname.empty() && !cliopts::parameters.empty()) {
+  if (cliopts::yamlname.empty() && !cliopts::parameters.empty()) {
     char const *env = std::getenv(kInventoryEnvVar);
-    cliopts::fclname = (env && *env) ? std::string(env) : InventoryDefaultPath();
-    if (::access(cliopts::fclname.c_str(), R_OK) != 0) {
+    cliopts::yamlname = (env && *env) ? std::string(env) : InventoryDefaultPath();
+    if (::access(cliopts::yamlname.c_str(), R_OK) != 0) {
       std::cerr << "[INFO]: -p was given without -c; auto-generating "
-                << cliopts::fclname << " via `nusyst config --mode all`.\n";
+                << cliopts::yamlname << " via `nusyst config --mode all`.\n";
       std::string cmd = "GenerateAllDialsConfigNuSyst --mode all -o " +
-                        cliopts::fclname + " > /dev/null 2>&1";
+                        cliopts::yamlname + " > /dev/null 2>&1";
       if (std::system(cmd.c_str()) != 0) {
         std::cerr << "[ERROR]: Auto-generation failed; re-running visibly:\n";
         std::system(("GenerateAllDialsConfigNuSyst --mode all -o " +
-                     cliopts::fclname).c_str());
+                     cliopts::yamlname).c_str());
         return 3;
       }
     }
   }
 
   bool RunNuSyst = true;
-  if (!cliopts::fclname.size()) {
+  if (!cliopts::yamlname.size()) {
     RunNuSyst = false;
     std::cout << "-c is not given, running without evaluating reweights" << std::endl;
   }
@@ -626,17 +624,18 @@ int RunSerial() {
   std::map<std::string, std::vector<std::string>> applies_to_channels;
   size_t n_filtered_providers = 0;
   if(RunNuSyst){
-    // Load the parameter-headers fhicl as a ParameterSet so a -p filter can
+    // Load the parameter-headers YAML as a ParameterSet so a -p filter can
     // drop providers before they're constructed. Without the filter, the
     // effect is identical to the old `response_helper(fclname)` one-shot.
-    fhicl::ParameterSet raw_ps;
-    {
-      std::unique_ptr<cet::filepath_maker> fm =
-          std::make_unique<cet::filepath_lookup_nonabsolute>("FHICL_FILE_PATH");
-      raw_ps = fhicl::ParameterSet::make(cliopts::fclname, *fm);
+    YAML::Node raw_ps;
+    raw_ps = YAML::LoadFile(cliopts::yamlname);
+    YAML::Node gen_ps = raw_ps[cliopts::yaml_key];
+    if (!gen_ps) {
+      std::cerr << "[ERROR]: " << cliopts::yamlname
+                << " has no top-level key " << std::quoted(cliopts::yaml_key)
+                << std::endl;
+      return 4;
     }
-    fhicl::ParameterSet gen_ps =
-        raw_ps.get<fhicl::ParameterSet>(cliopts::fhicl_key);
 
     // Provider-level -p filter: drop any provider whose dials all miss the
     // filter. These are not instantiated and not evaluated per event.
@@ -645,29 +644,31 @@ int RunSerial() {
     // from the tree.
     if (!cliopts::parameters.empty()) {
       auto provider_names =
-          gen_ps.get<std::vector<std::string>>("syst_providers");
+          gen_ps["syst_providers"] ? gen_ps["syst_providers"].as<std::vector<std::string>>()
+                                    : std::vector<std::string>{};
       std::vector<std::string> kept;
       for (auto const &pname : provider_names) {
-        fhicl::ParameterSet prov;
-        try { prov = gen_ps.get<fhicl::ParameterSet>(pname); }
-        catch (...) { continue; }
+        YAML::Node prov = gen_ps[pname];
+        if (!prov) continue;
         bool any_match = false;
-        for (auto const &key : prov.get_names()) {
-          if (!prov.is_key_to_table(key)) continue;
+        for (auto const &entry : prov) {
+          std::string key = entry.first.as<std::string>();
+          if (key == "tool_type" || key == "instance_name") continue;
+          if (!prov[key].IsMap()) continue;
           try {
-            fhicl::ParameterSet sub = prov.get<fhicl::ParameterSet>(key);
-            if (!sub.has_key("prettyName")) continue;
-            std::string pretty = sub.get<std::string>("prettyName");
+            YAML::Node sub = prov[key];
+            if (!sub["prettyName"]) continue;
+            std::string pretty = sub["prettyName"].as<std::string>();
             if (DialMatchesFilter(pretty)) { any_match = true; break; }
           } catch (...) {}
         }
         if (any_match) {
           kept.push_back(pname);
         } else {
-          gen_ps.erase(pname);
+          gen_ps[pname] = YAML::Node();
         }
       }
-      gen_ps.put_or_replace<std::vector<std::string>>("syst_providers", kept);
+      gen_ps["syst_providers"] = kept;
       std::cerr << "[INFO]: -p filter kept " << kept.size() << " of "
                 << provider_names.size() << " providers ("
                 << (provider_names.size() - kept.size())
@@ -683,17 +684,16 @@ int RunSerial() {
 
     // Re-derive applies_to_channels from the (possibly filtered) PS instead
     // of re-reading the file -- keeps the two views in sync.
-    auto provider_names =
-        gen_ps.get<std::vector<std::string>>("syst_providers",
-                                              std::vector<std::string>{});
+    auto provider_names = gen_ps["syst_providers"]
+                              ? gen_ps["syst_providers"].as<std::vector<std::string>>()
+                              : std::vector<std::string>{};
     for (auto const &pname : provider_names) {
       try {
-        fhicl::ParameterSet prov = gen_ps.get<fhicl::ParameterSet>(pname);
-        fhicl::ParameterSet topts =
-            prov.get<fhicl::ParameterSet>("tool_options",
-                                           fhicl::ParameterSet{});
-        auto patterns = topts.get<std::vector<std::string>>(
-            "applies_to_channels", std::vector<std::string>{});
+        YAML::Node prov = gen_ps[pname];
+        YAML::Node topts = prov["tool_options"];
+        auto patterns = topts["applies_to_channels"]
+                            ? topts["applies_to_channels"].as<std::vector<std::string>>()
+                            : std::vector<std::string>{};
         if (!patterns.empty()) {
           applies_to_channels[pname] = std::move(patterns);
         }

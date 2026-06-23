@@ -5,8 +5,6 @@
 #include "nusystematics/utility/exceptions.hh"
 #include "systematicstools/interface/ISystProviderTool.hh"
 
-#include "fhiclcpp/ParameterSet.h"
-
 // GENIE
 #include "Framework/EventGen/EventRecord.h"
 // Extra includes needed for CheckTune()
@@ -22,14 +20,14 @@ protected:
   // -- S. Gardiner, 20 December 2018
   void CheckTune(const std::string &tune_name) {
 
-    std::string fhicl_tune_name = tune_name;
+    std::string yaml_tune_name = tune_name;
 
     // The default tune name is ${GENIE_XSEC_TUNE}, which
     // should be converted into the value of the corresponding
     // enviornment variable, as is done below.
-    if (fhicl_tune_name.front() == '$') {
+    if (yaml_tune_name.front() == '$') {
       // need to remove ${}'s
-      std::string tuneEnvVar = fhicl_tune_name;
+      std::string tuneEnvVar = yaml_tune_name;
       std::string rmchars("$(){} ");
       // std::remove_if removes characters in [first,last) that are found
       //   within the rmchars string. It returns returns a past-the-end
@@ -44,10 +42,10 @@ protected:
 
       const char *tune = std::getenv(tuneEnvVar.c_str());
       if (tune) {
-        fhicl_tune_name = std::string(tune);
+        yaml_tune_name = std::string(tune);
       } else {
-        throw systtools::invalid_ToolConfigurationFHiCL()
-            << "can't resolve TuneName: " << fhicl_tune_name;
+        throw systtools::invalid_ToolConfigurationYAML()
+            << "can't resolve TuneName: " << yaml_tune_name;
       }
     }
 
@@ -57,13 +55,13 @@ protected:
     if (current_tune.empty()) {
       // Constructor automatically calls grunopt->Init();
       genie::RunOpt *grunopt = genie::RunOpt::Instance();
-      grunopt->SetTuneName(fhicl_tune_name);
+      grunopt->SetTuneName(yaml_tune_name);
       grunopt->BuildTune();
     } else {
       // It has already been built, so just check consistency
-      if (fhicl_tune_name != current_tune) {
-        throw systtools::invalid_ToolConfigurationFHiCL()
-            << "Requested GENIE tune \"" << fhicl_tune_name
+      if (yaml_tune_name != current_tune) {
+        throw systtools::invalid_ToolConfigurationYAML()
+            << "Requested GENIE tune \"" << yaml_tune_name
             << "\" does not match previously built tune \"" << current_tune
             << '\"';
       }
@@ -71,12 +69,15 @@ protected:
   }
 
 public:
-  IGENIESystProvider_tool(fhicl::ParameterSet const &ps)
-      : ISystProviderTool(ps), fGENIEModuleLabel(ps.get<std::string>(
-                                   "genie_module_label", "generator")) {
+  IGENIESystProvider_tool(YAML::Node const &yamlnd)
+      : ISystProviderTool(yamlnd),
+        fGENIEModuleLabel(yamlnd["genie_module_label"]
+                               ? yamlnd["genie_module_label"].as<std::string>()
+                               : "generator") {
 
-    std::string tune_name =
-        ps.get<std::string>("TuneName", "${GENIE_XSEC_TUNE}");
+    std::string tune_name = yamlnd["TuneName"]
+                                ? yamlnd["TuneName"].as<std::string>()
+                                : "${GENIE_XSEC_TUNE}";
     this->CheckTune(tune_name);
   }
 

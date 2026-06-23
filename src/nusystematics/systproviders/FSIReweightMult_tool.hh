@@ -19,13 +19,13 @@ class FSIReweightMult : public nusyst::IGENIESystProvider_tool {
     std::unique_ptr<nusyst::FSIReweightCalculatorMult> fsiReweightCalculatorMult;
 
 public:
-  explicit FSIReweightMult(fhicl::ParameterSet const &);
+  explicit FSIReweightMult(YAML::Node const &);
 
-  bool SetupResponseCalculator(fhicl::ParameterSet const &);
+  bool SetupResponseCalculator(YAML::Node const &);
 
-  fhicl::ParameterSet GetExtraToolOptions() { return tool_options; }
+  YAML::Node GetExtraToolOptions() { return tool_options; }
 
-  systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const &,
+  systtools::SystMetaData BuildSystMetaData(YAML::Node const &,
                                             systtools::paramId_t);
 
   systtools::event_unit_response_t GetEventResponse(genie::EventRecord const &);
@@ -36,7 +36,7 @@ public:
 
 private:
 
-  fhicl::ParameterSet tool_options;
+  YAML::Node tool_options;
 
   size_t ResponseParameterIdx;
 

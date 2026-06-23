@@ -18,11 +18,11 @@
 #include <sstream>
 #include <fstream>
 
-using namespace fhicl;
+using namespace systtools;
 using namespace systtools;
 using namespace nusyst;
 
-GENIEReWeight::GENIEReWeight(ParameterSet const &params)
+GENIEReWeight::GENIEReWeight(YAML::Node const &params)
     : IGENIESystProvider_tool(params), fHaveReconfiguredOneOfTheHERG(false),
       valid_file(nullptr), valid_tree(nullptr) {}
 
@@ -31,27 +31,26 @@ std::string GENIEReWeight::AsString() {
   return "";
 }
 
-SystMetaData GENIEReWeight::BuildSystMetaData(ParameterSet const &params,
+SystMetaData GENIEReWeight::BuildSystMetaData(YAML::Node const &params,
                                               paramId_t firstParamId) {
 
-  tool_options = fhicl::ParameterSet();
+  tool_options = YAML::Node();
 
   bool ignore_parameter_dependence =
-      params.get<bool>("ignore_parameter_dependence", false);
-  tool_options.put("ignore_parameter_dependence", ignore_parameter_dependence);
+      params["ignore_parameter_dependence"] ? params["ignore_parameter_dependence"].as<bool>() : false;
+  tool_options["ignore_parameter_dependence"] = ignore_parameter_dependence;
 
-  bool UseFullHERG = params.get<bool>("UseFullHERG", false);
-  tool_options.put("UseFullHERG", UseFullHERG);
+  bool UseFullHERG = params["UseFullHERG"] ? params["UseFullHERG"].as<bool>() : false;
+  tool_options["UseFullHERG"] = UseFullHERG;
 
-  std::string genie_tune_name = params.get<std::string>("genie_tune_name",
-                                                   "${GENIE_XSEC_TUNE}");
-  tool_options.put("genie_tune_name",genie_tune_name);
+  std::string genie_tune_name = params["genie_tune_name"] ? params["genie_tune_name"].as<std::string>() : "${GENIE_XSEC_TUNE}";
+  tool_options["genie_tune_name"] = genie_tune_name;
 
-  std::string evgen_list_name = params.get<std::string>("EventGeneratorList", "");
-  tool_options.put("evgen_list_name",evgen_list_name);
+  std::string evgen_list_name = params["EventGeneratorList"] ? params["EventGeneratorList"].as<std::string>() : "";
+  tool_options["evgen_list_name"] = evgen_list_name;
 
-  fill_valid_tree = params.get<bool>("fill_valid_tree", false);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  fill_valid_tree = params["fill_valid_tree"] ? params["fill_valid_tree"].as<bool>() : false;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
   SystMetaData QEmd =
       ConfigureQEParameterHeaders(params, firstParamId, tool_options);
@@ -114,13 +113,13 @@ void GENIEReWeight::extend_ResponseToGENIEParameters(
 }
 
 bool GENIEReWeight::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   std::cout << "[INFO]: Setting up GENIE ReWeight instances..." << std::endl;
 
   //==== taken from https://github.com/LArSoft/larsim/blob/5b8ddeef9a556aa8a6bfa61915a16af25fa33a74/larsim/EventWeight/App/EventWeight_module.cc#L63-L78
-  std::string genie_tune_name = tool_options.get<std::string>("genie_tune_name");
-  std::string evgen_list_name = tool_options.get<std::string>("EventGeneratorList", "");
+  std::string genie_tune_name = tool_options["genie_tune_name"] ? tool_options["genie_tune_name"].as<std::string>() : "";
+  std::string evgen_list_name = tool_options["EventGeneratorList"] ? tool_options["EventGeneratorList"].as<std::string>() : "";
   std::cout << "[INFO]: genie_tune_name = " << genie_tune_name << std::endl;
   std::cout << "[INFO]: evgen_list_name = " << evgen_list_name << std::endl;
 
@@ -188,7 +187,7 @@ bool GENIEReWeight::SetupResponseCalculator(
 
   std::cout << "[INFO]: Done!" << std::endl;
 
-  fill_valid_tree = tool_options.get("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
   if (fill_valid_tree) {
     InitValidTree();
   }

@@ -1,6 +1,6 @@
 #include "nusystematics/systproviders/BeRPAWeight_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 #include "systematicstools/utility/ResponselessParamUtility.hh"
 
 #include "nusystematics/utility/GENIEUtils.hh"
@@ -16,7 +16,7 @@ using namespace systtools;
 
 // #define BERPAWEIGHT_DEBUG
 
-BeRPAWeight::BeRPAWeight(fhicl::ParameterSet const &params)
+BeRPAWeight::BeRPAWeight(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       pidx_BeRPA_Response(kParamUnhandled<size_t>),
       pidx_BeRPA_A(kParamUnhandled<size_t>),
@@ -25,14 +25,14 @@ BeRPAWeight::BeRPAWeight(fhicl::ParameterSet const &params)
       pidx_BeRPA_E(kParamUnhandled<size_t>), valid_file(nullptr),
       valid_tree(nullptr) {}
 
-SystMetaData BeRPAWeight::BuildSystMetaData(fhicl::ParameterSet const &ps,
+SystMetaData BeRPAWeight::BuildSystMetaData(YAML::Node const &yamlnd,
                                             paramId_t firstId) {
 
   SystMetaData smd;
 
   ignore_parameter_dependence =
-      ps.get<bool>("ignore_parameter_dependence", false);
-  ApplyCV = ps.get<bool>("ApplyCV", false);
+      yamlnd["ignore_parameter_dependence"] ? yamlnd["ignore_parameter_dependence"].as<bool>() : false;
+  ApplyCV = yamlnd["ApplyCV"] ? yamlnd["ApplyCV"].as<bool>() : false;
 
   SystParamHeader responseParam;
   std::vector<std::string> dependentParamNames;
@@ -44,14 +44,14 @@ SystMetaData BeRPAWeight::BuildSystMetaData(fhicl::ParameterSet const &ps,
   for (std::string const &pname :
        {"BeRPA_A", "BeRPA_B", "BeRPA_D", "BeRPA_E"}) {
     SystParamHeader phdr;
-    if (ParseFhiclToolConfigurationParameter(ps, pname, phdr, firstId)) {
+    if (ParseYAMLToolConfigurationParameter(yamlnd, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
       if (!ignore_parameter_dependence) {
         dependentParamNames.push_back(phdr.prettyName);
         phdr.isResponselessParam = true;
         phdr.responseParamId = responseParam.systParamId;
         if (phdr.isSplineable) {
-          throw invalid_ToolConfigurationFHiCL()
+          throw invalid_ToolConfigurationYAML()
               << "[ERROR]: Attempted to build spline from "
                  "parameter "
               << phdr.prettyName
@@ -73,18 +73,18 @@ SystMetaData BeRPAWeight::BuildSystMetaData(fhicl::ParameterSet const &ps,
                                            dependentParamNames);
   }
 
-  tool_options.put("fill_valid_tree", ps.get<bool>("fill_valid_tree", false));
-  tool_options.put("ignore_parameter_dependence", ignore_parameter_dependence);
-  tool_options.put("ApplyCV", ApplyCV);
+  tool_options["fill_valid_tree"] = yamlnd["fill_valid_tree"] ? yamlnd["fill_valid_tree"].as<bool>() : false;
+  tool_options["ignore_parameter_dependence"] = ignore_parameter_dependence;
+  tool_options["ApplyCV"] = ApplyCV;
 
   return smd;
 }
 
 bool BeRPAWeight::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   ignore_parameter_dependence =
-      tool_options.get<bool>("ignore_parameter_dependence", false);
+      tool_options["ignore_parameter_dependence"] ? tool_options["ignore_parameter_dependence"].as<bool>() : false;
 
   SystMetaData const &md = GetSystMetaData();
 
@@ -140,8 +140,8 @@ bool BeRPAWeight::SetupResponseCalculator(
               std::back_inserter(EVariations));
   }
 
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
-  ApplyCV = tool_options.get<bool>("ApplyCV", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
+  ApplyCV = tool_options["ApplyCV"] ? tool_options["ApplyCV"].as<bool>() : false;
 
   if (fill_valid_tree) {
     InitValidTree();

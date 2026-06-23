@@ -23,7 +23,7 @@
 #include "nusystematics/systproviders/WSReweight_tool.hh"
 #include "nusystematics/systproviders/MECq0q3InterpWeighting_tool.hh"
 
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 
 #include <memory>
 
@@ -32,8 +32,8 @@ namespace nusyst {
 NEW_SYSTTOOLS_EXCEPT(unknown_nusyst_systprovider);
 
 inline std::unique_ptr<IGENIESystProvider_tool>
-make_instance(fhicl::ParameterSet const &paramset) {
-  std::string tool_type = paramset.get<std::string>("tool_type");
+make_instance(YAML::Node const &paramset) {
+  std::string tool_type = paramset["tool_type"].as<std::string>();
 
   if (tool_type == "GENIEReWeight") {
     return std::make_unique<GENIEReWeight>(paramset);

@@ -1,6 +1,6 @@
 #include "nusystematics/systproviders/MKSinglePiTemplate_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "nusystematics/utility/GENIEUtils.hh"
 #include "nusystematics/utility/exceptions.hh"
@@ -11,11 +11,11 @@
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
+using namespace systtools;
 
 // #define DEBUG_MKSINGLEPI
 
-MKSinglePiTemplate::MKSinglePiTemplate(ParameterSet const &params)
+MKSinglePiTemplate::MKSinglePiTemplate(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       ResponseParameterIdx(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
@@ -27,37 +27,37 @@ struct channel_id {
 };
 } // namespace
 
-SystMetaData MKSinglePiTemplate::BuildSystMetaData(ParameterSet const &cfg,
+SystMetaData MKSinglePiTemplate::BuildSystMetaData(YAML::Node const &cfg,
                                                    paramId_t firstId) {
 
   SystMetaData smd;
 
   systtools::SystParamHeader phdr;
-  if (ParseFhiclToolConfigurationParameter(cfg, "MKSPP_ReWeight", phdr,
+  if (ParseYAMLToolConfigurationParameter(cfg, "MKSPP_ReWeight", phdr,
                                                  firstId)) {
     phdr.systParamId = firstId++;
     smd.push_back(phdr);
   }
 
-  if (!cfg.has_key("MKSPP_Template_input_manifest") ||
-      !cfg.is_key_to_table("MKSPP_Template_input_manifest")) {
-    throw invalid_ToolConfigurationFHiCL()
+  if (!cfg["MKSPP_Template_input_manifest"] ||
+      !cfg["MKSPP_Template_input_manifest"].IsMap()) {
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring calculated variations for "
-           "MKSPP_Template, expected to find a FHiCL table keyed by "
+           "MKSPP_Template, expected to find a YAML table keyed by "
            "MKSPP_Template_input_manifest describing the location of the "
            "histogram inputs. See "
            "nusystematics/responsecalculators/"
            "TemplateResponseCalculatorBase.hh "
            "for the layout.";
   }
-  fhicl::ParameterSet templateManifest =
-      cfg.get<fhicl::ParameterSet>("MKSPP_Template_input_manifest");
-  tool_options.put("MKSPP_Template_input_manifest", templateManifest);
+  YAML::Node templateManifest =
+      cfg["MKSPP_Template_input_manifest"];
+  tool_options["MKSPP_Template_input_manifest"] = templateManifest;
 
   size_t NNuChannels = 0;
   for (std::string const &ch : {"NumuPPiPlus", "NumuPPi0", "NumuNPiPlus"}) {
 
-    if (!templateManifest.has_key(ch)) {
+    if (!templateManifest[ch]) {
       continue;
     }
 
@@ -68,7 +68,7 @@ SystMetaData MKSinglePiTemplate::BuildSystMetaData(ParameterSet const &cfg,
   for (std::string const &ch :
        {"NumuBNPiMinus", "NumuBNPi0", "NumuBPPiMinus"}) {
 
-    if (!templateManifest.has_key(ch)) {
+    if (!templateManifest[ch]) {
       continue;
     }
 
@@ -77,10 +77,10 @@ SystMetaData MKSinglePiTemplate::BuildSystMetaData(ParameterSet const &cfg,
 
   size_t NChannels = NNuChannels + NAntiNuChannels;
   if (!NChannels) {
-    throw invalid_ToolConfigurationFHiCL()
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring a MKSPP_Template reweighting instance, "
            "failed to find any configured channels. Input templates must be "
-           "described by in a table keyed MKSPP_Template_input_manifest with "
+           "described by in a YAML table keyed MKSPP_Template_input_manifest with "
            "the layout follows that consumed by "
            "nusystematics/responsecalculators/"
            "TemplateResponseCalculatorBase.hh";
@@ -89,23 +89,23 @@ SystMetaData MKSinglePiTemplate::BuildSystMetaData(ParameterSet const &cfg,
   SuppressNeutrinoBkgSPP = NNuChannels;
   SuppressAntiNeutrinoBkgSPP = NAntiNuChannels;
 
-  tool_options.put("SuppressNeutrinoBkgSPP", SuppressNeutrinoBkgSPP);
-  tool_options.put("SuppressAntiNeutrinoBkgSPP", SuppressAntiNeutrinoBkgSPP);
+  tool_options["SuppressNeutrinoBkgSPP"] = SuppressNeutrinoBkgSPP;
+  tool_options["SuppressAntiNeutrinoBkgSPP"] = SuppressAntiNeutrinoBkgSPP;
 
-  fill_valid_tree = cfg.get<bool>("fill_valid_tree", false);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  fill_valid_tree = cfg["fill_valid_tree"] ? cfg["fill_valid_tree"].as<bool>() : false;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
-  use_Q2W_templates = cfg.get<bool>("use_Q2W_templates", true);
-  tool_options.put("use_Q2W_templates", use_Q2W_templates);
+  use_Q2W_templates = cfg["use_Q2W_templates"] ? cfg["use_Q2W_templates"].as<bool>() : true;
+  tool_options["use_Q2W_templates"] = use_Q2W_templates;
 
-  Q2_or_q0_is_x = cfg.get<bool>("Q2_or_q0_is_x", false);
-  tool_options.put("Q2_or_q0_is_x", Q2_or_q0_is_x);
+  Q2_or_q0_is_x = cfg["Q2_or_q0_is_x"] ? cfg["Q2_or_q0_is_x"].as<bool>() : false;
+  tool_options["Q2_or_q0_is_x"] = Q2_or_q0_is_x;
 
   return smd;
 }
 
 bool MKSinglePiTemplate::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
       "Messenger_whisper.xml");
@@ -116,7 +116,7 @@ bool MKSinglePiTemplate::SetupResponseCalculator(
         << std::quoted("MKSPP_ReWeight");
   }
 
-  if (!tool_options.has_key("MKSPP_Template_input_manifest")) {
+  if (!tool_options["MKSPP_Template_input_manifest"]) {
     throw systtools::invalid_ToolOptions()
         << "[ERROR]: MKSPP_ReWeight parameter exists in the SystMetaData, but "
            "no MKSPP_Template_input_manifest key can be found on the "
@@ -126,8 +126,8 @@ bool MKSinglePiTemplate::SetupResponseCalculator(
            "please report to the maintiner.";
   }
 
-  fhicl::ParameterSet const &templateManifest =
-      tool_options.get<fhicl::ParameterSet>("MKSPP_Template_input_manifest");
+  YAML::Node const &templateManifest =
+      tool_options["MKSPP_Template_input_manifest"];
 
   ResponseParameterIdx = GetParamIndex(GetSystMetaData(), "MKSPP_ReWeight");
 
@@ -140,25 +140,25 @@ bool MKSinglePiTemplate::SetupResponseCalculator(
                                {"NumuBNPi0", genie::kSpp_vbp_cc_01010},
                                {"NumuBPPiMinus", genie::kSpp_vbp_cc_10001}}) {
 
-    if (!templateManifest.has_key(ch.name)) {
+    if (!templateManifest[ch.name]) {
       continue;
     }
 
     TemplateHelper th;
     th.Template = std::make_unique<MKSinglePiTemplate_ReWeight>(
-        templateManifest.get<fhicl::ParameterSet>(ch.name));
+        templateManifest[ch.name]);
     th.ZeroIsValid = th.Template->IsValidVariation(0);
 
     ChannelParameterMapping.emplace(ch.channel, std::move(th));
   }
 
-  SuppressNeutrinoBkgSPP = tool_options.get("SuppressNeutrinoBkgSPP", false);
+  SuppressNeutrinoBkgSPP = tool_options["SuppressNeutrinoBkgSPP"] ? tool_options["SuppressNeutrinoBkgSPP"].as<bool>() : false;
   SuppressAntiNeutrinoBkgSPP =
-      tool_options.get("SuppressAntiNeutrinoBkgSPP", false);
+      tool_options["SuppressAntiNeutrinoBkgSPP"] ? tool_options["SuppressAntiNeutrinoBkgSPP"].as<bool>() : false;
 
-  fill_valid_tree = tool_options.get("fill_valid_tree", false);
-  use_Q2W_templates = tool_options.get("use_Q2W_templates", true);
-  Q2_or_q0_is_x = tool_options.get("Q2_or_q0_is_x", true);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
+  use_Q2W_templates = tool_options["use_Q2W_templates"] ? tool_options["use_Q2W_templates"].as<bool>() : true;
+  Q2_or_q0_is_x = tool_options["Q2_or_q0_is_x"] ? tool_options["Q2_or_q0_is_x"].as<bool>() : true;
 
   if (fill_valid_tree) {
     InitValidTree();

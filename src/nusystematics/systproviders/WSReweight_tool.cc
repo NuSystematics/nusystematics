@@ -3,7 +3,7 @@
 #include "nusystematics/utility/exceptions.hh"
 #include "nusystematics/responsecalculators/WSReweight_calculator.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "Framework/GHEP/GHepParticle.h"
 
@@ -11,15 +11,15 @@
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
+using namespace systtools;
 
-WSReweight::WSReweight(ParameterSet const &params)
+WSReweight::WSReweight(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       pidx_nucleus_radius(systtools::kParamUnhandled<size_t>),
       pidx_surface_thickness(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
-SystMetaData WSReweight::BuildSystMetaData(ParameterSet const &cfg,
+SystMetaData WSReweight::BuildSystMetaData(YAML::Node const &cfg,
                                                      paramId_t firstId) {
 
   SystMetaData smd;
@@ -27,7 +27,7 @@ SystMetaData WSReweight::BuildSystMetaData(ParameterSet const &cfg,
   for (std::string const &pname :
        {"nucleus_radius", "surface_thickness"}) {
     systtools::SystParamHeader phdr;
-    if (ParseFhiclToolConfigurationParameter(cfg, pname, phdr, firstId)) {
+    if (ParseYAMLToolConfigurationParameter(cfg, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
       smd.push_back(phdr);
     }
@@ -36,23 +36,23 @@ SystMetaData WSReweight::BuildSystMetaData(ParameterSet const &cfg,
   // OPTION_IN_CONF_FILE can be defined in the configuration file
   // then it is copied to tool_option when running "GenerateSystProviderConfig" to generation paramHeader
 
-  std::string OPT_STRING = cfg.get<std::string>("OPT_STRING", ""); // second argument is the default when OPT_STRING does not exist
-  tool_options.put("OPT_STRING", OPT_STRING);
+  std::string OPT_STRING = cfg["OPT_STRING"] ? cfg["OPT_STRING"].as<std::string>() : ""; // second argument is the default when OPT_STRING does not exist
+  tool_options["OPT_STRING"] = OPT_STRING;
 
-  bool OPT_BOOL = cfg.get<bool>("OPT_BOOL", false);
-  tool_options.put("OPT_BOOL", OPT_BOOL);
+  bool OPT_BOOL = cfg["OPT_BOOL"] ? cfg["OPT_BOOL"].as<bool>() : false;
+  tool_options["OPT_BOOL"] = OPT_BOOL;
 
-  fill_valid_tree = cfg.get<bool>("fill_valid_tree", false);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  fill_valid_tree = cfg["fill_valid_tree"] ? cfg["fill_valid_tree"].as<bool>() : false;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
   return smd;
 }
 
 bool WSReweight::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
-  std::cout << "[WSReweight::SetupResponseCalculator] OPT_STRING = " << tool_options.get<std::string>("OPT_STRING") << std::endl;
-  std::cout << "[WSReweight::SetupResponseCalculator] OPT_BOOL = " << tool_options.get<bool>("OPT_BOOL") << std::endl;
+  std::cout << "[WSReweight::SetupResponseCalculator] OPT_STRING = " << (tool_options["OPT_STRING"] ? tool_options["OPT_STRING"].as<std::string>() : "") << std::endl;
+  std::cout << "[WSReweight::SetupResponseCalculator] OPT_BOOL = " << (tool_options["OPT_BOOL"] ? tool_options["OPT_BOOL"].as<bool>() : false) << std::endl;
 
   systtools::SystMetaData const &md = GetSystMetaData();
 
@@ -66,12 +66,12 @@ bool WSReweight::SetupResponseCalculator(
     pidx_surface_thickness = GetParamIndex(md, "surface_thickness");
   }
 
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
   if (fill_valid_tree) {
     InitValidTree();
   }
 
-  estimate_emiss = tool_options.get<bool>("estimate_emiss", false);
+  estimate_emiss = tool_options["estimate_emiss"] ? tool_options["estimate_emiss"].as<bool>() : false;
 
   return true;
 }

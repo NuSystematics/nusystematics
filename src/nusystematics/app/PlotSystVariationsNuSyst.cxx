@@ -17,8 +17,7 @@
 #include "nusystematics/utility/response_helper.hh"
 #include "nusystematics/utility/silence_genie.hh"
 
-#include "fhiclcpp/ParameterSet.h"
-#include "cetlib/filepath_maker.h"
+#include "yaml-cpp/yaml.h"
 
 #include "Framework/EventGen/EventRecord.h"
 #include "Framework/GHEP/GHepParticle.h"
@@ -126,7 +125,7 @@ static const std::vector<Var2DPair> kPredefined2DPairs = {
 
 // Built-in variable registry. The runtime registry `g_vars_registry` starts
 // from a copy of this map and may be extended / overridden / disabled by
-// `--plot-config <file.fcl>` (see LoadPlotConfig).
+// `--plot-config <file.yaml>` (see LoadPlotConfig).
 static const std::map<std::string, VarDef> kPredefinedVars = {
   // key            branch                label              units      diffLabel (empty -> auto from label)   xmin xmax
   {"Enu",         {"Enu_true",          "E_{#nu}",           "GeV",     "",                                     0,  10}},
@@ -230,13 +229,13 @@ VarDef ResolveVar(const std::string &spec) {
 
   std::cerr << "[ERROR]: Unknown variable '" << spec << "'.\n\n";
   PrintAvailableVars(std::cerr);
-  std::cerr << "\nTo add new variables, write a plot-config fhicl and pass it\n"
-               "via --plot-config <file.fcl>.  See doc/PlotConfig.example.fcl\n"
+  std::cerr << "\nTo add new variables, write a plot-config YAML and pass it\n"
+               "via --plot-config <file.yaml>.  See config/PlotConfig.example.yaml\n"
                "for the schema." << std::endl;
   std::exit(4);
 }
 
-// Load a plot-config fhicl file and merge its `plot_config` table into the
+// Load a plot-config YAML file and merge its `plot_config` table into the
 // global variable registry. Entries with `enabled: false` are erased. Entries
 // whose names match an existing built-in override that built-in's fields
 // (binning / labels / formula); fields omitted in the config inherit from the
@@ -244,36 +243,11 @@ VarDef ResolveVar(const std::string &spec) {
 void LoadPlotConfig(const std::string &path) {
   EnsureRegistryInitialised();
 
-  // Try the literal path first (handles absolute paths and paths relative
-  // to cwd -- what most users will type), fall back to FHICL_FILE_PATH lookup
-  // (handles bare basenames like `MyPlotConfig.fcl` resolved from the search
-  // path). Without the literal-first attempt, fhicl's nonabsolute lookup
-  // refuses a path like `doc/Plot.fcl` because it interprets the slash as
-  // "must be findable verbatim in FHICL_FILE_PATH".
-  fhicl::ParameterSet raw;
-  std::string literal_err, lookup_err;
-  try {
-    cet::filepath_maker fm;
-    raw = fhicl::ParameterSet::make(path, fm);
-  } catch (std::exception const &e) {
-    literal_err = e.what();
-    try {
-      cet::filepath_lookup_nonabsolute fm("FHICL_FILE_PATH");
-      raw = fhicl::ParameterSet::make(path, fm);
-    } catch (std::exception const &e2) {
-      lookup_err = e2.what();
-    }
-  }
-  if (raw.is_empty()) {
-    std::cerr << "[ERROR]: Failed to parse plot-config fhicl '" << path << "'.\n"
-              << "         As literal path: " << literal_err << "\n"
-              << "         Via FHICL_FILE_PATH: " << lookup_err << std::endl;
-    std::exit(5);
-  }
+  // Load the YAML file from the given path.
+  YAML::Node raw = YAML::LoadFile(path);
 
-  fhicl::ParameterSet plot_cfg;
-  try { plot_cfg = raw.get<fhicl::ParameterSet>("plot_config"); }
-  catch (std::exception const &) {
+  YAML::Node plot_cfg = raw["plot_config"];
+  if (!plot_cfg) {
     std::cerr << "[ERROR]: '" << path
               << "' has no top-level 'plot_config' table." << std::endl;
     std::exit(5);
@@ -281,18 +255,17 @@ void LoadPlotConfig(const std::string &path) {
 
   // Top-level scalar knobs in plot_config (not per-variable settings).
   // The per-variable loop below skips these because is_key_to_table is false.
-  cliopts::plots_per_page      = plot_cfg.get<int>("plots_per_page",
-                                                    cliopts::plots_per_page);
-  cliopts::ratio_min_cv_count  = plot_cfg.get<double>("ratio_min_cv_count",
-                                                       cliopts::ratio_min_cv_count);
+  cliopts::plots_per_page      = plot_cfg["plots_per_page"] ? plot_cfg["plots_per_page"].as<int>() : cliopts::plots_per_page;
+  cliopts::ratio_min_cv_count  = plot_cfg["ratio_min_cv_count"] ? plot_cfg["ratio_min_cv_count"].as<double>() : cliopts::ratio_min_cv_count;
 
-  for (auto const &name : plot_cfg.get_names()) {
-    if (!plot_cfg.is_key_to_table(name)) continue;
-    fhicl::ParameterSet entry;
-    try { entry = plot_cfg.get<fhicl::ParameterSet>(name); }
+  for (auto const &item : plot_cfg) {
+    std::string name = item.first.as<std::string>();
+    if (!plot_cfg[name].IsMap()) continue;
+    YAML::Node entry;
+    try { entry = plot_cfg[name]; }
     catch (std::exception const &) { continue; }
 
-    if (!entry.get<bool>("enabled", true)) {
+    if (entry["enabled"] && !entry["enabled"].as<bool>()) {
       g_vars_registry.erase(name);
       continue;
     }
@@ -307,14 +280,14 @@ void LoadPlotConfig(const std::string &path) {
       vd.units     = "";
       vd.diffLabel = "";    // auto = "d#sigma/d" + label
     }
-    vd.branch    = entry.get<std::string>("branch", vd.branch);
-    vd.label     = entry.get<std::string>("label", vd.label);
-    vd.units     = entry.get<std::string>("units", vd.units);
-    vd.diffLabel = entry.get<std::string>("diff_label", vd.diffLabel);
-    vd.xmin      = entry.get<double>("xmin", vd.xmin);
-    vd.xmax      = entry.get<double>("xmax", vd.xmax);
-    vd.nbins     = entry.get<int>("nbins", vd.nbins);
-    vd.formula   = entry.get<std::string>("formula", vd.formula);
+    vd.branch    = entry["branch"] ? entry["branch"].as<std::string>() : vd.branch;
+    vd.label     = entry["label"] ? entry["label"].as<std::string>() : vd.label;
+    vd.units     = entry["units"] ? entry["units"].as<std::string>() : vd.units;
+    vd.diffLabel = entry["diff_label"] ? entry["diff_label"].as<std::string>() : vd.diffLabel;
+    vd.xmin      = entry["xmin"] ? entry["xmin"].as<double>() : vd.xmin;
+    vd.xmax      = entry["xmax"] ? entry["xmax"].as<double>() : vd.xmax;
+    vd.nbins     = entry["nbins"] ? entry["nbins"].as<int>() : vd.nbins;
+    vd.formula   = entry["formula"] ? entry["formula"].as<std::string>() : vd.formula;
     g_vars_registry[name] = vd;
   }
 
@@ -481,8 +454,8 @@ struct ParamMeta {
 // ===== CLI =================================================================
 namespace cliopts {
 std::string input_file;
-std::string fclname;
-std::string fhicl_key = "generated_systematic_provider_configuration";
+std::string yamlname;
+std::string yaml_key = "generated_systematic_provider_configuration";
 std::string output_base = "syst_variations";
 std::string treename = "events";
 std::string genie_branch_name = "gmcrec";
@@ -511,11 +484,11 @@ void SayUsage(char const *argv[]) {
     "  Required:\n"
     "    -i <file.root>       Input ROOT file (ghep or flat tree)\n\n"
     "  Optional:\n"
-    "    -c <config.fcl>      FHiCL config (required for GHEP mode; if given\n"
+    "    -c <config.yaml>      YAML config (required for GHEP mode; if given\n"
     "                         in flat-tree mode, applies_to_channels patterns\n"
     "                         are read from it to skip dial x channel pages\n"
     "                         where the dial does not apply)\n"
-    "    -k <fhicl_key>       Top-level fhicl key (default: generated_systematic_provider_configuration)\n"
+    "    -k <yaml_key>       Top-level YAML key (default: generated_systematic_provider_configuration)\n"
     "    -o <output>          Output basename (default: syst_variations)\n"
     "    -v <var1,var2,...>    Variables to plot (default: all predefined).\n"
     "                         Pass --list-vars to see what's available.\n"
@@ -526,8 +499,8 @@ void SayUsage(char const *argv[]) {
     "    --nbins <n>          Number of bins (default: 50)\n"
     "    --no-pdf / --no-root Skip output\n"
     "    --list-vars          Print the table of available -v variables and exit\n"
-    "    --plot-config <f>    fhicl file overriding / adding plot variables.\n"
-    "                         See config/PlotConfig.example.fcl for the schema.\n"
+    "    --plot-config <f>    YAML file overriding / adding plot variables.\n"
+    "                         See config/PlotConfig.example.yaml for the schema.\n"
     "    --dim <1|2>          Plot dimensionality. Default 1 (differential xsec\n"
     "                         per kinematic variable). 2 produces 2D pair plots:\n"
     "                         per (channel, dial) page, two rows of three\n"
@@ -560,8 +533,8 @@ void HandleOpts(int argc, char const *argv[]) {
       }
     }
     else if (s == "-i") cliopts::input_file = argv[++opt];
-    else if (s == "-c") cliopts::fclname = argv[++opt];
-    else if (s == "-k") cliopts::fhicl_key = argv[++opt];
+    else if (s == "-c") cliopts::yamlname = argv[++opt];
+    else if (s == "-k") cliopts::yaml_key = argv[++opt];
     else if (s == "-o") {
       // -o is a *base* name; the tool appends .pdf and .root. If the user
       // passed e.g. `-o foo.pdf`, strip the extension so we don't produce
@@ -718,53 +691,32 @@ using HistMap = std::map<std::string, std::map<std::string, std::map<std::string
 using Hist2DMap = std::map<std::string, std::map<std::string, std::map<std::string, Syst2DHists>>>;
 
 // ===== applies_to_channels loader (mirrors DumpConfiguredTweaksNuSyst) ======
-// Re-parse the parameter-headers fhicl to extract per-provider
+// Re-parse the parameter-headers YAML to extract per-provider
 // `applies_to_channels` patterns. Returns an empty map if no provider declares
 // the key, in which case no channel-aware skipping happens and behaviour
 // matches the pre-filter baseline.
 std::map<std::string, std::vector<std::string>>
-LoadAppliesToChannelsMap(const std::string &fclname,
+LoadAppliesToChannelsMap(const std::string &yamlname,
                         const std::string &top_key) {
   std::map<std::string, std::vector<std::string>> out;
-  auto try_parse = [&](cet::filepath_maker &fm) -> fhicl::ParameterSet {
-    return fhicl::ParameterSet::make(fclname, fm);
-  };
-  fhicl::ParameterSet raw;
-  bool parsed = false;
-  // 1) Treat the path as-is (handles absolute paths and paths relative to cwd).
   try {
-    cet::filepath_maker fm;
-    raw = try_parse(fm);
-    parsed = true;
-  } catch (std::exception const &) {}
-  // 2) Fall back to FHICL_FILE_PATH lookup (handles bare basenames).
-  if (!parsed) {
-    try {
-      cet::filepath_lookup_nonabsolute fm("FHICL_FILE_PATH");
-      raw = try_parse(fm);
-      parsed = true;
-    } catch (std::exception const &e) {
-      std::cerr << "[WARN]: Failed to load applies_to_channels map from "
-                << fclname << ": " << e.what()
-                << ". Falling back to no channel filtering." << std::endl;
-      return {};
-    }
-  }
-  try {
-    fhicl::ParameterSet gen = raw.get<fhicl::ParameterSet>(top_key);
-    auto provider_names = gen.get<std::vector<std::string>>("syst_providers");
+    YAML::Node raw = YAML::LoadFile(yamlname);
+    YAML::Node gen = raw[top_key];
+    if (!gen) return out;
+    auto provider_names = gen["syst_providers"]
+                              ? gen["syst_providers"].as<std::vector<std::string>>()
+                              : std::vector<std::string>{};
     for (auto const &name : provider_names) {
-      fhicl::ParameterSet prov =
-          gen.get<fhicl::ParameterSet>(name, fhicl::ParameterSet{});
-      fhicl::ParameterSet topts =
-          prov.get<fhicl::ParameterSet>("tool_options", fhicl::ParameterSet{});
-      auto patterns =
-          topts.get<std::vector<std::string>>("applies_to_channels", {});
+      YAML::Node prov = gen[name];
+      YAML::Node topts = prov["tool_options"];
+      auto patterns = topts["applies_to_channels"]
+                          ? topts["applies_to_channels"].as<std::vector<std::string>>()
+                          : std::vector<std::string>{};
       if (!patterns.empty()) out[name] = patterns;
     }
   } catch (std::exception const &e) {
-    std::cerr << "[WARN]: applies_to_channels lookup in " << fclname
-              << " failed: " << e.what()
+    std::cerr << "[WARN]: Failed to load applies_to_channels map from "
+              << yamlname << ": " << e.what()
               << ". Falling back to no channel filtering." << std::endl;
     return {};
   }
@@ -776,14 +728,6 @@ LoadAppliesToChannelsMap(const std::string &fclname,
 // nusyst tweaks shipping Bjorken_x/plep_L/plep_T). Mutates the relevant
 // EventVars fields in place; leaves them untouched if the inputs needed
 // for the fallback are also missing.
-//
-// Required inputs:
-//   * Bjorken_x: just Q2 and q0 (always present in the tweaks tree).
-//   * pL / pT  : isparticles_* and fsparticles_* vectors (per-particle
-//                4-vectors). We pick the IS neutrino's direction (|PDG| in
-//                {12, 14, 16}) and the leading-|p| FS lepton (|PDG| in
-//                {11, 12, 13, 14, 15, 16}). If the vectors are absent, pL/pT
-//                stay -999 and the consuming pair (pL_pT) silently skips.
 inline void ApplyDerivedFallbacks(
     EventVars &evars,
     bool has_x, bool has_pL, bool has_pT,
@@ -792,71 +736,59 @@ inline void ApplyDerivedFallbacks(
     std::vector<int>    const *fs_pdg, std::vector<double> const *fs_px,
     std::vector<double> const *fs_py,  std::vector<double> const *fs_pz) {
 
-  // -- Bjorken x ---------------------------------------------------------
   if (!has_x) {
-    static const double M_N = 0.93827203;  // GeV
+    static const double M_N = 0.93827203;
     double safe_q0 = (evars.q0 > 1e-9) ? evars.q0 : 1e-9;
     evars.Bjorken_x = evars.Q2 / (2.0 * M_N * safe_q0);
   }
 
-  // -- pL / pT -----------------------------------------------------------
-  if (has_pL && has_pT) return;  // nothing to do
+  if (has_pL && has_pT) return;
 
-  // Preferred path: full per-particle vectors. Pick the IS neutrino's
-  // direction and the leading-|p| FS lepton; project.
-  bool from_vectors = false;
   if (is_pdg && fs_pdg && !is_pdg->empty() && !fs_pdg->empty()) {
-    double nu_px = 0, nu_py = 0, nu_pz = 0, nu_mag2 = 0;
+    double nu_px = 0.0, nu_py = 0.0, nu_pz = 0.0, nu_mag2 = 0.0;
     for (size_t i = 0; i < is_pdg->size(); ++i) {
       int a = std::abs((*is_pdg)[i]);
       if (a == 12 || a == 14 || a == 16) {
-        nu_px = (*is_px)[i]; nu_py = (*is_py)[i]; nu_pz = (*is_pz)[i];
-        nu_mag2 = nu_px*nu_px + nu_py*nu_py + nu_pz*nu_pz;
+        nu_px = (*is_px)[i];
+        nu_py = (*is_py)[i];
+        nu_pz = (*is_pz)[i];
+        nu_mag2 = nu_px * nu_px + nu_py * nu_py + nu_pz * nu_pz;
         break;
       }
     }
     if (nu_mag2 > 1e-18) {
       double nu_mag = std::sqrt(nu_mag2);
-      double nx = nu_px/nu_mag, ny = nu_py/nu_mag, nz = nu_pz/nu_mag;
-      double best_p = -1, best_px = 0, best_py = 0, best_pz = 0;
+      double nx = nu_px / nu_mag;
+      double ny = nu_py / nu_mag;
+      double nz = nu_pz / nu_mag;
+      double best_p = -1.0;
+      double best_px = 0.0;
+      double best_py = 0.0;
+      double best_pz = 0.0;
       for (size_t i = 0; i < fs_pdg->size(); ++i) {
         int a = std::abs((*fs_pdg)[i]);
         if (a == 11 || a == 12 || a == 13 || a == 14 || a == 15 || a == 16) {
-          double px = (*fs_px)[i], py = (*fs_py)[i], pz = (*fs_pz)[i];
-          double pmag = std::sqrt(px*px + py*py + pz*pz);
-          if (pmag > best_p) { best_p = pmag; best_px = px; best_py = py; best_pz = pz; }
+          double px = (*fs_px)[i];
+          double py = (*fs_py)[i];
+          double pz = (*fs_pz)[i];
+          double pmag = std::sqrt(px * px + py * py + pz * pz);
+          if (pmag > best_p) {
+            best_p = pmag;
+            best_px = px;
+            best_py = py;
+            best_pz = pz;
+          }
         }
       }
-      if (best_p >= 0) {
-        double pL = best_px * nx + best_py * ny + best_pz * nz;
-        double pT2 = std::max(0.0, best_p * best_p - pL * pL);
-        if (!has_pL) evars.plep_L = pL;
-        if (!has_pT) evars.plep_T = std::sqrt(pT2);
-        from_vectors = true;
+      if (best_p > 0.0) {
+        evars.plep_L = best_px * nx + best_py * ny + best_pz * nz;
+        double perp2 = std::max(0.0, best_p * best_p - evars.plep_L * evars.plep_L);
+        evars.plep_T = std::sqrt(perp2);
       }
     }
   }
-  if (from_vectors) return;
-
-  // Older-tree fallback: per-particle vectors are missing too, but plep,
-  // Enu and q3 are always available. Solve for pL under the convention
-  // that the incoming neutrino is along +z (true for typical GENIE flat
-  // events): q3^2 = pT^2 + (Enu - pL)^2, plep^2 = pT^2 + pL^2  =>
-  //   pL = (plep^2 + Enu^2 - q3^2) / (2 Enu)
-  //   pT = sqrt(max(0, plep^2 - pL^2))
-  // Reproduces the per-vector result when the neutrino is along z (the
-  // typical case); a generic non-z beam direction would need the per-
-  // particle vectors and bypasses this branch.
-  if (evars.Enu > 1e-9 && evars.plep > 0) {
-    double pL = (evars.plep * evars.plep + evars.Enu * evars.Enu - evars.q3 * evars.q3)
-                / (2.0 * evars.Enu);
-    double pT2 = std::max(0.0, evars.plep * evars.plep - pL * pL);
-    if (!has_pL) evars.plep_L = pL;
-    if (!has_pT) evars.plep_T = std::sqrt(pT2);
-  }
 }
 
-// Resolve which provider declared a parameter by longest-prefix match on the
 // param's full name (e.g. "GENIEReWeight_CCQE_MaCCQE" -> "GENIEReWeight_CCQE").
 // Returns nullptr if no provider in the map is a prefix.
 const std::vector<std::string> *
@@ -1328,7 +1260,7 @@ void FillFromFlatTree2D(
 
 // ===== GHEP MODE ===========================================================
 void FillFromGHEP(
-    const std::string &input, const std::string &fclname,
+  const std::string &input, const std::string &yamlname,
     const std::vector<VarDef> &vars,
     const std::map<std::string, std::vector<std::string>> &applies_to_channels,
     HistMap &allhists,
@@ -1343,30 +1275,29 @@ void FillFromGHEP(
     genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
         "Messenger_whisper.xml");
 
-    fhicl::ParameterSet raw_ps;
-    {
-      std::unique_ptr<cet::filepath_maker> fm =
-          std::make_unique<cet::filepath_lookup_nonabsolute>("FHICL_FILE_PATH");
-      raw_ps = fhicl::ParameterSet::make(fclname, *fm);
+    YAML::Node raw_ps = YAML::LoadFile(yamlname);
+    YAML::Node gen_ps = raw_ps[cliopts::yaml_key];
+    if (!gen_ps) {
+      std::cerr << "[ERROR]: " << yamlname << " has no top-level key '"
+                << cliopts::yaml_key << "'" << std::endl;
+      return;
     }
-    fhicl::ParameterSet gen_ps =
-        raw_ps.get<fhicl::ParameterSet>(cliopts::fhicl_key);
 
     if (!cliopts::parameters.empty()) {
-      auto provider_names =
-          gen_ps.get<std::vector<std::string>>("syst_providers");
+      auto provider_names = gen_ps["syst_providers"] ? gen_ps["syst_providers"].as<std::vector<std::string>>() : std::vector<std::string>{};
       std::vector<std::string> kept;
       for (auto const &pname : provider_names) {
-        fhicl::ParameterSet prov;
-        try { prov = gen_ps.get<fhicl::ParameterSet>(pname); }
-        catch (...) { continue; }
+        YAML::Node prov = gen_ps[pname];
+        if (!prov) continue;
         bool any_match = false;
-        for (auto const &key : prov.get_names()) {
-          if (!prov.is_key_to_table(key)) continue;
+        for (auto const &item : prov) {
+          std::string key = item.first.as<std::string>();
+          if (key == "tool_type" || key == "instance_name") continue;
+          if (!prov[key].IsMap()) continue;
           try {
-            fhicl::ParameterSet sub = prov.get<fhicl::ParameterSet>(key);
-            if (!sub.has_key("prettyName")) continue;
-            std::string pretty = sub.get<std::string>("prettyName");
+            YAML::Node sub = prov[key];
+            if (!sub["prettyName"]) continue;
+            std::string pretty = sub["prettyName"].as<std::string>();
             // Reuse the existing ParamSelected() helper (matches the
             // provider-qualified `<provider>_<dial>` form as well as the
             // bare dial name, so the user can pass either).
@@ -1377,9 +1308,9 @@ void FillFromGHEP(
           } catch (...) {}
         }
         if (any_match) kept.push_back(pname);
-        else           gen_ps.erase(pname);
+        else           gen_ps[pname] = YAML::Node();
       }
-      gen_ps.put_or_replace<std::vector<std::string>>("syst_providers", kept);
+      gen_ps["syst_providers"] = kept;
       std::cerr << "[INFO]: -p filter kept " << kept.size() << " of "
                 << provider_names.size() << " providers ("
                 << (provider_names.size() - kept.size())
@@ -1791,63 +1722,35 @@ inline void UseBlueWhiteRedPalette() {
   static Double_t blues[7]  = {0.674, 0.764, 0.871, 1.0,  0.510, 0.302, 0.169};
   TColor::CreateGradientColorTable(7, stops, reds, greens, blues, 255);
 }
-inline void UseMagmaPalette() {
-  static Double_t stops[6]  = {0.00, 0.20, 0.40, 0.60, 0.80, 1.00};
-  static Double_t reds[6]   = {0.001, 0.234, 0.550, 0.866, 0.987, 0.987};
-  static Double_t greens[6] = {0.000, 0.060, 0.149, 0.219, 0.471, 0.991};
-  static Double_t blues[6]  = {0.014, 0.402, 0.506, 0.420, 0.299, 0.750};
-  TColor::CreateGradientColorTable(6, stops, reds, greens, blues, 255);
-}
+static int g_panel_2d_uid = 0;
 
-// Pick the index in `tweakvals` closest to `target` (e.g. +1 or -1).
-// Returns -1 if the vector is empty.
-inline int IndexClosestTo(const std::vector<double> &tweakvals, double target) {
-  if (tweakvals.empty()) return -1;
+inline int IndexClosestTo(const std::vector<double> &vals, double target) {
+  if (vals.empty()) return -1;
   int best = 0;
-  double best_d = std::abs(tweakvals[0] - target);
-  for (int i = 1; i < (int)tweakvals.size(); ++i) {
-    double d = std::abs(tweakvals[i] - target);
-    if (d < best_d) { best_d = d; best = i; }
+  double best_abs = std::abs(vals[0] - target);
+  for (size_t i = 1; i < vals.size(); ++i) {
+    double d = std::abs(vals[i] - target);
+    if (d < best_abs) {
+      best_abs = d;
+      best = static_cast<int>(i);
+    }
   }
   return best;
 }
 
-// ===== PDF plotting -- 2D mode =============================================
-// Per (channel, dial): pairs are emitted two per page, each row is
-//   [ (var_-1sigma - CV)/CV  |  CV 2D  |  (var_+1sigma - CV)/CV ]
-// drawn with a diverging palette centered at 0 for the ratio panels and
-// the default palette for the CV. Snaps to the nearest tweakval if exact
-// +-1 sigma is not available.
 void Make2DPlots(const Hist2DMap &allhists2d,
                  const std::vector<Var2DPair> &pairs,
                  size_t n_events_processed) {
-  // Same monotonic-counter trick as MakePlots: avoids gDirectory name
-  // collisions across (channel, dial, page, row) iterations that would
-  // otherwise cause Clone() to silently reuse a stale histogram.
-  static int g_panel_2d_uid = 0;
   std::string pdfname = cliopts::output_base + ".pdf";
-  TCanvas *c = new TCanvas("c2dplots", "", 1400, 1000);
-  // Suppress the default ROOT stat box on every histogram drawn from here
-  // on. It otherwise sits over the upper-right corner and obscures the
-  // y-axis labels in tight panels.
-  gStyle->SetOptStat(0);
+  TCanvas *c = new TCanvas("cplots2d", "", 1600, 1100);
 
-  // Force an ODD number of contour bands so the central band sits exactly
-  // on palette position 0.5. ROOT's default 20 bands (even) makes the band
-  // straddling 0 fetch its colour from position 10.5/20 = 0.525, which is
-  // already past the white midpoint and on the salmon side -- the colourbar
-  // tick at "0" then visibly lines up with light pink instead of white.
-  // 99 bands gives a smooth gradient and a clean central band at 49.5/99 =
-  // 0.500 = the BWR palette's pure-white midpoint.
-  gStyle->SetNumberContours(99);
-
-  // Same channel ordering helper as 1D.
   auto channel_priority = [](const std::string &s) -> std::string {
     if (s == "Total") return "000";
     if (s == "Total_CC") return "001";
     if (s == "Total_NC") return "002";
-    return "100_" + s;
+    return "1" + ChannelSortKey(s);
   };
+
   std::vector<std::string> channels;
   for (auto &[ch, _] : allhists2d) channels.push_back(ch);
   std::sort(channels.begin(), channels.end(),
@@ -2386,17 +2289,17 @@ void WriteROOT(const HistMap &allhists) {
 }
 
 // ===== main ================================================================
-constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_FCL";
+constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_YAML";
 
 std::string InventoryDefaultPath() {
 #ifdef NUSYST_INSTALL_PREFIX
-  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.fcl";
+  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.yaml";
 #else
   for (char const *var : {"nusystematics_ROOT", "NUSYST"}) {
     char const *val = std::getenv(var);
-    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.fcl";
+    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.yaml";
   }
-  return "/tmp/nusyst_inventory.fcl";
+  return "/tmp/nusyst_inventory.yaml";
 #endif
 }
 
@@ -2420,18 +2323,18 @@ int main(int argc, char const *argv[]) {
   // Cache fallback: -p without -c means "use the cached kitchen sink and
   // filter to these dials". Same resolution + auto-generation as nusyst
   // inventory / tweaks / response.
-  if (cliopts::fclname.empty() && !cliopts::parameters.empty()) {
+  if (cliopts::yamlname.empty() && !cliopts::parameters.empty()) {
     char const *env = std::getenv(kInventoryEnvVar);
-    cliopts::fclname = (env && *env) ? std::string(env) : InventoryDefaultPath();
-    if (::access(cliopts::fclname.c_str(), R_OK) != 0) {
+    cliopts::yamlname = (env && *env) ? std::string(env) : InventoryDefaultPath();
+    if (::access(cliopts::yamlname.c_str(), R_OK) != 0) {
       std::cerr << "[INFO]: -p was given without -c; auto-generating "
-                << cliopts::fclname << " via `nusyst config --mode all`.\n";
+                << cliopts::yamlname << " via `nusyst config --mode all`.\n";
       std::string cmd = "GenerateAllDialsConfigNuSyst --mode all -o " +
-                        cliopts::fclname + " > /dev/null 2>&1";
+                        cliopts::yamlname + " > /dev/null 2>&1";
       if (std::system(cmd.c_str()) != 0) {
         std::cerr << "[ERROR]: Auto-generation failed; re-running visibly:\n";
         std::system(("GenerateAllDialsConfigNuSyst --mode all -o " +
-                     cliopts::fclname).c_str());
+                     cliopts::yamlname).c_str());
         return 3;
       }
     }
@@ -2468,11 +2371,11 @@ int main(int argc, char const *argv[]) {
   EventCounts counts;
 
   // Optional per-provider applies_to_channels patterns. Loaded only if a
-  // fhicl config is given; empty -> no filtering.
+  // YAML config is given; empty -> no filtering.
   std::map<std::string, std::vector<std::string>> applies_to_channels;
-  if (!cliopts::fclname.empty()) {
-    applies_to_channels = LoadAppliesToChannelsMap(cliopts::fclname,
-                                                    cliopts::fhicl_key);
+  if (!cliopts::yamlname.empty()) {
+    applies_to_channels = LoadAppliesToChannelsMap(cliopts::yamlname,
+                                                    cliopts::yaml_key);
   }
 
   if (flat_tree_mode) {
@@ -2564,11 +2467,11 @@ int main(int argc, char const *argv[]) {
                 << std::endl;
     }
     fin->Close(); delete fin; fin = nullptr;
-    if (cliopts::fclname.empty()) {
-      std::cout << "[ERROR]: GHEP mode requires -c <config.fcl>" << std::endl;
+    if (cliopts::yamlname.empty()) {
+      std::cout << "[ERROR]: GHEP mode requires -c <config.yaml>" << std::endl;
       return 3;
     }
-    FillFromGHEP(cliopts::input_file, cliopts::fclname, vars,
+    FillFromGHEP(cliopts::input_file, cliopts::yamlname, vars,
                  applies_to_channels, allhists, counts);
   }
 

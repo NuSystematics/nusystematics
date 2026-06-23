@@ -172,11 +172,11 @@ void AddIndependentParameters(SystMetaData const &md,
 
 std::vector<GENIEResponseParameter>
 ConfigureQEWeightEngine(SystMetaData const &QEmd,
-                        fhicl::ParameterSet const &tool_options) {
+                        YAML::Node const &tool_options) {
 
   std::vector<GENIEResponseParameter> param_map;
 
-  bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
+  bool UseFullHERG = tool_options["UseFullHERG"] ? tool_options["UseFullHERG"].as<bool>() : false;
 
   // Add NormCCQE
   AddIndependentParameters(
@@ -190,7 +190,7 @@ ConfigureQEWeightEngine(SystMetaData const &QEmd,
       UseFullHERG, param_map);
 
   // Add MACCQE
-  bool MAQEIsShapeOnly = tool_options.get<bool>("MAQEIsShapeOnly", false);
+  bool MAQEIsShapeOnly = tool_options["MAQEIsShapeOnly"] ? tool_options["MAQEIsShapeOnly"].as<bool>() : false;
   AddIndependentParameters(
       QEmd, {MAQEIsShapeOnly ? kXSecTwkDial_MaCCQEshape : kXSecTwkDial_MaCCQE},
       "xsec_ccqe_axFF",
@@ -234,7 +234,7 @@ ConfigureQEWeightEngine(SystMetaData const &QEmd,
       },
       UseFullHERG, param_map);
 
-  if (tool_options.get<bool>("AxFFCCQEDipoleToZExp", false)) {
+  if (tool_options["AxFFCCQEDipoleToZExp"] && tool_options["AxFFCCQEDipoleToZExp"].as<bool>()) {
 
     std::vector<std::string> dial_names;
     dial_names.push_back("ZExpAVariationResponse");
@@ -286,11 +286,11 @@ ConfigureQEWeightEngine(SystMetaData const &QEmd,
 
 std::vector<GENIEResponseParameter>
 ConfigureMECWeightEngine(SystMetaData const &MECmd,
-                        fhicl::ParameterSet const &tool_options) {
+                        YAML::Node const &tool_options) {
 
   std::vector<GENIEResponseParameter> param_map;
 
-  bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
+  bool UseFullHERG = tool_options["UseFullHERG"] ? tool_options["UseFullHERG"].as<bool>() : false;
 
   AddIndependentParameters(
       MECmd, {
@@ -310,11 +310,11 @@ ConfigureMECWeightEngine(SystMetaData const &MECmd,
 
 std::vector<GENIEResponseParameter>
 ConfigureNCELWeightEngine(SystMetaData const &NCELmd,
-                          fhicl::ParameterSet const &tool_options) {
+                          YAML::Node const &tool_options) {
 
   std::vector<GENIEResponseParameter> param_map;
 
-  bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
+  bool UseFullHERG = tool_options["UseFullHERG"] ? tool_options["UseFullHERG"].as<bool>() : false;
 
   AddResponseAndDependentDials(
       NCELmd, "NCELVariationResponse",
@@ -326,11 +326,11 @@ ConfigureNCELWeightEngine(SystMetaData const &NCELmd,
 
 std::vector<GENIEResponseParameter>
 ConfigureRESWeightEngine(SystMetaData const &RESmd,
-                         fhicl::ParameterSet const &tool_options) {
+                         YAML::Node const &tool_options) {
 
   std::vector<GENIEResponseParameter> param_map;
 
-  bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
+  bool UseFullHERG = tool_options["UseFullHERG"] ? tool_options["UseFullHERG"].as<bool>() : false;
 
   // Add any CCRES parameters
   AddIndependentParameters(
@@ -343,7 +343,7 @@ ConfigureRESWeightEngine(SystMetaData const &RESmd,
       },
       UseFullHERG, param_map);
 
-  bool CCRESIsShapeOnly = tool_options.get<bool>("CCRESIsShapeOnly", false);
+  bool CCRESIsShapeOnly = tool_options["CCRESIsShapeOnly"] ? tool_options["CCRESIsShapeOnly"].as<bool>() : false;
   AddResponseAndDependentDials(
       RESmd, "CCRESVariationResponse",
       {CCRESIsShapeOnly ? kXSecTwkDial_MaCCRESshape : kXSecTwkDial_MaCCRES,
@@ -368,7 +368,7 @@ ConfigureRESWeightEngine(SystMetaData const &RESmd,
       },
       UseFullHERG, param_map);
 
-  bool NCRESIsShapeOnly = tool_options.get<bool>("NCRESIsShapeOnly", false);
+  bool NCRESIsShapeOnly = tool_options["NCRESIsShapeOnly"] ? tool_options["NCRESIsShapeOnly"].as<bool>() : false;
   AddResponseAndDependentDials(
       RESmd, "NCRESVariationResponse",
       {NCRESIsShapeOnly ? kXSecTwkDial_MaNCRESshape : kXSecTwkDial_MaNCRES,
@@ -414,11 +414,11 @@ ConfigureRESWeightEngine(SystMetaData const &RESmd,
 
 std::vector<GENIEResponseParameter>
 ConfigureCOHWeightEngine(SystMetaData const &COHmd,
-                         fhicl::ParameterSet const &tool_options) {
+                         YAML::Node const &tool_options) {
 
   std::vector<GENIEResponseParameter> param_map;
 
-  bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
+  bool UseFullHERG = tool_options["UseFullHERG"] ? tool_options["UseFullHERG"].as<bool>() : false;
 
   AddResponseAndDependentDials(
       COHmd, "COHVariationResponse",
@@ -430,12 +430,12 @@ ConfigureCOHWeightEngine(SystMetaData const &COHmd,
 
 std::vector<GENIEResponseParameter>
 ConfigureDISWeightEngine(SystMetaData const &DISmd,
-                         fhicl::ParameterSet const &tool_options) {
+                         YAML::Node const &tool_options) {
 
   std::vector<GENIEResponseParameter> param_map;
 
-  bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
-  bool DISBYIsShapeOnly = tool_options.get<bool>("DISBYIsShapeOnly", false);
+  bool UseFullHERG = tool_options["UseFullHERG"] ? tool_options["UseFullHERG"].as<bool>() : false;
+  bool DISBYIsShapeOnly = tool_options["DISBYIsShapeOnly"] ? tool_options["DISBYIsShapeOnly"].as<bool>() : false;
   AddResponseAndDependentDials(
       DISmd, "DISBYVariationResponse",
       {DISBYIsShapeOnly ? kXSecTwkDial_AhtBYshape : kXSecTwkDial_AhtBY,
@@ -465,10 +465,10 @@ ConfigureDISWeightEngine(SystMetaData const &DISmd,
 
 std::vector<GENIEResponseParameter>
 ConfigureFSIWeightEngine(systtools::SystMetaData const &FSImd,
-                         fhicl::ParameterSet const &tool_options) {
+                         YAML::Node const &tool_options) {
   std::vector<GENIEResponseParameter> param_map;
 
-  bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
+  bool UseFullHERG = tool_options["UseFullHERG"] ? tool_options["UseFullHERG"].as<bool>() : false;
 
   AddResponseAndDependentDials(
       FSImd, "FSI_pi_VariationResponse",
@@ -525,11 +525,11 @@ ConfigureFSIWeightEngine(systtools::SystMetaData const &FSImd,
 
 std::vector<GENIEResponseParameter>
 ConfigureOtherWeightEngine(systtools::SystMetaData const &Othermd,
-                           fhicl::ParameterSet const &tool_options) {
+                           YAML::Node const &tool_options) {
 
   std::vector<GENIEResponseParameter> param_map;
 
-  bool UseFullHERG = tool_options.get<bool>("UseFullHERG", false);
+  bool UseFullHERG = tool_options["UseFullHERG"] ? tool_options["UseFullHERG"].as<bool>() : false;
 
   AddIndependentParameters(
       Othermd, {kSystNucl_CCQEPauliSupViaKF, kSystNucl_CCQEMomDistroFGtoSF},

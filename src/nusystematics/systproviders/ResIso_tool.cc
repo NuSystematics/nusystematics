@@ -1,6 +1,6 @@
 #include "nusystematics/systproviders/ResIso_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "RwFramework/GSyst.h"
 
@@ -10,7 +10,7 @@ using namespace systtools;
 // constructor passes up configuration object to base class for generic tool
 // initialization and initialises our local copies of paramIds to unconfigured
 //  flag values
-ResIso::ResIso(fhicl::ParameterSet const &params)
+ResIso::ResIso(YAML::Node const &params)
     : IGENIESystProvider_tool(params) {
 
   for (int rescode = 0; rescode < 18; ++rescode) {
@@ -32,13 +32,13 @@ ResIso::ResIso(fhicl::ParameterSet const &params)
   }
 }
 
-SystMetaData ResIso::BuildSystMetaData(fhicl::ParameterSet const &ps,
+SystMetaData ResIso::BuildSystMetaData(YAML::Node const &yamlnd,
                                             paramId_t firstId) {
   SystMetaData smd;
   SystParamHeader responseParam;
 
   SystParamHeader dial_variation_template;
-  if (!ParseFhiclToolConfigurationParameter(ps, "alldial",
+  if (!ParseYAMLToolConfigurationParameter(yamlnd, "alldial",
                                             dial_variation_template)) {
           std::cout << "Cannot Parse" << std::endl;
     throw;
@@ -61,14 +61,14 @@ SystMetaData ResIso::BuildSystMetaData(fhicl::ParameterSet const &ps,
   }
 
   // Put any options that you want to propagate to the ParamHeaders options
-  tool_options.put("verbosity_level", ps.get<int>("verbosity_level", 0));
+  tool_options["verbosity_level"] = yamlnd["verbosity_level"] ? yamlnd["verbosity_level"].as<int>() : 0;
 
   return smd;
 }
 
 bool ResIso::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
-  verbosity_level = tool_options.get<int>("verbosity_level", 0);
+    YAML::Node const &tool_options) {
+  verbosity_level = tool_options["verbosity_level"] ? tool_options["verbosity_level"].as<int>() : 0;
 
   // grab the pre-parsed param headers object
   SystMetaData const &md = GetSystMetaData();
@@ -84,7 +84,7 @@ bool ResIso::SetupResponseCalculator(
       }
       continue;
     }
-    // if the sytsmetadata (incoming paramheaders fhicl) has the parameter
+    // if the sytsmetadata (incoming paramheaders from YAML) has the parameter
     pidx_Params[i] = GetParamIndex(md, prettyname);
 
     if (verbosity_level > 1) {

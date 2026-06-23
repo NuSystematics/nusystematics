@@ -13,13 +13,13 @@
 
 class SkeleWeighter : public nusyst::IGENIESystProvider_tool {
 public:
-  explicit SkeleWeighter(fhicl::ParameterSet const &);
+  explicit SkeleWeighter(YAML::Node const &);
 
   //'First' configuration step: tool configuration
-  // - takes 'arbitrary' FHiCL configuration and
+  // - takes 'arbitrary' YAML configuration and
   //   produces SystMetaData object which can later be used to configure a
   //   specific set of parameter values to be calculated
-  systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const &,
+  systtools::SystMetaData BuildSystMetaData(YAML::Node const &,
                                             systtools::paramId_t);
 
   //'Second' configuration step: parameter headers
@@ -27,11 +27,11 @@ public:
   //   to configure an instance of this class to calculate weights
   // - Recieves a copy of the tool_options instance constructed by 
   //   BuildSystMetaData as an argument
-  bool SetupResponseCalculator(fhicl::ParameterSet const &);
+  bool SetupResponseCalculator(YAML::Node const &);
 
-  // Used to pass arbitrary FHiCL options from the tool configuration to the
+  // Used to pass arbitrary YAML options from the tool configuration to the
   //   parameter headers.
-  fhicl::ParameterSet GetExtraToolOptions() { return tool_options; }
+  YAML::Node GetExtraToolOptions() { return tool_options; }
 
   // Parameter-specific implementation goes in here
   systtools::event_unit_response_t GetEventResponse(genie::EventRecord const &);
@@ -45,7 +45,7 @@ public:
 private:
   // arbitrary additional configuration from the tool configuration/parameter
   // headers can be storeds here
-  fhicl::ParameterSet tool_options;
+  YAML::Node tool_options;
 
   // The ParamHeaders id of the four free parameters provided by this
   // systprovider

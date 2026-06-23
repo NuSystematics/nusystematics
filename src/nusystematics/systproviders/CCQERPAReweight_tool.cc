@@ -2,7 +2,7 @@
 
 #include "nusystematics/utility/exceptions.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "Framework/GHEP/GHepParticle.h"
 
@@ -10,50 +10,49 @@
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
 
-CCQERPAReweight::CCQERPAReweight(ParameterSet const &params)
+CCQERPAReweight::CCQERPAReweight(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       ccqeRPAReweightCalculator(nullptr),
       ResponseParameterIdx(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
-SystMetaData CCQERPAReweight::BuildSystMetaData(ParameterSet const &cfg,
-                                                     paramId_t firstId) {
+SystMetaData CCQERPAReweight::BuildSystMetaData(YAML::Node const &cfg,
+                                                paramId_t firstId) {
 
   std::cout << "[CCQERPAReweight::BuildSystMetaData] called" << std::endl;
 
   SystMetaData smd;
 
   systtools::SystParamHeader phdr;
-  if (ParseFhiclToolConfigurationParameter(cfg, "CCQERPAReweight",
-                                                 phdr, firstId)) {
+  if (ParseYAMLToolConfigurationParameter(cfg, "CCQERPAReweight",
+                                          phdr, firstId)) {
     phdr.systParamId = firstId++;
     smd.push_back(phdr);
   }
 
-  fhicl::ParameterSet templateManifest =
-      cfg.get<fhicl::ParameterSet>("CCQERPAReweight_input_manifest");
-  tool_options.put("CCQERPAReweight_input_manifest", templateManifest);
+  YAML::Node templateManifest =
+      cfg["CCQERPAReweight_input_manifest"];
+  tool_options["CCQERPAReweight_input_manifest"] = templateManifest;
 
   // OPTION_IN_CONF_FILE can be defined in the configuration file
   // then it is copied to tool_option when running "GenerateSystProviderConfig" to generation paramHeader
 
-  fill_valid_tree = cfg.get<bool>("fill_valid_tree", false);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  fill_valid_tree = cfg["fill_valid_tree"] ? cfg["fill_valid_tree"].as<bool>() : false;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
   return smd;
 }
 
 bool CCQERPAReweight::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   std::cout << "[CCQERPAReweight::SetupResponseCalculator] called" << std::endl;
 
-  fhicl::ParameterSet templateManifest =
-      tool_options.get<fhicl::ParameterSet>("CCQERPAReweight_input_manifest");
+  YAML::Node templateManifest =
+      tool_options["CCQERPAReweight_input_manifest"];
 
-  std::string rwmode_str = templateManifest.get<std::string>("RWMode");
+  std::string rwmode_str = templateManifest["RWMode"].as<std::string>();
   std::string kin_Y_str(""), kin_Z_str("");
   if(rwmode_str=="q3q0"){
     rwMode = q3q0;
@@ -76,7 +75,7 @@ bool CCQERPAReweight::SetupResponseCalculator(
     kin_Z_str = "Theta";
   }
   else{
-    throw invalid_ToolConfigurationFHiCL()
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: RWMode is wrong: " << rwmode_str;
   }
 
@@ -91,7 +90,7 @@ bool CCQERPAReweight::SetupResponseCalculator(
   ResponseParameterIdx =
       GetParamIndex(GetSystMetaData(), "CCQERPAReweight");
 
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
   if (fill_valid_tree) {
     InitValidTree();
   }
@@ -146,7 +145,7 @@ CCQERPAReweight::GetEventResponse(genie::EventRecord const &ev) {
     bin_kin = {FSLepP4.Vect().Mag(), AngleLeps};
   }
   else{
-    throw invalid_ToolConfigurationFHiCL() 
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: RWMode is wrong: " << rwMode;
   }
 

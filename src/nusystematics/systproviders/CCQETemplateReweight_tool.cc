@@ -2,7 +2,7 @@
 
 #include "nusystematics/utility/exceptions.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "Framework/GHEP/GHepParticle.h"
 
@@ -10,26 +10,25 @@
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
 
 
-CCQETemplateReweight::CCQETemplateReweight(ParameterSet const &params)
+CCQETemplateReweight::CCQETemplateReweight(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       ccqeTemplateReweightCalculator(nullptr),
       valid_file(nullptr), valid_tree(nullptr) {
 
 }
 
-SystMetaData CCQETemplateReweight::BuildSystMetaData(ParameterSet const &cfg,
+SystMetaData CCQETemplateReweight::BuildSystMetaData(YAML::Node const &cfg,
                                                      paramId_t firstId) {
 
   std::cout << "[CCQETemplateReweight::BuildSystMetaData] called" << std::endl;
 
   SystMetaData smd;
 
-  std::vector<double> this_q0BinEdges = cfg.get<std::vector<double>>("q0_bin_edges");
+  std::vector<double> this_q0BinEdges = cfg["q0_bin_edges"].as<std::vector<double>>();
   unsigned int this_Nq0Bins = this_q0BinEdges.size()-1;
-  int this_verbosity_level = cfg.get<int>("verbosity_level", 0);
+  int this_verbosity_level = cfg["verbosity_level"] ? cfg["verbosity_level"].as<int>() : 0;
 
   std::cout << "[INFO]: Using bin edges: ";
   for(const auto q0BinEdge: this_q0BinEdges) std::cout << q0BinEdge << ", ";
@@ -42,7 +41,7 @@ SystMetaData CCQETemplateReweight::BuildSystMetaData(ParameterSet const &cfg,
     systtools::SystParamHeader phdr;
     std::cout << "[CCQETemplateReweight::BuildSystMetaData] Attempting to parse parameter: " 
               << desc << std::endl;
-    if (ParseFhiclToolConfigurationParameter(cfg, desc, phdr, firstId)) {
+    if (ParseYAMLToolConfigurationParameter(cfg, desc, phdr, firstId)) {
       phdr.systParamId = firstId++;
       smd.push_back(phdr);
       std::cout << "[CCQETemplateReweight::BuildSystMetaData] Successfully parsed parameter: " 
@@ -53,19 +52,22 @@ SystMetaData CCQETemplateReweight::BuildSystMetaData(ParameterSet const &cfg,
     }
   }
 
-  tool_options.put("q0_bin_edges", this_q0BinEdges);
+  tool_options["q0_bin_edges"] = YAML::Node();
+  for (auto v : this_q0BinEdges) {
+    tool_options["q0_bin_edges"].push_back(v);
+  }
 
-  fhicl::ParameterSet templateManifest =
-      cfg.get<fhicl::ParameterSet>("CCQETemplateReweight_input_manifest");
-  tool_options.put("CCQETemplateReweight_input_manifest", templateManifest);
+  YAML::Node templateManifest =
+      cfg["CCQETemplateReweight_input_manifest"];
+  tool_options["CCQETemplateReweight_input_manifest"] = templateManifest;
 
-  tool_options.put("verbosity_level", this_verbosity_level);
+  tool_options["verbosity_level"] = this_verbosity_level;
 
   // OPTION_IN_CONF_FILE can be defined in the configuration file
   // then it is copied to tool_option when running "GenerateSystProviderConfig" to generation paramHeader
 
-  fill_valid_tree = cfg.get<bool>("fill_valid_tree", false);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  fill_valid_tree = cfg["fill_valid_tree"] ? cfg["fill_valid_tree"].as<bool>() : false;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
   std::cout << "[CCQETemplateReweight::BuildSystMetaData] Total parameters parsed: " << smd.size() << std::endl;
 
@@ -73,13 +75,13 @@ SystMetaData CCQETemplateReweight::BuildSystMetaData(ParameterSet const &cfg,
 }
 
 bool CCQETemplateReweight::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   std::cout << "[CCQETemplateReweight::SetupResponseCalculator] called" << std::endl;
 
-  verbosity_level = tool_options.get<int>("verbosity_level", 0);
+  verbosity_level = tool_options["verbosity_level"] ? tool_options["verbosity_level"].as<int>() : 0;
 
-  q0BinEdges = tool_options.get<std::vector<double>>("q0_bin_edges");
+  q0BinEdges = tool_options["q0_bin_edges"].as<std::vector<double>>();
   if( verbosity_level > 3 ) {
     std::cout << "[INFO]: Using bin edges: ";
     for(const auto q0BinEdge: q0BinEdges) std::cout << q0BinEdge << ", ";
@@ -114,10 +116,10 @@ bool CCQETemplateReweight::SetupResponseCalculator(
 
   } // loop over descriptors
 
-  fhicl::ParameterSet templateManifest =
-      tool_options.get<fhicl::ParameterSet>("CCQETemplateReweight_input_manifest");
+  YAML::Node templateManifest =
+      tool_options["CCQETemplateReweight_input_manifest"];
 
-  std::string rwmode_str = templateManifest.get<std::string>("RWMode");
+  std::string rwmode_str = templateManifest["RWMode"].as<std::string>();
   std::string kin_Y_str(""), kin_Z_str("");
 
   if(rwmode_str=="q3q0"){
@@ -141,7 +143,7 @@ bool CCQETemplateReweight::SetupResponseCalculator(
     kin_Z_str = "Theta";
   }
   else{
-    throw invalid_ToolConfigurationFHiCL()
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: RWMode is wrong: " << rwmode_str;
   }
 
@@ -153,7 +155,7 @@ bool CCQETemplateReweight::SetupResponseCalculator(
 
   ccqeTemplateReweightCalculator = std::make_unique<CCQETemplateReweightCalculator>( templateManifest );
 
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
   if (fill_valid_tree) {
     InitValidTree();
   }
@@ -209,7 +211,7 @@ CCQETemplateReweight::GetEventResponse(genie::EventRecord const &ev) {
     bin_kin = {FSLepP4.Vect().Mag(), AngleLeps};
   }
   else{
-    throw invalid_ToolConfigurationFHiCL() 
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: RWMode is wrong: " << rwMode;
   }
 

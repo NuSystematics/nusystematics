@@ -1,16 +1,16 @@
 #include "nusystematics/systproviders/NOvAStyleNonResPionNorm_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 using namespace nusyst;
 
 NOvAStyleNonResPionNorm::NOvAStyleNonResPionNorm(
-    fhicl::ParameterSet const &params)
+    YAML::Node const &params)
     : IGENIESystProvider_tool(params), valid_file(nullptr),
       valid_tree(nullptr) {}
 
 systtools::SystMetaData
-NOvAStyleNonResPionNorm::BuildSystMetaData(fhicl::ParameterSet const &ps,
+NOvAStyleNonResPionNorm::BuildSystMetaData(YAML::Node const &yamlnd,
                                            systtools::paramId_t firstId) {
 
   systtools::SystMetaData smd;
@@ -23,8 +23,8 @@ NOvAStyleNonResPionNorm::BuildSystMetaData(fhicl::ParameterSet const &ps,
               BuildNRPiChannel(IsNeutrino, IsCC, TargetNucleon, NPi);
 
           systtools::SystParamHeader ch_param;
-          if (ParseFhiclToolConfigurationParameter(
-                  ps, GetNRPiChannelName(chan), ch_param, firstId)) {
+            if (ParseYAMLToolConfigurationParameter(
+              yamlnd, GetNRPiChannelName(chan), ch_param, firstId)) {
             ch_param.systParamId = firstId++;
             smd.push_back(ch_param);
           }
@@ -33,25 +33,25 @@ NOvAStyleNonResPionNorm::BuildSystMetaData(fhicl::ParameterSet const &ps,
     }
   }
 
-  WBegin = ps.get<double>("WBegin", 0);
-  WEnd = ps.get<double>("WEnd", 5);
-  WTransition = ps.get<double>("WTransition", 3);
-  OneSigmaResponse = ps.get<double>("OneSigmaResponse", 0.5);
-  HighWResponse = ps.get<double>("HighWResponse", 0.05);
-  fill_valid_tree = ps.get<bool>("fill_valid_tree", false);
+  WBegin = yamlnd["WBegin"] ? yamlnd["WBegin"].as<double>() : 0;
+  WEnd = yamlnd["WEnd"] ? yamlnd["WEnd"].as<double>() : 5;
+  WTransition = yamlnd["WTransition"] ? yamlnd["WTransition"].as<double>() : 3;
+  OneSigmaResponse = yamlnd["OneSigmaResponse"] ? yamlnd["OneSigmaResponse"].as<double>() : 0.5;
+  HighWResponse = yamlnd["HighWResponse"] ? yamlnd["HighWResponse"].as<double>() : 0.05;
+  fill_valid_tree = yamlnd["fill_valid_tree"] ? yamlnd["fill_valid_tree"].as<bool>() : false;
 
-  tool_options.put("WBegin", WBegin);
-  tool_options.put("WEnd", WEnd);
-  tool_options.put("WTransition", WTransition);
-  tool_options.put("OneSigmaResponse", OneSigmaResponse);
-  tool_options.put("HighWResponse", HighWResponse);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  tool_options["WBegin"] = WBegin;
+  tool_options["WEnd"] = WEnd;
+  tool_options["WTransition"] = WTransition;
+  tool_options["OneSigmaResponse"] = OneSigmaResponse;
+  tool_options["HighWResponse"] = HighWResponse;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
   return smd;
 }
 
 bool NOvAStyleNonResPionNorm::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   systtools::SystMetaData const &md = GetSystMetaData();
 
@@ -72,12 +72,12 @@ bool NOvAStyleNonResPionNorm::SetupResponseCalculator(
     }
   }
 
-  WBegin = tool_options.get<double>("WBegin", 0);
-  WEnd = tool_options.get<double>("WEnd", 5);
-  WTransition = tool_options.get<double>("WTransition", 3);
-  OneSigmaResponse = tool_options.get<double>("OneSigmaResponse", 0.5);
-  HighWResponse = tool_options.get<double>("HighWResponse", 0.05);
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
+  WBegin = tool_options["WBegin"] ? tool_options["WBegin"].as<double>() : 0;
+  WEnd = tool_options["WEnd"] ? tool_options["WEnd"].as<double>() : 5;
+  WTransition = tool_options["WTransition"] ? tool_options["WTransition"].as<double>() : 3;
+  OneSigmaResponse = tool_options["OneSigmaResponse"] ? tool_options["OneSigmaResponse"].as<double>() : 0.5;
+  HighWResponse = tool_options["HighWResponse"] ? tool_options["HighWResponse"].as<double>() : 0.05;
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
 
   if (fill_valid_tree) {
     InitValidTree();

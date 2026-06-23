@@ -2,41 +2,41 @@
 
 #include "systematicstools/interface/SystMetaData.hh"
 
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 
 #include <string>
 
 namespace nusyst {
 
 systtools::SystMetaData
-ConfigureQEParameterHeaders(fhicl::ParameterSet const &, systtools::paramId_t,
-                            fhicl::ParameterSet &tool_options);
+ConfigureQEParameterHeaders(YAML::Node const &, systtools::paramId_t,
+                            YAML::Node &tool_options);
 
 systtools::SystMetaData
-ConfigureMECParameterHeaders(fhicl::ParameterSet const &, systtools::paramId_t,
-                            fhicl::ParameterSet &tool_options);
+ConfigureMECParameterHeaders(YAML::Node const &, systtools::paramId_t,
+                            YAML::Node &tool_options);
 
 systtools::SystMetaData
-ConfigureNCELParameterHeaders(fhicl::ParameterSet const &, systtools::paramId_t,
-                              fhicl::ParameterSet &tool_options);
+ConfigureNCELParameterHeaders(YAML::Node const &, systtools::paramId_t,
+                              YAML::Node &tool_options);
 
 systtools::SystMetaData
-ConfigureRESParameterHeaders(fhicl::ParameterSet const &, systtools::paramId_t,
-                             fhicl::ParameterSet &tool_options);
+ConfigureRESParameterHeaders(YAML::Node const &, systtools::paramId_t,
+                             YAML::Node &tool_options);
 systtools::SystMetaData
-ConfigureCOHParameterHeaders(fhicl::ParameterSet const &, systtools::paramId_t,
-                             fhicl::ParameterSet &tool_options);
+ConfigureCOHParameterHeaders(YAML::Node const &, systtools::paramId_t,
+                             YAML::Node &tool_options);
 
 systtools::SystMetaData
-ConfigureDISParameterHeaders(fhicl::ParameterSet const &, systtools::paramId_t,
-                             fhicl::ParameterSet &tool_options);
+ConfigureDISParameterHeaders(YAML::Node const &, systtools::paramId_t,
+                             YAML::Node &tool_options);
 
 systtools::SystMetaData
-ConfigureFSIParameterHeaders(fhicl::ParameterSet const &, systtools::paramId_t,
-                             fhicl::ParameterSet &tool_options);
+ConfigureFSIParameterHeaders(YAML::Node const &, systtools::paramId_t,
+                             YAML::Node &tool_options);
 
 systtools::SystMetaData
-ConfigureOtherParameterHeaders(fhicl::ParameterSet const &,
+ConfigureOtherParameterHeaders(YAML::Node const &,
                                systtools::paramId_t);
 
 } // namespace nusyst

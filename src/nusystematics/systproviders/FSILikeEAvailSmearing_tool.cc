@@ -1,6 +1,6 @@
 #include "nusystematics/systproviders/FSILikeEAvailSmearing_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "nusystematics/utility/GENIEUtils.hh"
 #include "nusystematics/utility/exceptions.hh"
@@ -11,34 +11,33 @@
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
 
 // #define DEBUG_MKSINGLEPI
 
-FSILikeEAvailSmearing::FSILikeEAvailSmearing(ParameterSet const &params)
+FSILikeEAvailSmearing::FSILikeEAvailSmearing(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       ResponseParameterIdx(systtools::kParamUnhandled<size_t>) {}
 
-SystMetaData FSILikeEAvailSmearing::BuildSystMetaData(ParameterSet const &cfg,
+SystMetaData FSILikeEAvailSmearing::BuildSystMetaData(YAML::Node const &cfg,
                                                       paramId_t firstId) {
 
   SystMetaData smd;
 
   systtools::SystParamHeader phdr;
-  if (ParseFhiclToolConfigurationParameter(cfg, "FSILikeEAvailSmearing",
-                                                 phdr, firstId)) {
+  if (ParseYAMLToolConfigurationParameter(cfg, "FSILikeEAvailSmearing",
+                                          phdr, firstId)) {
     phdr.systParamId = firstId++;
     smd.push_back(phdr);
   }
 
-  fhicl::ParameterSet templateManifest =
-      cfg.get<fhicl::ParameterSet>("FSILikeEAvailSmearing_input_manifest");
+  YAML::Node templateManifest =
+      cfg["FSILikeEAvailSmearing_input_manifest"];
 
-  if (!cfg.has_key("FSILikeEAvailSmearing_input_manifest") ||
-      !cfg.is_key_to_table("FSILikeEAvailSmearing_input_manifest")) {
-    throw invalid_ToolConfigurationFHiCL()
+  if (!cfg["FSILikeEAvailSmearing_input_manifest"] ||
+      !cfg["FSILikeEAvailSmearing_input_manifest"].IsMap()) {
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring calculated variations for "
-           "FSILikeEAvailSmearing, expected to find a FHiCL table keyed by "
+           "FSILikeEAvailSmearing, expected to find a YAML table keyed by "
            "FSILikeEAvailSmearing_input_manifest describing the location of "
            "the histogram inputs. See "
            "nusystematics/responsecalculators/"
@@ -49,7 +48,7 @@ SystMetaData FSILikeEAvailSmearing::BuildSystMetaData(ParameterSet const &cfg,
   for (std::string const &ch : {"CCQE", "CCRes", "CCDIS", "CCMEC", "CCQE_bar",
                                 "CCRes_bar", "CCDIS_bar", "CCMEC_bar", "NC"}) {
 
-    if (!templateManifest.has_key(ch)) {
+    if (!templateManifest[ch]) {
       continue;
     }
 
@@ -57,7 +56,7 @@ SystMetaData FSILikeEAvailSmearing::BuildSystMetaData(ParameterSet const &cfg,
   }
 
   if (!NChannels) {
-    throw invalid_ToolConfigurationFHiCL()
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring a FSILikeEAvailSmearing reweighting "
            "instance, failed to find any configured channels. Input templates "
            "must be described by in a table keyed "
@@ -67,12 +66,14 @@ SystMetaData FSILikeEAvailSmearing::BuildSystMetaData(ParameterSet const &cfg,
            "TemplateResponseCalculatorBase.hh";
   }
 
-  tool_options.put("FSILikeEAvailSmearing_input_manifest", templateManifest);
+  tool_options["FSILikeEAvailSmearing_input_manifest"] = templateManifest;
 
-  LimitWeights = cfg.get<std::pair<double, double>>(
-      "LimitWeights", {0, std::numeric_limits<double>::max()});
-  tool_options.put("LimitWeights", std::vector<double>{LimitWeights.first,
-                                                       LimitWeights.second});
+  LimitWeights = cfg["LimitWeights"] ?
+    cfg["LimitWeights"].as<std::pair<double, double>>() :
+    std::pair<double, double>{0, std::numeric_limits<double>::max()};
+  tool_options["LimitWeights"] = YAML::Node();
+  tool_options["LimitWeights"].push_back(LimitWeights.first);
+  tool_options["LimitWeights"].push_back(LimitWeights.second);
 
   return smd;
 }
@@ -85,7 +86,7 @@ struct channel_id {
 } // namespace
 
 bool FSILikeEAvailSmearing::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
       "Messenger_whisper.xml");
@@ -96,7 +97,7 @@ bool FSILikeEAvailSmearing::SetupResponseCalculator(
         << std::quoted("FSILikeEAvailSmearing");
   }
 
-  if (!tool_options.has_key("FSILikeEAvailSmearing_input_manifest")) {
+  if (!tool_options["FSILikeEAvailSmearing_input_manifest"]) {
     throw systtools::invalid_ToolOptions()
         << "[ERROR]: FSILikeEAvailSmearing parameter exists in the "
            "SystMetaData, but "
@@ -108,9 +109,8 @@ bool FSILikeEAvailSmearing::SetupResponseCalculator(
            "please report to the maintiner.";
   }
 
-  fhicl::ParameterSet const &templateManifest =
-      tool_options.get<fhicl::ParameterSet>(
-          "FSILikeEAvailSmearing_input_manifest");
+  YAML::Node const &templateManifest =
+      tool_options["FSILikeEAvailSmearing_input_manifest"];
 
   ResponseParameterIdx =
       GetParamIndex(GetSystMetaData(), "FSILikeEAvailSmearing");
@@ -126,21 +126,22 @@ bool FSILikeEAvailSmearing::SetupResponseCalculator(
                                {"CCMEC_bar", chan::kCCMEC_bar},
                                {"NC", chan::kNC}}) {
 
-    if (!templateManifest.has_key(ch.name)) {
+    if (!templateManifest[ch.name]) {
       continue;
     }
 
     TemplateHelper th;
     th.Template = std::make_unique<FSILikeEAvailSmearing_ReWeight>();
     th.Template->LoadInputHistograms(
-        templateManifest.get<fhicl::ParameterSet>(ch.name));
+        templateManifest[ch.name]);
     th.ZeroIsValid = th.Template->IsValidVariation(0);
 
     ChannelParameterMapping.emplace(ch.channel, std::move(th));
   }
 
-  LimitWeights = tool_options.get<std::pair<double, double>>(
-      "LimitWeights", {0, std::numeric_limits<double>::max()});
+  LimitWeights = tool_options["LimitWeights"] ?
+    std::pair<double, double>{tool_options["LimitWeights"][0].as<double>(), tool_options["LimitWeights"][1].as<double>()} :
+    std::pair<double, double>{0, std::numeric_limits<double>::max()};
 
   genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
       "Messenger_whisper.xml");

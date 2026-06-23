@@ -38,15 +38,15 @@ private:
 
 public:
   response_helper() : NEvsProcessed(0), ProfilerRate(0) {}
-  response_helper(std::string const &fhicl_config_filename) : NEvsProcessed(0) {
-    LoadConfiguration(fhicl_config_filename);
+  response_helper(std::string const &yaml_config_filename) : NEvsProcessed(0) {
+    LoadConfiguration(yaml_config_filename);
   }
 
   std::vector<std::unique_ptr<IGENIESystProvider_tool>>& GetSystProvider(){
     return syst_providers;
   };
 
-  void LoadProvidersAndHeaders(fhicl::ParameterSet const &ps) {
+  void LoadProvidersAndHeaders(YAML::Node const &ps) {
     syst_providers = systtools::ConfigureISystProvidersFromParameterHeaders<
         IGENIESystProvider_tool>(ps, make_instance);
     
@@ -67,18 +67,16 @@ public:
     SetHeaders(configuredParameterHeaders);
   }
 
-  void LoadConfiguration(std::string const &fhicl_config_filename) {
-    config_file = fhicl_config_filename;
+  void LoadConfiguration(std::string const &yaml_config_filename) {
+    config_file = yaml_config_filename;
 
-    // TODO
-    std::unique_ptr<cet::filepath_maker> fm
-        = std::make_unique<cet::filepath_lookup_nonabsolute>("FHICL_FILE_PATH");
-    fhicl::ParameterSet ps = fhicl::ParameterSet::make(config_file, *fm);
+    YAML::Node root = YAML::LoadFile(config_file);
 
-    LoadProvidersAndHeaders(ps.get<fhicl::ParameterSet>(
-        "generated_systematic_provider_configuration"));
+    LoadProvidersAndHeaders(root["generated_systematic_provider_configuration"]);
 
-    ProfilerRate = ps.get<size_t>("ProfileRate", 0);
+    if (root["ProfileRate"]) {
+      ProfilerRate = root["ProfileRate"].as<size_t>();
+    }
   }
 
   systtools::event_unit_response_t

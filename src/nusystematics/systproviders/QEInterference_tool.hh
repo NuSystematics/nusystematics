@@ -2,7 +2,7 @@
 
 // Interfaces
 #include "nusystematics/interface/IGENIESystProvider_tool.hh"
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "nusystematics/responsecalculators/QEInterferenceResponseCalculator.hh"
 
@@ -35,14 +35,14 @@ class QEInterference : public nusyst::IGENIESystProvider_tool {
   std::unique_ptr<nusyst::QEInterferenceResponseCalculator> QEIntfResponseCalculator;
 
 public:
-  explicit QEInterference(fhicl::ParameterSet const & ps);
+  explicit QEInterference(YAML::Node const & ps);
   ~QEInterference();
   
-  bool SetupResponseCalculator(fhicl::ParameterSet const &);
+  bool SetupResponseCalculator(YAML::Node const &);
 
-  fhicl::ParameterSet GetExtraToolOptions() { return tool_options; }
+  YAML::Node GetExtraToolOptions() { return tool_options; }
 
-  systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const & cfg,
+  systtools::SystMetaData BuildSystMetaData(YAML::Node const & cfg,
 					    systtools::paramId_t id);
 
   systtools::event_unit_response_t GetEventResponse(genie::EventRecord const &);
@@ -51,7 +51,7 @@ public:
 
 private:
   
-  fhicl::ParameterSet tool_options;
+  YAML::Node tool_options;
 
   // Vector to hold the name of the descriptors.
   // Will be loaded into the appropriate members in BuildSystMetaData()

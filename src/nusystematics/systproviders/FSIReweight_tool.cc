@@ -4,7 +4,7 @@
 
 #include "nusystematics/utility/exceptions.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "Framework/GHEP/GHepParticle.h"
 
@@ -12,9 +12,8 @@
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
 
-FSIReweight::FSIReweight(ParameterSet const &params)
+FSIReweight::FSIReweight(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       fsiReweightCalculator(nullptr),
       ResponseParameterIdx(systtools::kParamUnhandled<size_t>),
@@ -23,55 +22,55 @@ FSIReweight::FSIReweight(ParameterSet const &params)
       h_KEini_Ebias(nullptr),
       valid_file(nullptr), valid_tree(nullptr) {}
 
-SystMetaData FSIReweight::BuildSystMetaData(ParameterSet const &cfg,
-                                                     paramId_t firstId) {
+SystMetaData FSIReweight::BuildSystMetaData(YAML::Node const &cfg,
+                                            paramId_t firstId) {
 
   std::cout << "[FSIReweight::BuildSystMetaData] called" << std::endl;
 
   SystMetaData smd;
 
   systtools::SystParamHeader phdr;
-  if (ParseFhiclToolConfigurationParameter(cfg, "FSIReweight",
-                                                 phdr, firstId)) {
+  if (ParseYAMLToolConfigurationParameter(cfg, "FSIReweight",
+                                          phdr, firstId)) {
     phdr.systParamId = firstId++;
     smd.push_back(phdr);
   }
 
-  fhicl::ParameterSet templateManifest =
-      cfg.get<fhicl::ParameterSet>("FSIReweight_input_manifest");
-  tool_options.put("FSIReweight_input_manifest", templateManifest);
+  YAML::Node templateManifest =
+      cfg["FSIReweight_input_manifest"];
+  tool_options["FSIReweight_input_manifest"] = templateManifest;
 
   // OPTION_IN_CONF_FILE can be defined in the configuration file
   // then it is copied to tool_option when running "GenerateSystProviderConfig" to generation paramHeader
 
-  fill_valid_tree = cfg.get<bool>("fill_valid_tree", false);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  fill_valid_tree = cfg["fill_valid_tree"] ? cfg["fill_valid_tree"].as<bool>() : false;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
-  save_map = cfg.get<bool>("save_map", false);
-  tool_options.put("save_map", save_map);
+  save_map = cfg["save_map"] ? cfg["save_map"].as<bool>() : false;
+  tool_options["save_map"] = save_map;
 
   return smd;
 }
 
 bool FSIReweight::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   std::cout << "[FSIReweight::SetupResponseCalculator] called" << std::endl;
 
-  fhicl::ParameterSet templateManifest =
-      tool_options.get<fhicl::ParameterSet>("FSIReweight_input_manifest");
+  YAML::Node templateManifest =
+      tool_options["FSIReweight_input_manifest"];
 
   fsiReweightCalculator = std::make_unique<FSIReweightCalculator>( templateManifest );
 
   ResponseParameterIdx =
       GetParamIndex(GetSystMetaData(), "FSIReweight");
 
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
   if (fill_valid_tree) {
     InitValidTree();
   }
 
-  save_map = tool_options.get<bool>("save_map", false);
+  save_map = tool_options["save_map"] ? tool_options["save_map"].as<bool>() : false;
   if (save_map) {
     std::cout << "[[FSIReweight::SetupResponseCalculator] save_map is True" << std::endl;
     outfile_map = new TFile("FSI_2Dmap.root", "recreate");

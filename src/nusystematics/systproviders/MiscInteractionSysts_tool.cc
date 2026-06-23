@@ -1,6 +1,6 @@
 #include "nusystematics/systproviders/MiscInteractionSysts_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "nusystematics/utility/GENIEUtils.hh"
 
@@ -11,7 +11,7 @@
 
 using namespace nusyst;
 
-MiscInteractionSysts::MiscInteractionSysts(fhicl::ParameterSet const &params)
+MiscInteractionSysts::MiscInteractionSysts(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       pidx_C12ToAr40_2p2hScaling_nu(systtools::kParamUnhandled<size_t>),
       pidx_C12ToAr40_2p2hScaling_nubar(systtools::kParamUnhandled<size_t>),
@@ -21,7 +21,7 @@ MiscInteractionSysts::MiscInteractionSysts(fhicl::ParameterSet const &params)
       valid_file(nullptr), valid_tree(nullptr) {}
 
 systtools::SystMetaData
-MiscInteractionSysts::BuildSystMetaData(fhicl::ParameterSet const &ps,
+MiscInteractionSysts::BuildSystMetaData(YAML::Node const &yamlnd,
                                         systtools::paramId_t firstId) {
 
   systtools::SystMetaData smd;
@@ -30,20 +30,20 @@ MiscInteractionSysts::BuildSystMetaData(fhicl::ParameterSet const &ps,
        {"C12ToAr40_2p2hScaling_nu", "C12ToAr40_2p2hScaling_nubar",
         "nuenuebar_xsec_ratio", "nuenumu_xsec_ratio", "SPPLowQ2Suppression"}) {
     systtools::SystParamHeader phdr;
-    if (ParseFhiclToolConfigurationParameter(ps, pname, phdr, firstId)) {
+    if (ParseYAMLToolConfigurationParameter(yamlnd, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
       smd.push_back(phdr);
     }
   }
 
-  fill_valid_tree = ps.get<bool>("fill_valid_tree", false);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  fill_valid_tree = yamlnd["fill_valid_tree"] ? yamlnd["fill_valid_tree"].as<bool>() : false;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
   return smd;
 }
 
 bool MiscInteractionSysts::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   systtools::SystMetaData const &md = GetSystMetaData();
 
@@ -64,7 +64,7 @@ bool MiscInteractionSysts::SetupResponseCalculator(
   if (HasParam(md, "SPPLowQ2Suppression")) {
     pidx_SPPLowQ2Suppression = GetParamIndex(md, "SPPLowQ2Suppression");
   }
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
 
   if (fill_valid_tree) {
     InitValidTree();

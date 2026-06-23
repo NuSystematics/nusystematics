@@ -16,13 +16,13 @@
 class DIRT2_Emiss : public nusyst::IGENIESystProvider_tool {
 
 public:
-  explicit DIRT2_Emiss(fhicl::ParameterSet const &);
+  explicit DIRT2_Emiss(YAML::Node const &);
 
-  bool SetupResponseCalculator(fhicl::ParameterSet const &);
+  bool SetupResponseCalculator(YAML::Node const &);
 
-  fhicl::ParameterSet GetExtraToolOptions() { return tool_options; }
+  YAML::Node GetExtraToolOptions() { return tool_options; }
 
-  systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const &,
+  systtools::SystMetaData BuildSystMetaData(YAML::Node const &,
                                             systtools::paramId_t);
 
   systtools::event_unit_response_t GetEventResponse(genie::EventRecord const &);
@@ -33,7 +33,7 @@ public:
 
 private:
 
-  fhicl::ParameterSet tool_options;
+  YAML::Node tool_options;
 
   size_t pidx_Emiss_CorrTail_Ar_p;
   size_t pidx_Emiss_CorrTail_Ar_n;

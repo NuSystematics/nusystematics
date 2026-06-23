@@ -7,7 +7,7 @@
 #include "systematicstools/utility/ROOTUtility.hh"
 #include "systematicstools/utility/exceptions.hh"
 
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -41,22 +41,19 @@ public:
       : InterpolatedBinResponses(std::move(other.InterpolatedBinResponses)),
         BinnedResponses(std::move(other.BinnedResponses)) {}
 
-  /// Reads and loads input fhicl
+  /// Reads and loads input YAML
   ///
-  /// Expected fhicl like:
-  ///  use_FW_SEARCH_PATH: true # If enabled, will search for files in
-  ///  in the search path. Only read for ART jobs.
-  ///  input_file: "file.root" # Optional default root file name for this
-  ///                          # parameter's inputs
-  ///    inputs: [
-  ///      { value: 0
-  ///        input_file: "file.root" # Optional if the less-specific is
+  /// Expected YAML like:
+  ///   use_FW_SEARCH_PATH: true # If enabled, will search for files in
+  ///                           # the search path. Only read for ART jobs.
+  ///   input_file: "file.root" # Optional default root file name for this
+  ///                           # parameter's inputs
+  ///   inputs:
+  ///     - value: 0
+  ///       input_file: "file.root" # Optional if the less-specific is
   ///                                # supplied
-  ///        input_hist: "histo_name"
-  ///      }
-  ///    ]
-  ///  }
-  void LoadInputHistograms(fhicl::ParameterSet const &ps);
+  ///       input_hist: "histo_name"
+  void LoadInputHistograms(YAML::Node const &config);
 
   typedef Int_t bin_it_t;
 
@@ -112,16 +109,20 @@ void TemplateResponseCalculatorBase<
 
 template <size_t NDims, bool Continuous, size_t PolyResponseOrder>
 void TemplateResponseCalculatorBase<NDims, Continuous, PolyResponseOrder>::
-    LoadInputHistograms(fhicl::ParameterSet const &ps) {
+    LoadInputHistograms(YAML::Node const &config) {
 
-  std::string const &default_root_file = ps.get<std::string>("input_file", "");
+  std::string default_root_file;
+  if (config["input_file"]) {
+    default_root_file = config["input_file"].as<std::string>();
+  }
 
-  for (fhicl::ParameterSet const &val_config :
-       ps.get<std::vector<fhicl::ParameterSet>>("inputs")) {
-    double pval = val_config.get<double>("value");
-    std::string input_file =
-        val_config.get<std::string>("input_file", default_root_file);
-    std::string input_hist = val_config.get<std::string>("input_hist");
+  for (const YAML::Node &val_config : config["inputs"]) {
+    double pval = val_config["value"].as<double>();
+    std::string input_file = default_root_file;
+    if (val_config["input_file"]) {
+      input_file = val_config["input_file"].as<std::string>();
+    }
+    std::string input_hist = val_config["input_hist"].as<std::string>();
 
     BinnedResponses[pval] = std::unique_ptr<typename THType<NDims>::type>(
         GetHistogram<typename THType<NDims>::type>(input_file, input_hist));

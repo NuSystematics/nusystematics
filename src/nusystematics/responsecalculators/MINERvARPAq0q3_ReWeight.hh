@@ -6,6 +6,7 @@
 #include "nusystematics/utility/enumclass2int.hh"
 #include "nusystematics/utility/exceptions.hh"
 
+#include "yaml-cpp/yaml.h"
 #include <ostream>
 
 // #define MINERvARPAq0q3_ReWeight_DEBUG
@@ -27,8 +28,29 @@ class MINERvARPAq0q3_ReWeight
 public:
   enum class RPATweak_t { kCV = 0, kPlus1 = 1, kMinus1 = -1 };
 
-  MINERvARPAq0q3_ReWeight(fhicl::ParameterSet const &InputManifest) {
+  MINERvARPAq0q3_ReWeight(YAML::Node const &InputManifest) {
     LoadInputHistograms(InputManifest);
+  }
+
+  void LoadInputHistograms(YAML::Node const &config) {
+    std::string default_root_file;
+    if (config["input_file"]) {
+      default_root_file = config["input_file"].as<std::string>();
+    }
+
+    for (const YAML::Node &val_config : config["inputs"]) {
+      double pval = val_config["value"].as<double>();
+      std::string input_file = default_root_file;
+      if (val_config["input_file"]) {
+        input_file = val_config["input_file"].as<std::string>();
+      }
+      std::string input_hist = val_config["input_hist"].as<std::string>();
+
+      BinnedResponses[pval] = std::unique_ptr<TH2>(
+          GetHistogram<TH2>(input_file, input_hist));
+    }
+
+    ValidateInputHistograms();
   }
 
   virtual bin_it_t GetBin(std::array<double, 2> const &kinematics) const {

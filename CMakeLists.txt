@@ -24,7 +24,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 include(CPM)
 
 find_package(ROOT 6.10 REQUIRED)
-
+find_package(yaml-cpp REQUIRED)
 CPMFindPackage(
     NAME systematicstools
     GIT_TAG v02_00_04

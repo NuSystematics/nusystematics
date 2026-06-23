@@ -1,5 +1,5 @@
 // GenerateAllDialsConfigNuSyst.cxx
-// Builds a "kitchen sink" generated_systematic_provider_configuration fhicl
+// Builds a "kitchen sink" generated_systematic_provider_configuration YAML
 // containing every available dial:
 //   - all GENIE Reweight dials enumerated from genie::rew::GSyst_t at runtime
 //     (no hardcoded dial names -- discovered via GSyst::AsString)
@@ -19,9 +19,7 @@
 #include "nusystematics/utility/response_helper.hh"
 #include "nusystematics/utility/silence_genie.hh"
 
-#include "fhiclcpp/ParameterSet.h"
-#include "fhiclcpp/intermediate_table.h"
-#include "fhiclcpp/parse.h"
+#include "yaml-cpp/yaml.h"
 
 #include "RwCalculators/GReWeightNuXSecCCQE.h"
 #include "RwFramework/GSyst.h"
@@ -76,11 +74,11 @@ const std::set<std::string> kDevelopmentTemplates = {
 
 void SayUsage(char const *argv[]) {
   std::cout << "[USAGE]: " << argv[0] << "\n\n"
-    "  Generates a 'generated_systematic_provider_configuration' fhicl\n"
+    "  Generates a 'generated_systematic_provider_configuration' YAML\n"
     "  containing every available dial.\n\n"
     "  Optional:\n"
     "    --mode <m>             genierw | providers | all (default: all)\n"
-    "    -o <output.fcl>        Output file (default: stdout)\n"
+    "    -o <output.yaml>        Output file (default: stdout)\n"
     "    --fcl-dir <dir>        Tool-config fcl directory\n"
     "                           (default: $NUSYST/fcl)\n"
     "    --variation-descriptor \"[-3,-2,-1,0,1,2,3]\"\n"
@@ -368,11 +366,11 @@ std::vector<std::string> ChannelPatternsForBucket(const std::string &bucket) {
 // with `instance_name = <bucket>` and only that bucket's dials. With
 // --single-instance, returns a single "All" entry with every dial (legacy
 // kitchen-sink layout).
-std::map<std::string, fhicl::ParameterSet>
+std::map<std::string, YAML::Node>
 BuildGENIEReWeightToolConfigs(std::vector<std::string> &included_dials,
                               std::vector<std::string> &skipped_names,
                               std::vector<std::string> &skipped_reasons) {
-  std::map<std::string, fhicl::ParameterSet> out;
+  std::map<std::string, YAML::Node> out;
 
   // Build a flat list of (dial_name, bucket) for the dials we keep.
   std::vector<std::pair<std::string, std::string>> dials;
@@ -400,19 +398,18 @@ BuildGENIEReWeightToolConfigs(std::vector<std::string> &included_dials,
   for (auto &[_, bucket] : dials) bucket_set.insert(bucket);
 
   for (auto const &bucket : bucket_set) {
-    fhicl::ParameterSet ps;
-    ps.put<std::string>("tool_type", "GENIEReWeight");
-    ps.put<std::string>("instance_name", bucket);
+    YAML::Node ps;
+    ps["tool_type"] = "GENIEReWeight";
+    ps["instance_name"] = bucket;
     // Required to allow splineable parameters individually
-    ps.put<bool>("ignore_parameter_dependence", true);
-    ps.put<std::string>("genie_tune_name", "${GENIE_XSEC_TUNE}");
+    ps["ignore_parameter_dependence"] = true;
+    ps["genie_tune_name"] = "${GENIE_XSEC_TUNE}";
     out[bucket] = ps;
   }
 
   for (auto &[name, bucket] : dials) {
-    out[bucket].put<double>(name + "_central_value", 0.0);
-    out[bucket].put<std::string>(name + "_variation_descriptor",
-                                  cliopts::variation_descriptor);
+    out[bucket][name + "_central_value"] = 0.0;
+    out[bucket][name + "_variation_descriptor"] = cliopts::variation_descriptor;
   }
 
   // Surface the count of invalid GSyst_t enum gaps as a single summary row
@@ -426,31 +423,28 @@ BuildGENIEReWeightToolConfigs(std::vector<std::string> &included_dials,
   return out;
 }
 
-// Detect a tool-config-style fhicl: must contain a top-level "syst_providers" key.
+// Detect a tool-config-style YAML: must contain a top-level "syst_providers" key.
 bool IsToolConfigFile(const std::string &path) {
-  std::unique_ptr<cet::filepath_maker> fm = std::make_unique<cet::filepath_maker>();
   try {
-    fhicl::ParameterSet ps = fhicl::ParameterSet::make(path, *fm);
-    return ps.has_key("syst_providers");
+    YAML::Node ps = YAML::LoadFile(path);
+    return static_cast<bool>(ps["syst_providers"]);
   } catch (...) {
     return false;
   }
 }
 
-// Best-effort tool_type extraction from a tool-config fhicl. Walks each
+// Best-effort tool_type extraction from a tool-config YAML. Walks each
 // provider stanza listed in syst_providers and collects its tool_type
 // string. Returns empty on parse failure (caller falls back gracefully).
 std::vector<std::string> ToolTypesDeclaredIn(const std::string &path) {
   std::vector<std::string> out;
-  std::unique_ptr<cet::filepath_maker> fm = std::make_unique<cet::filepath_maker>();
   try {
-    fhicl::ParameterSet ps = fhicl::ParameterSet::make(path, *fm);
-    auto names = ps.get<std::vector<std::string>>("syst_providers",
-                                                    std::vector<std::string>{});
+    YAML::Node ps = YAML::LoadFile(path);
+    auto names = ps["syst_providers"] ? ps["syst_providers"].as<std::vector<std::string>>() : std::vector<std::string>{};
     for (auto const &n : names) {
       try {
-        auto prov = ps.get<fhicl::ParameterSet>(n);
-        auto tt = prov.get<std::string>("tool_type", "");
+        YAML::Node prov = ps[n];
+        auto tt = prov["tool_type"] ? prov["tool_type"].as<std::string>() : std::string{};
         if (!tt.empty()) out.push_back(tt);
       } catch (...) {}
     }
@@ -482,10 +476,9 @@ std::vector<std::string> ListFcls(const std::string &dir) {
 // but then fail in SetupResponseCalculator when actually used downstream.
 bool VerifyProviderLoad(IGENIESystProvider_tool *prov, std::string &err_out) {
   try {
-    fhicl::ParameterSet inner;
-    inner.put(prov->GetFullyQualifiedName(), prov->GetParameterHeadersDocument());
-    inner.put<std::vector<std::string>>("syst_providers",
-                                         {prov->GetFullyQualifiedName()});
+    YAML::Node inner;
+    inner[prov->GetFullyQualifiedName()] = prov->GetParameterHeadersDocument();
+    inner["syst_providers"] = std::vector<std::string>{prov->GetFullyQualifiedName()};
     nusyst::response_helper rh;
     rh.LoadProvidersAndHeaders(inner);
     return true;
@@ -528,7 +521,7 @@ bool IsKnownUpstreamBug(const std::string &err) {
   return err.find("basic_string: construction from null") != std::string::npos;
 }
 
-// Try to instantiate providers from a tool-config fhicl. Returns the
+// Try to instantiate providers from a tool-config YAML. Returns the
 // configured providers (empty on failure) and writes any error to err_out.
 // Also verifies each provider can be loaded from its own parameter headers.
 // Uses syst_param_id_offset to make sure paramIds remain unique across calls.
@@ -537,8 +530,7 @@ TryLoadToolConfig(const std::string &path, paramId_t &syst_param_id_offset,
                   std::string &err_out) {
   std::vector<std::unique_ptr<IGENIESystProvider_tool>> tools;
   try {
-    std::unique_ptr<cet::filepath_maker> fm = std::make_unique<cet::filepath_maker>();
-    fhicl::ParameterSet ps = fhicl::ParameterSet::make(path, *fm);
+  YAML::Node ps = YAML::LoadFile(path);
     tools = systtools::ConfigureISystProvidersFromToolConfig<IGENIESystProvider_tool>(
         ps, nusyst::make_instance, "syst_providers", syst_param_id_offset);
   } catch (std::exception &e) {
@@ -570,15 +562,15 @@ TryLoadToolConfig(const std::string &path, paramId_t &syst_param_id_offset,
 // `instance_name` (e.g. "All", "CCQE", "FSI") must match the instance_name
 // field inside `tool_ps` so the resulting FQ name lines up with the wrapper key.
 std::vector<std::unique_ptr<IGENIESystProvider_tool>>
-TryLoadInMemoryGENIERW(const fhicl::ParameterSet &tool_ps,
+TryLoadInMemoryGENIERW(const YAML::Node &tool_ps,
                         const std::string &instance_name,
                         paramId_t &syst_param_id_offset, std::string &err_out) {
   std::vector<std::unique_ptr<IGENIESystProvider_tool>> tools;
   std::string fqname = "GENIEReWeight_" + instance_name;
   try {
-    fhicl::ParameterSet wrapper;
-    wrapper.put(fqname, tool_ps);
-    wrapper.put<std::vector<std::string>>("syst_providers", {fqname});
+    YAML::Node wrapper;
+  wrapper[fqname] = tool_ps;
+  wrapper["syst_providers"] = std::vector<std::string>{fqname};
     tools = systtools::ConfigureISystProvidersFromToolConfig<IGENIESystProvider_tool>(
         wrapper, nusyst::make_instance, "syst_providers", syst_param_id_offset);
   } catch (std::exception &e) {
@@ -658,7 +650,7 @@ int main(int argc, char const *argv[]) {
   // Collect all successfully-loaded providers here
   std::vector<std::unique_ptr<IGENIESystProvider_tool>> all_providers;
   // For per-bucket GENIE Reweight providers: provider FQ name ->
-  // applies_to_channels patterns, written into the output fhicl so that
+  // applies_to_channels patterns, written into the output YAML so that
   // downstream consumers (DumpConfiguredTweaksNuSyst) can skip non-matching
   // providers per event without reading any external map.
   std::map<std::string, std::vector<std::string>> provider_channel_patterns;
@@ -667,12 +659,12 @@ int main(int argc, char const *argv[]) {
   paramId_t syst_param_id_offset = 0;
 
   // Capture standalone-scan outcomes so they can be embedded in the output
-  // fhicl as a `_scan_report` table. `nusyst inventory` reads it back and
+  // YAML as a `_scan_report` table. `nusyst inventory` reads it back and
   // prints a footer summarising what was looked at but not loaded.
   //
   // Each failure category is stored as two parallel string arrays (names +
   // reasons) rather than as a single "<name>: <reason>" composite. Reason
-  // strings can contain colons, brackets, and other characters that fhicl's
+  // strings can contain colons, brackets, and other characters that YAML's
   // value parser tries to interpret if they appear unquoted in a list, which
   // would break round-tripping. The pair-of-arrays form avoids that.
   struct ScanReport {
@@ -681,7 +673,7 @@ int main(int argc, char const *argv[]) {
     std::vector<std::string> skipped_data_names,      skipped_data_reasons;
     std::vector<std::string> skipped_bug_names,       skipped_bug_reasons;
     std::vector<std::string> skipped_other_names,     skipped_other_reasons;
-    std::vector<std::string> registered_no_fcl;       // dispatchable but no fhicl
+    std::vector<std::string> registered_no_fcl;       // dispatchable but no YAML
     // GENIE Reweight dials we filter out from the kitchen-sink config so they
     // never appear in the inventory table. Surfaced in the footer so users
     // know they exist and why they were dropped.
@@ -689,10 +681,10 @@ int main(int argc, char const *argv[]) {
     std::vector<std::string> genie_rw_skipped_reasons;
   } scan_report;
 
-  // Sanitize an error / reason message for embedding into the output fhicl as
+  // Sanitize an error / reason message for embedding into the output YAML as
   // a string. Two issues to handle:
-  //   1. Newlines would break fhicl's single-line value form.
-  //   2. fhicl's value parser treats `:`, `[`, `]`, `{`, `}`, `,` and quotes
+  //   1. Newlines would break YAML's single-line value form.
+  //   2. YAML's value parser treats `:`, `[`, `]`, `{`, `}`, `,` and quotes
   //      as syntactic -- even inside a string element of a vector<string>,
   //      `put<vector<string>>` re-validates each entry and fails on those
   //      characters. So we strip them down to spaces / backticks. The result
@@ -709,7 +701,7 @@ int main(int argc, char const *argv[]) {
           ascii += '`'; break;
         default:
           if (c < 32 || c > 126) {
-            // Non-ASCII (UTF-8 bytes, em-dashes, etc.) -- fhicl's value parser
+            // Non-ASCII (UTF-8 bytes, em-dashes, etc.) -- YAML's value parser
             // can choke on these. Replace with a plain hyphen for em-dashes
             // (E2 80 94) / en-dashes (E2 80 93) / others; the goal is "human
             // can still read it", not "round-trips bit-for-bit".
@@ -757,7 +749,7 @@ int main(int argc, char const *argv[]) {
       }
     }
     // Persist for `nusyst inventory` footer. Sanitize the reasons through
-    // flatten_err for the same fhicl-roundtrip reasons as the scan report.
+    // flatten_err for the same YAML-roundtrip reasons as the scan report.
     scan_report.genie_rw_skipped_names = skipped_names;
     for (auto const &r : skipped_reasons)
       scan_report.genie_rw_skipped_reasons.push_back(flatten_err(r));
@@ -889,8 +881,8 @@ int main(int argc, char const *argv[]) {
   // ----- Compute "registered but no tool config" -----
   // The accurate definition we want: a registered tool_type appears in
   // `registered_no_fcl` iff no `.fcl` we scanned declared it. Providers
-  // whose fhicl was found but failed/skipped are NOT the same thing -- they
-  // have a fhicl, it just didn't load -- so those tool_types must also be
+  // whose YAML was found but failed/skipped are NOT the same thing -- they
+  // have a YAML, it just didn't load -- so those tool_types must also be
   // excluded from this list. Collect tool_types declared by *any* scanned
   // tool-config (regardless of load outcome), plus those from providers
   // that loaded successfully, and subtract from the registered set.
@@ -898,8 +890,8 @@ int main(int argc, char const *argv[]) {
     std::set<std::string> observed_tt;
     for (auto &p : all_providers) {
       try {
-        observed_tt.insert(
-            p->GetParameterHeadersDocument().get<std::string>("tool_type"));
+        YAML::Node hdr = p->GetParameterHeadersDocument();
+        if (hdr["tool_type"]) observed_tt.insert(hdr["tool_type"].as<std::string>());
       } catch (...) {}
     }
     if (!cliopts::fcl_dir.empty()) {
@@ -920,7 +912,7 @@ int main(int argc, char const *argv[]) {
   }
 
   // ----- Build the merged generated config -----
-  fhicl::ParameterSet out_ps;
+  YAML::Node out_ps;
   std::vector<std::string> providerNames;
   for (auto &prov : all_providers) {
     if (!systtools::Validate(prov->GetSystMetaData(), false)) {
@@ -928,44 +920,42 @@ int main(int argc, char const *argv[]) {
                 << " failed Validate(); skipping." << std::endl;
       continue;
     }
-    fhicl::ParameterSet tool_ps = prov->GetParameterHeadersDocument();
+    YAML::Node tool_ps = prov->GetParameterHeadersDocument();
     // For per-channel GENIE Reweight buckets, inject the channel patterns
     // into tool_options so downstream consumers can skip non-matching events.
     auto pcp_it = provider_channel_patterns.find(prov->GetFullyQualifiedName());
     if (pcp_it != provider_channel_patterns.end()) {
-      fhicl::ParameterSet topts =
-          tool_ps.get<fhicl::ParameterSet>("tool_options", fhicl::ParameterSet{});
-      topts.put_or_replace<std::vector<std::string>>("applies_to_channels",
-                                                       pcp_it->second);
-      tool_ps.put_or_replace("tool_options", topts);
+      YAML::Node topts = tool_ps["tool_options"] ? tool_ps["tool_options"] : YAML::Node{};
+      topts["applies_to_channels"] = pcp_it->second;
+      tool_ps["tool_options"] = topts;
     }
-    out_ps.put(prov->GetFullyQualifiedName(), tool_ps);
+    out_ps[prov->GetFullyQualifiedName()] = tool_ps;
     providerNames.push_back(prov->GetFullyQualifiedName());
   }
-  out_ps.put("syst_providers", providerNames);
+  out_ps["syst_providers"] = providerNames;
 
   // Embed the scan report so `nusyst inventory` can surface providers that
-  // were registered in make_instance but had no tool-config fhicl to load,
-  // and those whose fhicl was found but failed/skipped.
+  // were registered in make_instance but had no tool-config YAML to load,
+  // and those whose YAML was found but failed/skipped.
   {
-    fhicl::ParameterSet report_ps;
-    report_ps.put("fcl_dir",                  scan_report.fcl_dir);
-    report_ps.put("failed_names",             scan_report.failed_names);
-    report_ps.put("failed_reasons",           scan_report.failed_reasons);
-    report_ps.put("skipped_data_names",       scan_report.skipped_data_names);
-    report_ps.put("skipped_data_reasons",     scan_report.skipped_data_reasons);
-    report_ps.put("skipped_bug_names",        scan_report.skipped_bug_names);
-    report_ps.put("skipped_bug_reasons",      scan_report.skipped_bug_reasons);
-    report_ps.put("skipped_other_names",      scan_report.skipped_other_names);
-    report_ps.put("skipped_other_reasons",    scan_report.skipped_other_reasons);
-    report_ps.put("registered_no_fcl",        scan_report.registered_no_fcl);
-    report_ps.put("genie_rw_skipped_names",   scan_report.genie_rw_skipped_names);
-    report_ps.put("genie_rw_skipped_reasons", scan_report.genie_rw_skipped_reasons);
-    out_ps.put("_scan_report", report_ps);
+    YAML::Node report_ps;
+    report_ps["fcl_dir"] = scan_report.fcl_dir;
+    report_ps["failed_names"] = scan_report.failed_names;
+    report_ps["failed_reasons"] = scan_report.failed_reasons;
+    report_ps["skipped_data_names"] = scan_report.skipped_data_names;
+    report_ps["skipped_data_reasons"] = scan_report.skipped_data_reasons;
+    report_ps["skipped_bug_names"] = scan_report.skipped_bug_names;
+    report_ps["skipped_bug_reasons"] = scan_report.skipped_bug_reasons;
+    report_ps["skipped_other_names"] = scan_report.skipped_other_names;
+    report_ps["skipped_other_reasons"] = scan_report.skipped_other_reasons;
+    report_ps["registered_no_fcl"] = scan_report.registered_no_fcl;
+    report_ps["genie_rw_skipped_names"] = scan_report.genie_rw_skipped_names;
+    report_ps["genie_rw_skipped_reasons"] = scan_report.genie_rw_skipped_reasons;
+    out_ps["_scan_report"] = report_ps;
   }
 
-  fhicl::ParameterSet wrapped_out_ps;
-  wrapped_out_ps.put("generated_systematic_provider_configuration", out_ps);
+  YAML::Node wrapped_out_ps;
+  wrapped_out_ps["generated_systematic_provider_configuration"] = out_ps;
 
   std::ostream *os(nullptr);
   std::ofstream fs;
@@ -979,7 +969,7 @@ int main(int argc, char const *argv[]) {
   } else {
     os = &std::cout;
   }
-  (*os) << wrapped_out_ps.to_indented_string() << std::endl;
+  (*os) << wrapped_out_ps << std::endl;
   if (cliopts::outputfile.size()) fs.close();
 
   std::cerr << "\n=== Summary ===" << std::endl;

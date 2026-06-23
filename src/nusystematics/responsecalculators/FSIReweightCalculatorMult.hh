@@ -9,7 +9,7 @@
 #include "systematicstools/utility/exceptions.hh"
 #include "systematicstools/utility/string_parsers.hh"
 
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -56,12 +56,12 @@ namespace nusyst {
 
   public:
 
-    FSIReweightCalculatorMult(fhicl::ParameterSet const &InputManifest) {
+    FSIReweightCalculatorMult(YAML::Node const &InputManifest) {
       LoadInputHistograms(InputManifest);
     }
     ~FSIReweightCalculatorMult(){}
 
-    void LoadInputHistograms(fhicl::ParameterSet const &ps);
+    void LoadInputHistograms(YAML::Node const &config);
 
     double GetFSIReweightMultSum(double KEini, double nucleons, double parameter_value, int parpdg);
     double GetFSIReweightMultDiff(double KEini, double nucleons, double parameter_value, int parpdg);
@@ -168,15 +168,29 @@ inline double FSIReweightCalculatorMult::GetFSIReweightMultDiff(double KEini, do
 
 }
 
-  inline void FSIReweightCalculatorMult::LoadInputHistograms(fhicl::ParameterSet const &ps) {
+  inline void FSIReweightCalculatorMult::LoadInputHistograms(YAML::Node const &config) {
 
-    std::string const &default_root_file = systtools::expand_env_vars( ps.get<std::string>("input_file", "") );
+    std::string default_root_file;
+    if (config["input_file"]) {
+      default_root_file = config["input_file"].as<std::string>();
+    }
 
-    for (fhicl::ParameterSet const &val_config :
-         ps.get<std::vector<fhicl::ParameterSet>>("inputs")) {
-      std::string hName = val_config.get<std::string>("name");
-      std::string input_hist = val_config.get<std::string>("input_hist");
-      std::string input_file = systtools::expand_env_vars( val_config.get<std::string>("input_file", default_root_file) ); // If specified per hist, replace it
+    for (const YAML::Node &val_config : config["inputs"]) {
+      std::string hName = val_config["name"].as<std::string>();
+      std::string input_hist = val_config["input_hist"].as<std::string>();
+      std::string input_file = default_root_file;
+      if (val_config["input_file"]) {
+        input_file = val_config["input_file"].as<std::string>();
+      }
+      input_file = systtools::expand_env_vars(input_file);
+
+      if (input_file.find("/") != 0) {
+        std::string tmp_NUSYSTEMATICS_ROOT = std::getenv("nusystematics_ROOT");
+        if (tmp_NUSYSTEMATICS_ROOT == "") {
+          throw invalid_FSIMult_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set but put relative path:" << input_file;
+        }
+        input_file = tmp_NUSYSTEMATICS_ROOT + "/data/" + input_file;
+      }
 
       if(hName=="hist_nom_protonPlus"){
         hist_nom_protonPlus = GetHistogram<TH2D>(input_file, input_hist);
@@ -239,7 +253,6 @@ inline double FSIReweightCalculatorMult::GetFSIReweightMultDiff(double KEini, do
       else if(hName=="hist_altDiff_piMinus"){
         hist_altDiff_piMinus = GetHistogram<TH2D>(input_file, input_hist);
       }
-
 
     }
   }

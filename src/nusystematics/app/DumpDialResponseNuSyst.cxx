@@ -15,8 +15,7 @@
 #include "nusystematics/utility/response_helper.hh"
 #include "nusystematics/utility/silence_genie.hh"
 
-#include "fhiclcpp/ParameterSet.h"
-#include "cetlib/filepath_maker.h"
+#include "yaml-cpp/yaml.h"
 
 #include <cstdlib>
 #include <unistd.h>
@@ -52,7 +51,7 @@ using namespace nusyst;
 
 // ===== CLI =================================================================
 namespace cliopts {
-std::string fclname;
+std::string yamlname;
 std::string input_file;
 std::string output_base = "dial_response";
 std::string genie_branch_name = "gmcrec";
@@ -67,7 +66,7 @@ bool make_root = true;
 void SayUsage(char const *argv[]) {
   std::cout << "[USAGE]: " << argv[0] << "\n\n"
     "  Required:\n"
-    "    -c <config.fcl>      FHiCL config file\n"
+    "    -c <config.yaml>     YAML config file\n"
     "    -i <ghep.root>       GENIE ghep input\n\n"
     "  Optional:\n"
     "    -p <par1,par2,...>    Filter dials by name substring\n"
@@ -87,7 +86,7 @@ void HandleOpts(int argc, char const *argv[]) {
   while (opt < argc) {
     std::string s(argv[opt]);
     if (s == "-?" || s == "--help") { SayUsage(argv); exit(0); }
-    else if (s == "-c") cliopts::fclname = argv[++opt];
+    else if (s == "-c") cliopts::yamlname = argv[++opt];
     else if (s == "-i") cliopts::input_file = argv[++opt];
     else if (s == "-o") {
       // -o is a *base* name; the tool appends .pdf and .root. If the user
@@ -189,7 +188,7 @@ struct DialInfo {
   bool is_weight_syst;
   std::array<double, 2> oneSigmaShifts;     // {down, up}
   std::array<double, 2> validityRange;      // {min, max}
-  std::vector<double> paramVariations;       // original from fhicl
+  std::vector<double> paramVariations;       // original from YAML
   std::vector<double> grid;                  // x-values where we evaluate
 };
 
@@ -203,21 +202,21 @@ using ResponseMap = std::map<std::string, std::map<std::string, std::vector<std:
 // ResponseMap[dial_fullname][channel] -> list of (event_index, weights)
 
 // ===== Cache resolution + provider-level filter (shared with nusyst tweaks) =
-// If `-c` is omitted while `-p` is given, resolve fclname against the cached
-// kitchen-sink path: $NUSYST_INVENTORY_FCL, then $nusystematics_ROOT/fcl/
-// nusyst_inventory.fcl, then $NUSYST/fcl/..., then /tmp/...
+// If `-c` is omitted while `-p` is given, resolve yamlname against the cached
+// kitchen-sink path: $NUSYST_INVENTORY_YAML, then $nusystematics_ROOT/fcl/
+// nusyst_inventory.yaml, then $NUSYST/fcl/..., then /tmp/...
 // Auto-generating via `nusyst config` on first use.
-constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_FCL";
+constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_YAML";
 
 std::string InventoryDefaultPath() {
 #ifdef NUSYST_INSTALL_PREFIX
-  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.fcl";
+  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.yaml";
 #else
   for (char const *var : {"nusystematics_ROOT", "NUSYST"}) {
     char const *val = std::getenv(var);
-    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.fcl";
+    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.yaml";
   }
-  return "/tmp/nusyst_inventory.fcl";
+  return "/tmp/nusyst_inventory.yaml";
 #endif
 }
 
@@ -236,24 +235,24 @@ int main(int argc, char const *argv[]) {
 
   // Cache fallback for the common `-p DialName -i events.root -o curves`
   // invocation. Same resolution + auto-generation as nusyst inventory / tweaks.
-  if (cliopts::fclname.empty() && !cliopts::parameters.empty()) {
+  if (cliopts::yamlname.empty() && !cliopts::parameters.empty()) {
     char const *env = std::getenv(kInventoryEnvVar);
-    cliopts::fclname = (env && *env) ? std::string(env) : InventoryDefaultPath();
-    if (::access(cliopts::fclname.c_str(), R_OK) != 0) {
+    cliopts::yamlname = (env && *env) ? std::string(env) : InventoryDefaultPath();
+    if (::access(cliopts::yamlname.c_str(), R_OK) != 0) {
       std::cerr << "[INFO]: -p was given without -c; auto-generating "
-                << cliopts::fclname << " via `nusyst config --mode all`.\n";
+                << cliopts::yamlname << " via `nusyst config --mode all`.\n";
       std::string cmd = "GenerateAllDialsConfigNuSyst --mode all -o " +
-                        cliopts::fclname + " > /dev/null 2>&1";
+                        cliopts::yamlname + " > /dev/null 2>&1";
       if (std::system(cmd.c_str()) != 0) {
         std::cerr << "[ERROR]: Auto-generation failed; re-running visibly:\n";
         std::system(("GenerateAllDialsConfigNuSyst --mode all -o " +
-                     cliopts::fclname).c_str());
+                     cliopts::yamlname).c_str());
         return 3;
       }
     }
   }
 
-  if (cliopts::fclname.empty() || cliopts::input_file.empty()) {
+  if (cliopts::yamlname.empty() || cliopts::input_file.empty()) {
     std::cout << "[ERROR]: -c and -i are required.\n"
                  "         (Pass -p <dial,...> to auto-resolve -c from the "
                  "cached kitchen sink.)" << std::endl;
@@ -271,43 +270,37 @@ int main(int argc, char const *argv[]) {
     genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
         "Messenger_whisper.xml");
 
-    fhicl::ParameterSet raw_ps;
-    {
-      std::unique_ptr<cet::filepath_maker> fm =
-          std::make_unique<cet::filepath_lookup_nonabsolute>("FHICL_FILE_PATH");
-      raw_ps = fhicl::ParameterSet::make(cliopts::fclname, *fm);
-    }
-    fhicl::ParameterSet gen_ps = raw_ps.get<fhicl::ParameterSet>(
-        "generated_systematic_provider_configuration");
+    YAML::Node raw_yaml = YAML::LoadFile(cliopts::yamlname);
+    YAML::Node gen_yaml = raw_yaml["generated_systematic_provider_configuration"];
 
     if (!cliopts::parameters.empty()) {
       auto provider_names =
-          gen_ps.get<std::vector<std::string>>("syst_providers");
+          gen_yaml["syst_providers"].as<std::vector<std::string>>();
       std::vector<std::string> kept;
       for (auto const &pname : provider_names) {
-        fhicl::ParameterSet prov;
-        try { prov = gen_ps.get<fhicl::ParameterSet>(pname); }
-        catch (...) { continue; }
+        YAML::Node prov = gen_yaml[pname];
+        if (!prov) { continue; }
         bool any_match = false;
-        for (auto const &key : prov.get_names()) {
-          if (!prov.is_key_to_table(key)) continue;
+        for (auto const &node : prov) {
+          const auto &key = node.first.as<std::string>();
+          if (!prov[key].IsMap()) continue;
           try {
-            fhicl::ParameterSet sub = prov.get<fhicl::ParameterSet>(key);
-            if (!sub.has_key("prettyName")) continue;
-            std::string pretty = sub.get<std::string>("prettyName");
+            YAML::Node sub = prov[key];
+            if (!sub["prettyName"]) continue;
+            std::string pretty = sub["prettyName"].as<std::string>();
             if (DialMatchesPFilter(pretty)) { any_match = true; break; }
           } catch (...) {}
         }
         if (any_match) kept.push_back(pname);
-        else           gen_ps.erase(pname);
+        else           gen_yaml[pname] = YAML::Null;
       }
-      gen_ps.put_or_replace<std::vector<std::string>>("syst_providers", kept);
+      gen_yaml["syst_providers"] = kept;
       std::cerr << "[INFO]: -p filter kept " << kept.size() << " of "
                 << provider_names.size() << " providers ("
                 << (provider_names.size() - kept.size())
                 << " skipped -- neither constructed nor evaluated).\n";
     }
-    phh.LoadProvidersAndHeaders(gen_ps);
+    phh.LoadProvidersAndHeaders(gen_yaml);
   }
 
   // Collect dial info
@@ -525,7 +518,7 @@ int main(int argc, char const *argv[]) {
       tex.DrawLatex(0.05, 0.93, "DumpDialResponseNuSyst Summary");
       tex.SetTextFont(42); tex.SetTextSize(0.028);
       double y = 0.86;
-      tex.DrawLatex(0.05, y, Form("Config: %s", cliopts::fclname.c_str())); y -= 0.03;
+      tex.DrawLatex(0.05, y, Form("Config: %s", cliopts::yamlname.c_str())); y -= 0.03;
       tex.DrawLatex(0.05, y, Form("Input:  %s", cliopts::input_file.c_str())); y -= 0.03;
       tex.DrawLatex(0.05, y, Form("Dials:  %zu   Active dials: %zu   Channels: %zu   Events/channel: %d",
                                    dials.size(), active_channels.size(),
@@ -651,7 +644,7 @@ int main(int argc, char const *argv[]) {
         line("Provider", di.provider_name);
         line("paramId", std::to_string(di.pid));
         line("centralParamValue", fmt_dbl(di.central));
-        line("paramVariations (fhicl)", fmt_vec(di.paramVariations));
+        line("paramVariations (YAML)", fmt_vec(di.paramVariations));
         line("Eval grid", fmt_vec(di.grid));
         line("oneSigma down / up",
               fmt_dbl(di.oneSigmaShifts[0]) + " / " + fmt_dbl(di.oneSigmaShifts[1]));

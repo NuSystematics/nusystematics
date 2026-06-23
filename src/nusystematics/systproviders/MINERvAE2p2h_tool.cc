@@ -1,6 +1,6 @@
 #include "nusystematics/systproviders/MINERvAE2p2h_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 #include "systematicstools/utility/ResponselessParamUtility.hh"
 
 #include "nusystematics/utility/enumclass2int.hh"
@@ -12,7 +12,7 @@ using namespace systtools;
 
 // #define MINERVAE2p2h_DEBUG
 
-MINERvAE2p2h::MINERvAE2p2h(fhicl::ParameterSet const &params)
+MINERvAE2p2h::MINERvAE2p2h(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       pidx_E2p2hResponse_nu(kParamUnhandled<size_t>),
       pidx_E2p2hResponse_nubar(kParamUnhandled<size_t>),
@@ -22,13 +22,13 @@ MINERvAE2p2h::MINERvAE2p2h(fhicl::ParameterSet const &params)
       pidx_E2p2hB_nubar(kParamUnhandled<size_t>), valid_file(nullptr),
       valid_tree(nullptr) {}
 
-SystMetaData MINERvAE2p2h::BuildSystMetaData(fhicl::ParameterSet const &ps,
+SystMetaData MINERvAE2p2h::BuildSystMetaData(YAML::Node const &yamlnd,
                                              paramId_t firstId) {
 
   SystMetaData smd;
 
   ignore_parameter_dependence =
-      ps.get<bool>("ignore_parameter_dependence", false);
+      yamlnd["ignore_parameter_dependence"] ? yamlnd["ignore_parameter_dependence"].as<bool>() : false;
 
   for (std::string const &nu : {"nu", "nubar"}) {
     SystParamHeader responseParam;
@@ -41,15 +41,15 @@ SystMetaData MINERvAE2p2h::BuildSystMetaData(fhicl::ParameterSet const &ps,
     for (std::string const &p : {"E2p2h_A", "E2p2h_B"}) {
       std::string pname = p + "_" + nu;
       SystParamHeader phdr;
-      if (ParseFhiclToolConfigurationParameter(ps, pname, phdr,
-                                                     firstId)) {
+      if (ParseYAMLToolConfigurationParameter(yamlnd, pname, phdr,
+                      firstId)) {
         phdr.systParamId = firstId++;
         if (!ignore_parameter_dependence) {
           dependentParamNames.push_back(phdr.prettyName);
           phdr.isResponselessParam = true;
           phdr.responseParamId = responseParam.systParamId;
           if (phdr.isSplineable) {
-            throw invalid_ToolConfigurationFHiCL()
+            throw invalid_ToolConfigurationYAML()
                 << "[ERROR]: Attempted to build spline from "
                    "parameter "
                 << phdr.prettyName
@@ -72,25 +72,25 @@ SystMetaData MINERvAE2p2h::BuildSystMetaData(fhicl::ParameterSet const &ps,
     }
   }
 
-  tool_options.put("fill_valid_tree", ps.get<bool>("fill_valid_tree", false));
-  tool_options.put("ignore_parameter_dependence", ignore_parameter_dependence);
+  tool_options["fill_valid_tree"] = yamlnd["fill_valid_tree"] ? yamlnd["fill_valid_tree"].as<bool>() : false;
+  tool_options["ignore_parameter_dependence"] = ignore_parameter_dependence;
 
-  LimitWeights = ps.get<std::pair<double, double>>(
-      "LimitWeights", {0, std::numeric_limits<double>::max()});
+  LimitWeights = yamlnd["LimitWeights"] ? yamlnd["LimitWeights"].as<std::pair<double, double>>() : std::pair<double, double>{0, std::numeric_limits<double>::max()};
 
-  tool_options.put("LimitWeights", std::vector<double>{LimitWeights.first,
-                                                       LimitWeights.second});
+  tool_options["LimitWeights"] = YAML::Node();
+  tool_options["LimitWeights"].push_back(LimitWeights.first);
+  tool_options["LimitWeights"].push_back(LimitWeights.second);
 
   return smd;
 }
 
 bool MINERvAE2p2h::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   SystMetaData const &md = GetSystMetaData();
 
   ignore_parameter_dependence =
-      tool_options.get<bool>("ignore_parameter_dependence", false);
+      tool_options["ignore_parameter_dependence"] ? tool_options["ignore_parameter_dependence"].as<bool>() : false;
 
   if (HasParam(md, "E2p2hResponse_nu")) {
     pidx_E2p2hResponse_nu = GetParamIndex(md, "E2p2hResponse_nu");
@@ -145,10 +145,11 @@ bool MINERvAE2p2h::SetupResponseCalculator(
               std::back_inserter(B_nubar_Variations));
   }
 
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
 
-  LimitWeights = tool_options.get<std::pair<double, double>>(
-      "LimitWeights", {0, std::numeric_limits<double>::max()});
+  LimitWeights = tool_options["LimitWeights"] ? 
+    std::pair<double, double>{tool_options["LimitWeights"][0].as<double>(), tool_options["LimitWeights"][1].as<double>()} :
+    std::pair<double, double>{0, std::numeric_limits<double>::max()};
 
   if (fill_valid_tree) {
     InitValidTree();

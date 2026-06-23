@@ -8,7 +8,7 @@
 #include "systematicstools/utility/ROOTUtility.hh"
 #include "systematicstools/utility/exceptions.hh"
 
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 
 #include "TH1.h"
 #include "TH2.h"
@@ -40,12 +40,12 @@ namespace nusyst {
 
   public:
 
-    CCQERPAReweightCalculator(fhicl::ParameterSet const &InputManifest) {
+    CCQERPAReweightCalculator(YAML::Node const &InputManifest) {
       LoadInputHistograms(InputManifest);
     }
     ~CCQERPAReweightCalculator(){}
 
-    void LoadInputHistograms(fhicl::ParameterSet const &ps);
+    void LoadInputHistograms(YAML::Node const &config);
 
     double GetRPAReweight(double Enu_GeV, std::array<double, 2> bin_kin, double parameter_value);
 
@@ -107,38 +107,41 @@ namespace nusyst {
 
   }
 
-  inline void CCQERPAReweightCalculator::LoadInputHistograms(fhicl::ParameterSet const &ps) {
+  inline void CCQERPAReweightCalculator::LoadInputHistograms(YAML::Node const &config) {
 
-    std::string const &default_root_file = ps.get<std::string>("input_file", "");
-    ENuBoundary = ps.get<double>("ENuBoundary");
+    std::string default_root_file;
+    if (config["input_file"]) {
+      default_root_file = config["input_file"].as<std::string>();
+    }
+
+    ENuBoundary = config["ENuBoundary"].as<double>();
     printf("[CCQERPAReweightCalculator::GetRPAReweight] ENuBoundary = %1.2f\n", ENuBoundary);
 
-    for (fhicl::ParameterSet const &val_config :
-         ps.get<std::vector<fhicl::ParameterSet>>("inputs")) {
-      std::string hName = val_config.get<std::string>("name");
-      std::string input_hist = val_config.get<std::string>("input_hist");
-      std::string input_file = val_config.get<std::string>("input_file", default_root_file); // If specified per hist, replace it
+    for (const YAML::Node &val_config : config["inputs"]) {
+      std::string hName = val_config["name"].as<std::string>();
+      std::string input_hist = val_config["input_hist"].as<std::string>();
+      std::string input_file = default_root_file;
+      if (val_config["input_file"]) {
+        input_file = val_config["input_file"].as<std::string>();
+      }
 
       // if it does not start with "/", find it under ${NUSYSTEMATICS_FQ_DIR}/data/
-      if(input_file.find("/")!=0){
+      if (input_file.find("/") != 0) {
         std::string tmp_NUSYSTEMATICS_ROOT = std::getenv("nusystematics_ROOT");
-        if(tmp_NUSYSTEMATICS_ROOT==""){
+        if (tmp_NUSYSTEMATICS_ROOT == "") {
           throw invalid_CCQE_RPA_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set but put relative path:" << input_file;
         }
-        input_file = tmp_NUSYSTEMATICS_ROOT+"/data/"+input_file;
+        input_file = tmp_NUSYSTEMATICS_ROOT + "/data/" + input_file;
       }
 
-      if(hName=="LowE_WithRPA"){
-        map_ENuRange_to_WithRPAXSec[0] = std::unique_ptr<TH3D>( GetHistogram<TH3D>(input_file, input_hist) );
-      }
-      else if(hName=="LowE_WithoutRPA"){
-        map_ENuRange_to_WithoutRPAXSec[0] = std::unique_ptr<TH3D>( GetHistogram<TH3D>(input_file, input_hist) );
-      }
-      else if(hName=="HighE_WithRPA"){
-        map_ENuRange_to_WithRPAXSec[1] = std::unique_ptr<TH3D>( GetHistogram<TH3D>(input_file, input_hist) );
-      }
-      else if(hName=="HighE_WithoutRPA"){
-        map_ENuRange_to_WithoutRPAXSec[1] = std::unique_ptr<TH3D>( GetHistogram<TH3D>(input_file, input_hist) );
+      if (hName == "LowE_WithRPA") {
+        map_ENuRange_to_WithRPAXSec[0] = std::unique_ptr<TH3D>(GetHistogram<TH3D>(input_file, input_hist));
+      } else if (hName == "LowE_WithoutRPA") {
+        map_ENuRange_to_WithoutRPAXSec[0] = std::unique_ptr<TH3D>(GetHistogram<TH3D>(input_file, input_hist));
+      } else if (hName == "HighE_WithRPA") {
+        map_ENuRange_to_WithRPAXSec[1] = std::unique_ptr<TH3D>(GetHistogram<TH3D>(input_file, input_hist));
+      } else if (hName == "HighE_WithoutRPA") {
+        map_ENuRange_to_WithoutRPAXSec[1] = std::unique_ptr<TH3D>(GetHistogram<TH3D>(input_file, input_hist));
       }
 
     }

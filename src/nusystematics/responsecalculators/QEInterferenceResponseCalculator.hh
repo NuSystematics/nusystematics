@@ -16,7 +16,7 @@
 #include "systematicstools/interface/types.hh"
 #include "systematicstools/utility/ROOTUtility.hh"
 #include "systematicstools/utility/exceptions.hh"
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 #include "TH1D.h"
 #include "TH3D.h"
 
@@ -29,13 +29,13 @@ namespace nusyst {
   class QEInterferenceResponseCalculator {
 
   public: 
-    QEInterferenceResponseCalculator(fhicl::ParameterSet const & InputParams) {
+    QEInterferenceResponseCalculator(YAML::Node const & InputParams) {
       LoadInputHistograms(InputParams);
     }
 
     ~QEInterferenceResponseCalculator() {}
 
-    void LoadInputHistograms(fhicl::ParameterSet const & InputParams);
+    void LoadInputHistograms(YAML::Node const & config);
 
     double GetWeight(int pdg, int current, double Enu_GeV, double Q0_GeV, double Q3_GeV);
 
@@ -99,21 +99,26 @@ namespace nusyst {
 
   } // GetWeight()
 
-  inline void QEInterferenceResponseCalculator::LoadInputHistograms(fhicl::ParameterSet const & ps)
+inline void QEInterferenceResponseCalculator::LoadInputHistograms(YAML::Node const & config)
   {
-    const std::string & default_input_file = ps.get<std::string>("input_file", "");
+    std::string default_input_file;
+    if (config["input_file"]) {
+      default_input_file = config["input_file"].as<std::string>();
+    }
     const std::vector<std::string> known_flavours = { "numu", "numubar", "nue", "nuebar" };
     const std::vector<std::string> known_currents = { "cc", "nc" };
     
     // Obtain for each flavour-current combination the name of the input histogram, and load it in.
-    for( fhicl::ParameterSet const & val_config :
-	   ps.get<std::vector<fhicl::ParameterSet>>("inputs") ) {
-      std::string config_name = val_config.get<std::string>("name"); // nu(mu, e)(bar)_(cc, nc)
-      std::string input_hist   = val_config.get<std::string>("input_hist"); // name of the hist in file
-      std::string input_enu_bins = val_config.get<std::string>("input_enu_bins");
-      std::string input_q0_bins = val_config.get<std::string>("input_q0_bins");
-      std::string input_q3_bins = val_config.get<std::string>("input_q3_bins");
-      std::string input_file   = val_config.get<std::string>("input_file", default_input_file);
+    for( const YAML::Node & val_config : config["inputs"] ) {
+      std::string config_name = val_config["name"].as<std::string>(); // nu(mu, e)(bar)_(cc, nc)
+      std::string input_hist   = val_config["input_hist"].as<std::string>(); // name of the hist in file
+      std::string input_enu_bins = val_config["input_enu_bins"].as<std::string>();
+      std::string input_q0_bins = val_config["input_q0_bins"].as<std::string>();
+      std::string input_q3_bins = val_config["input_q3_bins"].as<std::string>();
+      std::string input_file   = default_input_file;
+      if (val_config["input_file"]) {
+        input_file = val_config["input_file"].as<std::string>();
+      }
 
       std::string flavour_name = config_name.substr( 0, config_name.find("_") );
       std::string current_name = config_name.substr( config_name.find("_")+1 );

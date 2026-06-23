@@ -2,7 +2,7 @@
 
 #include "RwFramework/GSyst.h"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "TRandom3.h"
 
@@ -85,7 +85,7 @@ std::array<std::string, 4> b_params_for_zexp_names = {
 // initialization and initialises our local copies of paramIds to unconfigured
 //  flag values
 ZExpPCAWeighter::ZExpPCAWeighter(
-    fhicl::ParameterSet const &params) // fn takes the parameters in fcl file
+    YAML::Node const &params) // fn takes the parameters in fcl file
     : IGENIESystProvider_tool(
           params), // IGENIESystProvider_tool takes parameters and sets tune and
                    // event records etc. in GENIE
@@ -94,7 +94,7 @@ ZExpPCAWeighter::ZExpPCAWeighter(
 } // The ParamHeaders id of the four free parameters provided by
   // thissystprovider
 
-SystMetaData ZExpPCAWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
+SystMetaData ZExpPCAWeighter::BuildSystMetaData(YAML::Node const &yamlnd,
                                                 paramId_t firstId) {
   SystMetaData smd;
   SystParamHeader responseParam;
@@ -105,7 +105,7 @@ SystMetaData ZExpPCAWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
 
     // Set up parameter definition with a standard tool configuration form
     // using helper function.
-    if (ParseFhiclToolConfigurationParameter(ps, pname, phdr, firstId)) {
+    if (ParseYAMLToolConfigurationParameter(yamlnd, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
 
       // set any parameter-specific ParamHeader metadata here
@@ -117,16 +117,15 @@ SystMetaData ZExpPCAWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
   }
 
   // Put any options that you want to propagate to the ParamHeaders options
-  tool_options.put("verbosity_level",
-                   ps.get<int>("verbosity_level",
-                               0)); // put tool config options in papam geaders
+  tool_options["verbosity_level"] =
+                   yamlnd["verbosity_level"] ? yamlnd["verbosity_level"].as<int>() : 0; // put tool config options in papam geaders
 
   return smd;
 }
 
 bool ZExpPCAWeighter::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
-  verbosity_level = tool_options.get<int>("verbosity_level", 0);
+    YAML::Node const &tool_options) {
+  verbosity_level = tool_options["verbosity_level"] ? tool_options["verbosity_level"].as<int>() : 0;
 
   // grab the pre-parsed param headers object
   SystMetaData const &md = GetSystMetaData();

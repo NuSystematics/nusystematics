@@ -1,6 +1,6 @@
 #include "nusystematics/systproviders/SkeleWeighter_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "RwFramework/GSyst.h"
 
@@ -12,12 +12,12 @@ std::array<std::string, 4> ParamPrettyNames = {"p1", "p2", "p3", "p4"};
 // constructor passes up configuration object to base class for generic tool
 // initialization and initialises our local copies of paramIds to unconfigured
 //  flag values
-SkeleWeighter::SkeleWeighter(fhicl::ParameterSet const &params)
+SkeleWeighter::SkeleWeighter(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       pidx_Params{kParamUnhandled<size_t>, kParamUnhandled<size_t>,
                   kParamUnhandled<size_t>, kParamUnhandled<size_t>} {}
 
-SystMetaData SkeleWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
+SystMetaData SkeleWeighter::BuildSystMetaData(YAML::Node const &yamlnd,
                                               paramId_t firstId) {
   SystMetaData smd;
   SystParamHeader responseParam;
@@ -28,7 +28,7 @@ SystMetaData SkeleWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
 
     // Set up parameter definition with a standard tool configuration form
     // using helper function.
-    if (ParseFhiclToolConfigurationParameter(ps, pname, phdr, firstId)) {
+    if (ParseYAMLToolConfigurationParameter(yamlnd, pname, phdr, firstId)) {
       phdr.systParamId = firstId++;
 
       // set any parameter-specific ParamHeader metadata here
@@ -40,14 +40,14 @@ SystMetaData SkeleWeighter::BuildSystMetaData(fhicl::ParameterSet const &ps,
   }
 
   // Put any options that you want to propagate to the ParamHeaders options
-  tool_options.put("verbosity_level", ps.get<int>("verbosity_level", 0));
+  tool_options["verbosity_level"] = yamlnd["verbosity_level"] ? yamlnd["verbosity_level"].as<int>() : 0;
 
   return smd;
 }
 
 bool SkeleWeighter::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
-  verbosity_level = tool_options.get<int>("verbosity_level", 0);
+    YAML::Node const &tool_options) {
+  verbosity_level = tool_options["verbosity_level"] ? tool_options["verbosity_level"].as<int>() : 0;
 
   // grab the pre-parsed param headers object
   SystMetaData const &md = GetSystMetaData();

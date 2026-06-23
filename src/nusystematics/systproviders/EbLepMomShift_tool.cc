@@ -1,6 +1,6 @@
 #include "nusystematics/systproviders/EbLepMomShift_tool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "Framework/GHEP/GHepParticle.h"
 #include "Framework/GHEP/GHepUtils.h"
@@ -8,45 +8,45 @@
 using namespace nusyst;
 using namespace systtools;
 
-EbLepMomShift::EbLepMomShift(fhicl::ParameterSet const &params)
+EbLepMomShift::EbLepMomShift(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       ResponseParameterIdx(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
-SystMetaData EbLepMomShift::BuildSystMetaData(fhicl::ParameterSet const &ps,
+SystMetaData EbLepMomShift::BuildSystMetaData(YAML::Node const &yamlnd,
                                               paramId_t firstId) {
 
   SystMetaData smd;
 
   SystParamHeader phdr;
-  if (ParseFhiclToolConfigurationParameter(ps, "EbFSLepMomShift", phdr,
-                                                 firstId)) {
+  if (ParseYAMLToolConfigurationParameter(yamlnd, "EbFSLepMomShift", phdr,
+                                          firstId)) {
     phdr.systParamId = firstId++;
     phdr.isWeightSystematicVariation = false;
     smd.push_back(phdr);
   }
 
-  if (!ps.has_key("EbLepMomShift_Template_input_manifest") ||
-      !ps.is_key_to_table("EbLepMomShift_Template_input_manifest")) {
-    throw invalid_ToolConfigurationFHiCL()
+  if (!yamlnd["EbLepMomShift_Template_input_manifest"] ||
+      !yamlnd["EbLepMomShift_Template_input_manifest"].IsMap()) {
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring calculated variations for EbLepMomShift, "
-           "expected to find a FHiCL table keyed by "
+           "expected to find a yaml keyed by "
            "EbLepMomShift_Template_input_manifest describing the location of "
            "the histogram inputs. See "
            "nusystematics/responsecalculators/"
            "TemplateResponseCalculatorBase.hh for the layout.";
   }
-  fhicl::ParameterSet templateManifest =
-      ps.get<fhicl::ParameterSet>("EbLepMomShift_Template_input_manifest");
-  tool_options.put("EbLepMomShift_Template_input_manifest", templateManifest);
+    YAML::Node templateManifest =
+      yamlnd["EbLepMomShift_Template_input_manifest"];
+  tool_options["EbLepMomShift_Template_input_manifest"] = templateManifest;
 
-  tool_options.put("fill_valid_tree", ps.get<bool>("fill_valid_tree", false));
+  tool_options["fill_valid_tree"] = yamlnd["fill_valid_tree"] ? yamlnd["fill_valid_tree"].as<bool>() : false;
 
   return smd;
 }
 
 bool EbLepMomShift::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   SystMetaData const &md = GetSystMetaData();
 
@@ -56,7 +56,7 @@ bool EbLepMomShift::SetupResponseCalculator(
         << std::quoted("EbFSLepMomShift");
   }
 
-  if (!tool_options.has_key("EbLepMomShift_Template_input_manifest")) {
+  if (!tool_options["EbLepMomShift_Template_input_manifest"]) {
     throw systtools::invalid_ToolOptions()
         << "[ERROR]: EbFSLepMomShift parameter exists in the SystMetaData, but "
            "no EbLepMomShift_Template_input_manifest key can be found on the "
@@ -66,15 +66,14 @@ bool EbLepMomShift::SetupResponseCalculator(
            "please report to the maintiner.";
   }
 
-  fhicl::ParameterSet const &templateManifest =
-      tool_options.get<fhicl::ParameterSet>(
-          "EbLepMomShift_Template_input_manifest");
+  YAML::Node const &templateManifest =
+      tool_options["EbLepMomShift_Template_input_manifest"];
 
   ResponseParameterIdx = GetParamIndex(md, "EbFSLepMomShift");
 
   EbTemplate.LoadInputHistograms(templateManifest);
 
-  fill_valid_tree = tool_options.get("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
 
   if (fill_valid_tree) {
     InitValidTree();

@@ -2,7 +2,7 @@
 
 #include "systematicstools/interface/ISystProviderTool.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 #include "systematicstools/utility/ResponselessParamUtility.hh"
 #include "systematicstools/utility/string_parsers.hh"
 
@@ -39,18 +39,18 @@ inline void StampOneSigmaFromGENIE(systtools::SystParamHeader &param,
 }
 
 SystMetaData
-ConfigureSetOfIndependentParameters(fhicl::ParameterSet const &cfg,
+ConfigureSetOfIndependentParameters(YAML::Node const &cfg,
                                     paramId_t firstParamId,
                                     std::vector<genie::rew::GSyst_t> Dials) {
 
   SystMetaData MD;
   for (GSyst_t const &gdial : Dials) {
     std::string const &pname = GSyst::AsString(gdial);
-    if (!FhiclToolConfigurationParameterExists(cfg, pname)) {
+    if (!YAMLToolConfigurationParameterExists(cfg, pname)) {
       continue;
     }
     systtools::SystParamHeader param;
-    ParseFhiclToolConfigurationParameter(cfg, pname, param, firstParamId);
+    ParseYAMLToolConfigurationParameter(cfg, pname, param, firstParamId);
     param.systParamId = firstParamId++;
     StampOneSigmaFromGENIE(param, gdial);
     MD.push_back(std::move(param));
@@ -59,15 +59,15 @@ ConfigureSetOfIndependentParameters(fhicl::ParameterSet const &cfg,
 }
 
 SystMetaData ConfigureSetOfDependentShapeableParameters(
-    fhicl::ParameterSet const &cfg, paramId_t firstParamId,
-    fhicl::ParameterSet &tool_options, std::string const &ResponseParameterName,
+    YAML::Node const &cfg, paramId_t firstParamId,
+    YAML::Node &tool_options, std::string const &ResponseParameterName,
     std::vector<std::pair<genie::rew::GSyst_t, genie::rew::GSyst_t>> Dials,
     bool IsShape) {
 
   SystMetaData MD;
 
   bool ignore_parameter_dependence =
-      tool_options.get<bool>("ignore_parameter_dependence", false);
+      tool_options["ignore_parameter_dependence"] ? tool_options["ignore_parameter_dependence"].as<bool>() : false;
 
   SystParamHeader Response;
   if (!ignore_parameter_dependence) {
@@ -78,11 +78,11 @@ SystMetaData ConfigureSetOfDependentShapeableParameters(
   size_t NParams = 0;
   for (std::pair<GSyst_t, GSyst_t> const &gdial : Dials) {
     std::string const &pname = GSyst::AsString(gdial.first);
-    if (!FhiclToolConfigurationParameterExists(cfg, pname)) {
+    if (!YAMLToolConfigurationParameterExists(cfg, pname)) {
       continue;
     }
     systtools::SystParamHeader param;
-    ParseFhiclToolConfigurationParameter(cfg, pname, param, firstParamId);
+    ParseYAMLToolConfigurationParameter(cfg, pname, param, firstParamId);
     param.systParamId = firstParamId++;
     param.prettyName = GSyst::AsString(IsShape ? gdial.second : gdial.first);
     StampOneSigmaFromGENIE(param, IsShape ? gdial.second : gdial.first);
@@ -90,7 +90,7 @@ SystMetaData ConfigureSetOfDependentShapeableParameters(
       param.isResponselessParam = true;
       param.responseParamId = Response.systParamId;
       if (param.isSplineable) {
-        throw invalid_ToolConfigurationFHiCL()
+        throw invalid_ToolConfigurationYAML()
             << "[ERROR]: Attempted to build spline from "
                "parameter "
             << param.prettyName
@@ -122,14 +122,14 @@ SystMetaData ConfigureSetOfDependentShapeableParameters(
 }
 
 SystMetaData ConfigureSetOfDependentParameters(
-    fhicl::ParameterSet const &cfg, paramId_t firstParamId,
-    fhicl::ParameterSet &tool_options, std::string const &ResponseParameterName,
+    YAML::Node const &cfg, paramId_t firstParamId,
+    YAML::Node &tool_options, std::string const &ResponseParameterName,
     std::vector<genie::rew::GSyst_t> Dials) {
 
   SystMetaData MD;
 
   bool ignore_parameter_dependence =
-      tool_options.get<bool>("ignore_parameter_dependence", false);
+      tool_options["ignore_parameter_dependence"] ? tool_options["ignore_parameter_dependence"].as<bool>() : false;
 
   SystParamHeader Response;
   if (!ignore_parameter_dependence) {
@@ -140,18 +140,18 @@ SystMetaData ConfigureSetOfDependentParameters(
   size_t NParams = 0;
   for (GSyst_t const &gdial : Dials) {
     std::string const &pname = GSyst::AsString(gdial);
-    if (!FhiclToolConfigurationParameterExists(cfg, pname)) {
+    if (!YAMLToolConfigurationParameterExists(cfg, pname)) {
       continue;
     }
     systtools::SystParamHeader param;
-    ParseFhiclToolConfigurationParameter(cfg, pname, param, firstParamId);
+    ParseYAMLToolConfigurationParameter(cfg, pname, param, firstParamId);
     param.systParamId = firstParamId++;
     StampOneSigmaFromGENIE(param, gdial);
     if (!ignore_parameter_dependence) {
       param.isResponselessParam = true;
       param.responseParamId = Response.systParamId;
       if (param.isSplineable) {
-        throw invalid_ToolConfigurationFHiCL()
+        throw invalid_ToolConfigurationYAML()
             << "[ERROR]: Attempted to build spline from "
                "parameter "
             << param.prettyName
@@ -179,46 +179,46 @@ SystMetaData ConfigureSetOfDependentParameters(
   return MD;
 }
 
-SystMetaData ConfigureQEParameterHeaders(fhicl::ParameterSet const &cfg,
+SystMetaData ConfigureQEParameterHeaders(YAML::Node const &cfg,
                                          paramId_t firstParamId,
-                                         fhicl::ParameterSet &tool_options) {
+                                         YAML::Node &tool_options) {
   SystMetaData QEmd;
 
-  bool MaCCQEIsShapeOnly = cfg.get<bool>("MaCCQEIsShapeOnly", false);
-  tool_options.put("MaCCQEIsShapeOnly", MaCCQEIsShapeOnly);
+  bool MaCCQEIsShapeOnly = cfg["MaCCQEIsShapeOnly"] ? cfg["MaCCQEIsShapeOnly"].as<bool>() : false;
+  tool_options["MaCCQEIsShapeOnly"] = MaCCQEIsShapeOnly;
 
   // Axial FFs
-  bool DipoleNormCCQEIsUsed = FhiclToolConfigurationParameterExists(
+  bool DipoleNormCCQEIsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_NormCCQE));
   bool DipoleIsShapeOnly = MaCCQEIsShapeOnly || DipoleNormCCQEIsUsed;
-  bool DipoleMaCCQEIsUsed = FhiclToolConfigurationParameterExists(
+  bool DipoleMaCCQEIsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_MaCCQE));
 
   bool IsDipoleReWeight =
       DipoleIsShapeOnly || DipoleNormCCQEIsUsed || DipoleMaCCQEIsUsed;
 
-  bool ZNormIsUsed = FhiclToolConfigurationParameterExists(
+  bool ZNormIsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_ZNormCCQE));
-  bool ZExpA1IsUsed = FhiclToolConfigurationParameterExists(
+  bool ZExpA1IsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_ZExpA1CCQE));
-  bool ZExpA2IsUsed = FhiclToolConfigurationParameterExists(
+  bool ZExpA2IsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_ZExpA2CCQE));
-  bool ZExpA3IsUsed = FhiclToolConfigurationParameterExists(
+  bool ZExpA3IsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_ZExpA3CCQE));
-  bool ZExpA4IsUsed = FhiclToolConfigurationParameterExists(
+  bool ZExpA4IsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_ZExpA4CCQE));
 
   bool IsZExpReWeight = ZNormIsUsed || ZExpA1IsUsed || ZExpA2IsUsed ||
                         ZExpA3IsUsed || ZExpA4IsUsed;
 
   if (IsDipoleReWeight && IsZExpReWeight) {
-    throw invalid_ToolConfigurationFHiCL()
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring GENIReWeight_tool, both dipole and "
            "Z-expansion axial form factor dials are specified.";
   }
 
   if (DipoleNormCCQEIsUsed && !MaCCQEIsShapeOnly) {
-    throw invalid_ToolConfigurationFHiCL()
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring GENIEReWeight_tool, NormCCQE was "
            "requested but MaCCQE was not specified to be shape-only.";
   }
@@ -226,7 +226,7 @@ SystMetaData ConfigureQEParameterHeaders(fhicl::ParameterSet const &cfg,
   if (IsDipoleReWeight) {
     if (DipoleNormCCQEIsUsed) {
       systtools::SystParamHeader param;
-      ParseFhiclToolConfigurationParameter(
+      ParseYAMLToolConfigurationParameter(
           cfg, GSyst::AsString(kXSecTwkDial_NormCCQE), param, firstParamId);
       param.systParamId = firstParamId++;
       StampOneSigmaFromGENIE(param, kXSecTwkDial_NormCCQE);
@@ -234,7 +234,7 @@ SystMetaData ConfigureQEParameterHeaders(fhicl::ParameterSet const &cfg,
     }
     if (DipoleMaCCQEIsUsed) {
       systtools::SystParamHeader param;
-      ParseFhiclToolConfigurationParameter(
+      ParseYAMLToolConfigurationParameter(
           cfg, GSyst::AsString(kXSecTwkDial_MaCCQE), param, firstParamId);
       param.systParamId = firstParamId++;
       param.prettyName = GSyst::AsString(
@@ -248,7 +248,7 @@ SystMetaData ConfigureQEParameterHeaders(fhicl::ParameterSet const &cfg,
     // output its response via the a meta-parameter.
     if (ZNormIsUsed) {
       systtools::SystParamHeader param;
-      ParseFhiclToolConfigurationParameter(
+      ParseYAMLToolConfigurationParameter(
           cfg, GSyst::AsString(kXSecTwkDial_ZNormCCQE), param, firstParamId);
       param.systParamId = firstParamId++;
       StampOneSigmaFromGENIE(param, kXSecTwkDial_ZNormCCQE);
@@ -283,17 +283,16 @@ SystMetaData ConfigureQEParameterHeaders(fhicl::ParameterSet const &cfg,
   ExtendSystMetaData(QEmd, std::move(CoulombCCQEmd));
 
   bool AxFFCCQEDipoleToZExp =
-      cfg.get<bool>("AxFFCCQEDipoleToZExp", false) || IsZExpReWeight;
+      cfg["AxFFCCQEDipoleToZExp"] ? cfg["AxFFCCQEDipoleToZExp"].as<bool>() : false || IsZExpReWeight;
 
-  tool_options.put<bool>("AxFFCCQEDipoleToZExp",AxFFCCQEDipoleToZExp);
-
+  tool_options["AxFFCCQEDipoleToZExp"] = AxFFCCQEDipoleToZExp;
 
   return QEmd;
 }
 
-SystMetaData ConfigureMECParameterHeaders(fhicl::ParameterSet const &cfg,
+SystMetaData ConfigureMECParameterHeaders(YAML::Node const &cfg,
                                           paramId_t firstParamId,
-                                          fhicl::ParameterSet &tool_options) {
+                                          YAML::Node &tool_options) {
 
   return ConfigureSetOfIndependentParameters(
       cfg, firstParamId,
@@ -308,35 +307,35 @@ SystMetaData ConfigureMECParameterHeaders(fhicl::ParameterSet const &cfg,
 
 }
 
-SystMetaData ConfigureNCELParameterHeaders(fhicl::ParameterSet const &cfg,
+SystMetaData ConfigureNCELParameterHeaders(YAML::Node const &cfg,
                                            paramId_t firstParamId,
-                                           fhicl::ParameterSet &tool_options) {
+                                           YAML::Node &tool_options) {
   return ConfigureSetOfDependentParameters(
       cfg, firstParamId, tool_options, "NCELVariationResponse",
       {kXSecTwkDial_MaNCEL, kXSecTwkDial_EtaNCEL});
 }
 
-SystMetaData ConfigureRESParameterHeaders(fhicl::ParameterSet const &cfg,
+SystMetaData ConfigureRESParameterHeaders(YAML::Node const &cfg,
                                           paramId_t firstParamId,
-                                          fhicl::ParameterSet &tool_options) {
+                                          YAML::Node &tool_options) {
   SystMetaData RESmd;
 
   //************* CCRES
-  bool CCRESIsShapeOnly = cfg.get<bool>("CCRESIsShapeOnly", false);
-  tool_options.put("CCRESIsShapeOnly", CCRESIsShapeOnly);
+  bool CCRESIsShapeOnly = cfg["CCRESIsShapeOnly"] ? cfg["CCRESIsShapeOnly"].as<bool>() : false;
+  tool_options["CCRESIsShapeOnly"] = CCRESIsShapeOnly;
 
-  bool NormCCRESIsUsed = FhiclToolConfigurationParameterExists(
+  bool NormCCRESIsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_NormCCRES));
 
   if (NormCCRESIsUsed && !CCRESIsShapeOnly) {
-    throw invalid_ToolConfigurationFHiCL()
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring GENIEReWeight_tool, NormCCRES was "
            "requested but CCRES was not specified to be shape-only.";
   }
 
   if (NormCCRESIsUsed) {
     systtools::SystParamHeader param;
-    ParseFhiclToolConfigurationParameter(
+    ParseYAMLToolConfigurationParameter(
         cfg, GSyst::AsString(kXSecTwkDial_NormCCRES), param, firstParamId);
     param.systParamId = firstParamId++;
     StampOneSigmaFromGENIE(param, kXSecTwkDial_NormCCRES);
@@ -352,21 +351,21 @@ SystMetaData ConfigureRESParameterHeaders(fhicl::ParameterSet const &cfg,
   ExtendSystMetaData(RESmd, std::move(CCRESmd));
 
   //************* NCRES
-  bool NCRESIsShapeOnly = cfg.get<bool>("NCRESIsShapeOnly", false);
-  tool_options.put("NCRESIsShapeOnly", NCRESIsShapeOnly);
+  bool NCRESIsShapeOnly = cfg["NCRESIsShapeOnly"] ? cfg["NCRESIsShapeOnly"].as<bool>() : false;
+  tool_options["NCRESIsShapeOnly"] = NCRESIsShapeOnly;
 
-  bool NormNCRESIsUsed = FhiclToolConfigurationParameterExists(
+  bool NormNCRESIsUsed = YAMLToolConfigurationParameterExists(
       cfg, GSyst::AsString(kXSecTwkDial_NormNCRES));
 
   if (NormNCRESIsUsed && !NCRESIsShapeOnly) {
-    throw invalid_ToolConfigurationFHiCL()
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring GENIEReWeight_tool, NormNCRES was "
            "requested but NCRES was not specified to be shape-only.";
   }
 
   if (NormNCRESIsUsed) {
     systtools::SystParamHeader param;
-    ParseFhiclToolConfigurationParameter(
+    ParseYAMLToolConfigurationParameter(
         cfg, GSyst::AsString(kXSecTwkDial_NormNCRES), param, firstParamId);
     param.systParamId = firstParamId++;
     StampOneSigmaFromGENIE(param, kXSecTwkDial_NormNCRES);
@@ -400,20 +399,20 @@ SystMetaData ConfigureRESParameterHeaders(fhicl::ParameterSet const &cfg,
   return RESmd;
 }
 
-SystMetaData ConfigureCOHParameterHeaders(fhicl::ParameterSet const &cfg,
+SystMetaData ConfigureCOHParameterHeaders(YAML::Node const &cfg,
                                           paramId_t firstParamId,
-                                          fhicl::ParameterSet &tool_options) {
+                                          YAML::Node &tool_options) {
   return ConfigureSetOfDependentParameters(
       cfg, firstParamId, tool_options, "COHVariationResponse",
       {kXSecTwkDial_MaCOHpi, kXSecTwkDial_R0COHpi, kXSecTwkDial_NormCCCOHpi, kXSecTwkDial_NormNCCOHpi});
 }
 
-SystMetaData ConfigureDISParameterHeaders(fhicl::ParameterSet const &cfg,
+SystMetaData ConfigureDISParameterHeaders(YAML::Node const &cfg,
                                           paramId_t firstParamId,
-                                          fhicl::ParameterSet &tool_options) {
+                                          YAML::Node &tool_options) {
 
-  bool DISBYIsShapeOnly = cfg.get<bool>("DISBYIsShapeOnly", false);
-  tool_options.put("DISBYIsShapeOnly", DISBYIsShapeOnly);
+  bool DISBYIsShapeOnly = cfg["DISBYIsShapeOnly"] ? cfg["DISBYIsShapeOnly"].as<bool>() : false;
+  tool_options["DISBYIsShapeOnly"] = DISBYIsShapeOnly;
 
   SystMetaData DISmd = ConfigureSetOfDependentShapeableParameters(
       cfg, firstParamId, tool_options, "DISBYVariationResponse",
@@ -437,9 +436,9 @@ SystMetaData ConfigureDISParameterHeaders(fhicl::ParameterSet const &cfg,
   return DISmd;
 }
 
-SystMetaData ConfigureFSIParameterHeaders(fhicl::ParameterSet const &cfg,
+SystMetaData ConfigureFSIParameterHeaders(YAML::Node const &cfg,
                                           paramId_t firstParamId,
-                                          fhicl::ParameterSet &tool_options) {
+                                          YAML::Node &tool_options) {
 
   SystMetaData FSImd = ConfigureSetOfDependentParameters(
       cfg, firstParamId, tool_options, "FSI_pi_VariationResponse",
@@ -502,7 +501,7 @@ SystMetaData ConfigureFSIParameterHeaders(fhicl::ParameterSet const &cfg,
   return FSImd;
 }
 
-SystMetaData ConfigureOtherParameterHeaders(fhicl::ParameterSet const &cfg,
+SystMetaData ConfigureOtherParameterHeaders(YAML::Node const &cfg,
                                             paramId_t firstParamId) {
   return ConfigureSetOfIndependentParameters(
       cfg, firstParamId,

@@ -4,7 +4,7 @@
 
 #include "nusystematics/systproviders/GENIEResponseParameterAssociation.hh"
 
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 
 // GENIE
 #include "RwFramework/GReWeight.h"
@@ -16,34 +16,34 @@ namespace nusyst {
 
 std::vector<GENIEResponseParameter>
 ConfigureQEWeightEngine(systtools::SystMetaData const &,
-                        fhicl::ParameterSet const &tool_options);
+                        YAML::Node const &tool_options);
 
 std::vector<GENIEResponseParameter>
 ConfigureMECWeightEngine(systtools::SystMetaData const &,
-                        fhicl::ParameterSet const &tool_options);
+                        YAML::Node const &tool_options);
 
 std::vector<GENIEResponseParameter>
 ConfigureNCELWeightEngine(systtools::SystMetaData const &,
-                          fhicl::ParameterSet const &tool_options);
+                          YAML::Node const &tool_options);
 
 std::vector<GENIEResponseParameter>
 ConfigureRESWeightEngine(systtools::SystMetaData const &,
-                         fhicl::ParameterSet const &tool_options);
+                         YAML::Node const &tool_options);
 
 std::vector<GENIEResponseParameter>
 ConfigureCOHWeightEngine(systtools::SystMetaData const &,
-                         fhicl::ParameterSet const &tool_options);
+                         YAML::Node const &tool_options);
 
 std::vector<GENIEResponseParameter>
 ConfigureDISWeightEngine(systtools::SystMetaData const &,
-                         fhicl::ParameterSet const &tool_options);
+                         YAML::Node const &tool_options);
 
 std::vector<GENIEResponseParameter>
 ConfigureFSIWeightEngine(systtools::SystMetaData const &,
-                         fhicl::ParameterSet const &tool_options);
+                         YAML::Node const &tool_options);
 
 std::vector<GENIEResponseParameter>
 ConfigureOtherWeightEngine(systtools::SystMetaData const &,
-                           fhicl::ParameterSet const &tool_options);
+                           YAML::Node const &tool_options);
 
 } // namespace nusyst

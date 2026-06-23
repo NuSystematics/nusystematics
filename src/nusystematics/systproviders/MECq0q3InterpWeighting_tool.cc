@@ -3,7 +3,7 @@
  ******************************************************************************/
 #include "MECq0q3InterpWeighting_tool.hh"
 
-#include <fhiclcpp/ParameterSet.h>
+
 #include <TFile.h>
 #include <TKey.h>
 #include <TLorentzVector.h>
@@ -17,7 +17,7 @@
 #include <limits>
 
 // SystematicsTools helper
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 // GENIE
 #include "Framework/GHEP/GHepParticle.h"
@@ -31,13 +31,13 @@ using namespace nusyst;
 using namespace systtools;
 
 MECq0q3InterpWeighting::MECq0q3InterpWeighting(
-    const fhicl::ParameterSet& p)
+    const YAML::Node& p)
   : IGENIESystProvider_tool(p) {}
 
 // ---------------------------------------------------------------------------
 // Build metadata (standard NuSyst header parsing)
 SystMetaData
-MECq0q3InterpWeighting::BuildSystMetaData(fhicl::ParameterSet const &ps,
+MECq0q3InterpWeighting::BuildSystMetaData(YAML::Node const &yamlnd,
                                                   systtools::paramId_t firstId) {
 
   std::cout << "[MECq0q3InterpWeighting::BuildSystMetaData] Called\n";
@@ -45,10 +45,10 @@ MECq0q3InterpWeighting::BuildSystMetaData(fhicl::ParameterSet const &ps,
   SystMetaData smd;
   
   // Check if Q0 binning is enabled
-  auto man = ps.get<fhicl::ParameterSet>("MECResponse_input_manifest");
+  auto man = yamlnd["MECResponse_input_manifest"];
   std::vector<double> q0Bins;
-  if (man.has_key("Q0Bins")) {
-    q0Bins = man.get<std::vector<double>>("Q0Bins");
+  if (man && man["Q0Bins"]) {
+    q0Bins = man["Q0Bins"].as<std::vector<double>>();
   }
   
   // If Q0 binning is enabled, create multiple dials (one per bin)
@@ -58,7 +58,7 @@ MECq0q3InterpWeighting::BuildSystMetaData(fhicl::ParameterSet const &ps,
     for (size_t i = 0; i < q0Bins.size() - 1; ++i) {
       std::string dialName = "MECResponse_q0bin" + std::to_string(i);
       SystParamHeader phdr;
-      if (ParseFhiclToolConfigurationParameter(ps, dialName, phdr, firstId)) {
+      if (ParseYAMLToolConfigurationParameter(yamlnd, dialName, phdr, firstId)) {
         phdr.systParamId = firstId++;
         smd.push_back(phdr);
         std::cout << "    Created dial: " << dialName 
@@ -69,14 +69,14 @@ MECq0q3InterpWeighting::BuildSystMetaData(fhicl::ParameterSet const &ps,
     // Single dial mode (backward compatible)
     std::cout << "  Single-dial mode (backward compatible)\n";
     SystParamHeader phdr;
-    if (ParseFhiclToolConfigurationParameter(ps, "MECResponse", phdr, firstId)) {
+    if (ParseYAMLToolConfigurationParameter(yamlnd, "MECResponse", phdr, firstId)) {
       phdr.systParamId = firstId++;
       smd.push_back(phdr);
     }
   }
 
   // stash manifest for SetupResponseCalculator
-  tool_options.put("MECResponse_input_manifest", man);
+  tool_options["MECResponse_input_manifest"] = man;
 
   return smd;
 }
@@ -84,23 +84,23 @@ MECq0q3InterpWeighting::BuildSystMetaData(fhicl::ParameterSet const &ps,
 // ---------------------------------------------------------------------------
 // Read manifest and build calculators
 bool
-MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_opts)
+MECq0q3InterpWeighting::SetupResponseCalculator(YAML::Node const &tool_opts)
 {
   std::cout << "[MECq0q3InterpWeighting] SetupResponseCalculator begin\n";
 
   const auto manifest =
-      tool_opts.get<fhicl::ParameterSet>("MECResponse_input_manifest");
+      tool_opts["MECResponse_input_manifest"];
 
   // Energy grid (required)
-  if (!manifest.has_key("EnergyGrid"))
+  if (!manifest || !manifest["EnergyGrid"])
     throw std::runtime_error("Missing EnergyGrid");
-  fEgrid = manifest.get<std::vector<double>>("EnergyGrid");
+  fEgrid = manifest["EnergyGrid"].as<std::vector<double>>();
   if (fEgrid.empty())
     throw std::runtime_error("EnergyGrid must be non-empty");
 
   // Weight clamp (optional)
-  if (manifest.has_key("WeightLimits")) {
-    auto wl = manifest.get<std::vector<double>>("WeightLimits");
+  if (manifest["WeightLimits"]) {
+    auto wl = manifest["WeightLimits"].as<std::vector<double>>();
     if (wl.size() >= 2) {
       fWmin = std::min(wl.front(), wl.back());
       fWmax = std::max(wl.front(), wl.back());
@@ -111,9 +111,9 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
 
 
   // NEW: q0 apply window (optional, defaults to [0, +inf))
-  fQ0ApplyMin = manifest.get<double>("Q0ApplyMin", 0.0);
-  if (manifest.has_key("Q0ApplyMax")) {
-    fQ0ApplyMax = manifest.get<double>("Q0ApplyMax");
+  fQ0ApplyMin = manifest["Q0ApplyMin"] ? manifest["Q0ApplyMin"].as<double>() : 0.0;
+  if (manifest["Q0ApplyMax"]) {
+    fQ0ApplyMax = manifest["Q0ApplyMax"].as<double>();
     if (!(std::isfinite(fQ0ApplyMax)))
       throw std::runtime_error("Q0ApplyMax must be finite if provided");
   } else {
@@ -125,9 +125,9 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     throw std::runtime_error("Q0ApplyMax must be > Q0ApplyMin");
 
   // NEW: q3 apply window (optional, defaults to [0, +inf))
-  fQ3ApplyMin = manifest.get<double>("Q3ApplyMin", 0.0);
-  if (manifest.has_key("Q3ApplyMax")) {
-    fQ3ApplyMax = manifest.get<double>("Q3ApplyMax");
+  fQ3ApplyMin = manifest["Q3ApplyMin"] ? manifest["Q3ApplyMin"].as<double>() : 0.0;
+  if (manifest["Q3ApplyMax"]) {
+    fQ3ApplyMax = manifest["Q3ApplyMax"].as<double>();
     if (!(std::isfinite(fQ3ApplyMax)))
       throw std::runtime_error("Q3ApplyMax must be finite if provided");
   } else {
@@ -139,8 +139,8 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     throw std::runtime_error("Q3ApplyMax must be > Q3ApplyMin");
 
   // NEW: Q0 binning for multiple dials (optional)
-  if (manifest.has_key("Q0Bins")) {
-    fQ0Bins = manifest.get<std::vector<double>>("Q0Bins");
+  if (manifest["Q0Bins"]) {
+    fQ0Bins = manifest["Q0Bins"].as<std::vector<double>>();
     if (fQ0Bins.size() < 2)
       throw std::runtime_error("Q0Bins must have at least 2 edges to define bins");
     
@@ -156,7 +156,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     std::cout << " GeV\n";
     
     // Q0Select range incompatible with Q0Bins (they serve different purposes)
-    if (manifest.has_key("Q0SelectMin") || manifest.has_key("Q0SelectMax")) {
+    if (manifest["Q0SelectMin"] || manifest["Q0SelectMax"]) {
       std::cout << "  WARNING: Q0SelectMin/Max ignored when Q0Bins is set\n";
     }
   } else {
@@ -165,8 +165,8 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   }
 
   // NEW: Q0 selection range (optional, defaults to disabled)
-  fQ0SelectMin = manifest.get<double>("Q0SelectMin", 0.0);
-  fQ0SelectMax = manifest.get<double>("Q0SelectMax", 0.0);
+  fQ0SelectMin = manifest["Q0SelectMin"] ? manifest["Q0SelectMin"].as<double>() : 0.0;
+  fQ0SelectMax = manifest["Q0SelectMax"] ? manifest["Q0SelectMax"].as<double>() : 0.0;
   if (!(std::isfinite(fQ0SelectMin) && fQ0SelectMin >= 0.0))
     throw std::runtime_error("Q0SelectMin must be finite and >= 0");
   if (!(std::isfinite(fQ0SelectMax) && fQ0SelectMax >= 0.0))
@@ -179,28 +179,28 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   }
 
   // Energy window & snap tolerance (defaults implement your request)
-  fEnuMin     = manifest.get<double>("EnuMin",     0.4);
-  fEnuMax     = manifest.get<double>("EnuMax",     2.5);
-  fEnuSnapTol = manifest.get<double>("EnuSnapTol", 5e-3); // 5 MeV
+  fEnuMin     = manifest["EnuMin"] ? manifest["EnuMin"].as<double>() : 0.4;
+  fEnuMax     = manifest["EnuMax"] ? manifest["EnuMax"].as<double>() : 2.5;
+  fEnuSnapTol = manifest["EnuSnapTol"] ? manifest["EnuSnapTol"].as<double>() : 5e-3; // 5 MeV
   if (!(std::isfinite(fEnuMin) && std::isfinite(fEnuMax) && fEnuMax >= fEnuMin))
     throw std::runtime_error("EnuMin/EnuMax must be finite and EnuMax>=EnuMin");
   if (!(std::isfinite(fEnuSnapTol) && fEnuSnapTol >= 0.0))
     throw std::runtime_error("EnuSnapTol must be finite and >= 0");
 
-  const bool mapIsQ3xQ0 = manifest.get<bool>("MapIsQ3xQ0", false);
-  const bool useNearestBin = manifest.get<bool>("UseNearestBin", true);  // turn ON new behavior
-  const bool edgeClamp     = manifest.get<bool>("EdgeClamp",     true);  // clamp OOR to edge bin
+  const bool mapIsQ3xQ0 = manifest["MapIsQ3xQ0"] ? manifest["MapIsQ3xQ0"].as<bool>() : false;
+  const bool useNearestBin = manifest["UseNearestBin"] ? manifest["UseNearestBin"].as<bool>() : true;  // turn ON new behavior
+  const bool edgeClamp     = manifest["EdgeClamp"] ? manifest["EdgeClamp"].as<bool>() : true;  // clamp OOR to edge bin
   
   // Read Model parameter early to determine default out-of-range behavior
-  std::string model = manifest.get<std::string>("Model", "");
+  std::string model = manifest["Model"] ? manifest["Model"].as<std::string>() : "";
   
   // Out-of-range weight: default depends on model
   // Valencia: 0.0 (suppress beyond q3~1.2 GeV, q0~??? GeV)
   // Martini:  0.0 (suppress beyond q0~0.995 GeV)
   // Custom:   configurable via OutOfRangeWeight parameter
   double outOfRangeWeight = 1.0;  // backward compatible default
-  if (manifest.has_key("OutOfRangeWeight")) {
-    outOfRangeWeight = manifest.get<double>("OutOfRangeWeight");
+  if (manifest["OutOfRangeWeight"]) {
+    outOfRangeWeight = manifest["OutOfRangeWeight"].as<double>();
   } else if (!model.empty()) {
     // Auto-set based on model to match native generator behavior
     if (model == "valencia" || model == "martini") {
@@ -230,7 +230,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   //  (C) Auto-generate file paths based on Model parameter
   
   // Read DataBaseDir for auto-generation (model already read earlier for outOfRangeWeight)
-  std::string dataBaseDir = manifest.get<std::string>("DataBaseDir", "");
+  std::string dataBaseDir = manifest["DataBaseDir"] ? manifest["DataBaseDir"].as<std::string>() : "";
   
   std::vector<std::string> np_files, nn_files;
   
@@ -264,13 +264,13 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     }
   } else {
     // Fallback to explicitly provided file lists
-    if (manifest.has_key("np_files") && manifest.has_key("nn_files")) {
-      np_files = manifest.get<std::vector<std::string>>("np_files");
-      nn_files = manifest.get<std::vector<std::string>>("nn_files");
+    if (manifest["np_files"] && manifest["nn_files"]) {
+      np_files = manifest["np_files"].as<std::vector<std::string>>();
+      nn_files = manifest["nn_files"].as<std::vector<std::string>>();
     }
   }
   
-  const bool haveSingle = manifest.has_key("WeightFile");
+  const bool haveSingle = manifest["WeightFile"] ? true : false;
   const bool haveArrays = !np_files.empty() && !nn_files.empty();
   if (!haveSingle && !haveArrays)
     throw std::runtime_error("Need either WeightFile, (np_files & nn_files), or (Model & DataBaseDir)");
@@ -278,7 +278,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   fCalcs.clear();
 
   if (haveSingle) {
-    const std::string fname = manifest.get<std::string>("WeightFile");
+    const std::string fname = manifest["WeightFile"].as<std::string>();
     TFile fin(fname.c_str(), "READ");
     if (!fin.IsOpen())
       throw std::runtime_error("Cannot open WeightFile: " + fname);
@@ -311,8 +311,8 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     if (np_files.size() != fEgrid.size() || nn_files.size() != fEgrid.size())
       throw std::runtime_error("np_files/nn_files sizes must match EnergyGrid size");
 
-    const std::string hname_np = manifest.get<std::string>("HistNameNP");
-    const std::string hname_nn = manifest.get<std::string>("HistNameNN");
+    const std::string hname_np = manifest["HistNameNP"].as<std::string>();
+    const std::string hname_nn = manifest["HistNameNN"].as<std::string>();
 
     auto load_list = [&](const std::vector<std::string>& files,
                          Topo topo, const std::string& hname) {

@@ -19,12 +19,12 @@ class NOvAStyleNonResPionNorm : public nusyst::IGENIESystProvider_tool {
   std::vector<channel_param> ChannelParameterMapping;
 
 public:
-  explicit NOvAStyleNonResPionNorm(fhicl::ParameterSet const &);
+  explicit NOvAStyleNonResPionNorm(YAML::Node const &);
 
-  bool SetupResponseCalculator(fhicl::ParameterSet const &);
-  fhicl::ParameterSet GetExtraToolOptions() { return tool_options; }
+  bool SetupResponseCalculator(YAML::Node const &);
+  YAML::Node GetExtraToolOptions() { return tool_options; }
 
-  systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const &,
+  systtools::SystMetaData BuildSystMetaData(YAML::Node const &,
                                             systtools::paramId_t);
 
   systtools::event_unit_response_t GetEventResponse(genie::EventRecord const &);
@@ -34,7 +34,7 @@ public:
   ~NOvAStyleNonResPionNorm();
 
 private:
-  fhicl::ParameterSet tool_options;
+  YAML::Node tool_options;
 
   // Dial has uniform response of OneSigmaResponse between WBegin and
   // WTransition, where it linearly reduces to a response of HighWResponse at

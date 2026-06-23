@@ -4,7 +4,7 @@
 
 #include "nusystematics/utility/exceptions.hh"
 
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include "Framework/GHEP/GHepParticle.h"
 
@@ -12,17 +12,16 @@
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
 
-MINERvAq0q3Weighting::MINERvAq0q3Weighting(ParameterSet const &params)
+MINERvAq0q3Weighting::MINERvAq0q3Weighting(YAML::Node const &params)
     : IGENIESystProvider_tool(params), RPATemplateReweighter(nullptr),
       valid_file(nullptr), valid_tree(nullptr) {}
 
-SystMetaData MINERvAq0q3Weighting::BuildSystMetaData(ParameterSet const &cfg,
+SystMetaData MINERvAq0q3Weighting::BuildSystMetaData(YAML::Node const &cfg,
                                                      paramId_t firstId) {
 
   SystMetaData smd;
-  if (cfg.get<bool>("use_MINERvA_RPA_tunes", false)) { // RPA
+  if (cfg["use_MINERvA_RPA_tunes"] && cfg["use_MINERvA_RPA_tunes"].as<bool>()) { // RPA
     systtools::SystParamHeader param;
     param.systParamId = firstId++;
 
@@ -30,11 +29,11 @@ SystMetaData MINERvAq0q3Weighting::BuildSystMetaData(ParameterSet const &cfg,
     param.centralParamValue = 0;
     param.paramVariations = std::vector<double>{-1, 0, 1};
 
-    if (!cfg.has_key("MINERvATune_RPA_input_manifest") ||
-        !cfg.is_key_to_table("MINERvATune_RPA_input_manifest")) {
-      throw invalid_ToolConfigurationFHiCL()
+    if (!cfg["MINERvATune_RPA_input_manifest"] ||
+        !cfg["MINERvATune_RPA_input_manifest"].IsMap()) {
+      throw invalid_ToolConfigurationYAML()
           << "[ERROR]: When configuring calculated variations for "
-             "MINERvATune_RPA, expected to find a FHiCL table keyed by "
+             "MINERvATune_RPA, expected to find a YAML table keyed by "
              "MINERvATune_RPA_input_manifest describing the location of the "
              "histogram inputs. See "
              "nusystematics/responsecalculators/"
@@ -42,39 +41,39 @@ SystMetaData MINERvAq0q3Weighting::BuildSystMetaData(ParameterSet const &cfg,
              "for the layout.";
     }
 
-    fhicl::ParameterSet ps =
-        cfg.get<fhicl::ParameterSet>("MINERvATune_RPA_input_manifest");
-    tool_options.put("MINERvATune_RPA_input_manifest", ps);
+    YAML::Node ps =
+        cfg["MINERvATune_RPA_input_manifest"];
+    tool_options["MINERvATune_RPA_input_manifest"] = ps;
 
     smd.push_back(param);
   }
 
-  if (cfg.get<bool>("use_MINERvA_2p2h_tunes", false)) { // 2p2h
+  if (cfg["use_MINERvA_2p2h_tunes"] && cfg["use_MINERvA_2p2h_tunes"].as<bool>()) { // 2p2h
 
     parameter_per_2p2h_universe =
-        cfg.get<bool>("parameter_per_2p2h_universe", false);
+        cfg["parameter_per_2p2h_universe"] ? cfg["parameter_per_2p2h_universe"].as<bool>() : false;
 
-    tool_options.put("parameter_per_2p2h_universe",
-                     parameter_per_2p2h_universe);
+    tool_options["parameter_per_2p2h_universe"] =
+                     parameter_per_2p2h_universe;
 
     if (parameter_per_2p2h_universe) {
       systtools::SystParamHeader param_CV, param_NN, param_np, param_QE;
-      if (ParseFhiclToolConfigurationParameter(
+      if (ParseYAMLToolConfigurationParameter(
               cfg, "Mnv2p2hGaussEnhancement_CV", param_CV, firstId)) {
         param_CV.systParamId = firstId++;
         smd.push_back(param_CV);
       }
-      if (ParseFhiclToolConfigurationParameter(
+      if (ParseYAMLToolConfigurationParameter(
               cfg, "Mnv2p2hGaussEnhancement_NN", param_NN, firstId)) {
         param_NN.systParamId = firstId++;
         smd.push_back(param_NN);
       }
-      if (ParseFhiclToolConfigurationParameter(
+      if (ParseYAMLToolConfigurationParameter(
               cfg, "Mnv2p2hGaussEnhancement_np", param_np, firstId)) {
         param_np.systParamId = firstId++;
         smd.push_back(param_np);
       }
-      if (ParseFhiclToolConfigurationParameter(
+      if (ParseYAMLToolConfigurationParameter(
               cfg, "Mnv2p2hGaussEnhancement_QE", param_QE, firstId)) {
         param_QE.systParamId = firstId++;
         smd.push_back(param_QE);
@@ -82,7 +81,7 @@ SystMetaData MINERvAq0q3Weighting::BuildSystMetaData(ParameterSet const &cfg,
 
     } else {
       systtools::SystParamHeader param;
-      if (ParseFhiclToolConfigurationParameter(
+      if (ParseYAMLToolConfigurationParameter(
               cfg, "Mnv2p2hGaussEnhancement", param, firstId)) {
         param.systParamId = firstId++;
       } else {
@@ -95,27 +94,27 @@ SystMetaData MINERvAq0q3Weighting::BuildSystMetaData(ParameterSet const &cfg,
     }
   }
 
-  fill_valid_tree = cfg.get<bool>("fill_valid_tree", false);
-  tool_options.put("fill_valid_tree", fill_valid_tree);
+  fill_valid_tree = cfg["fill_valid_tree"] ? cfg["fill_valid_tree"].as<bool>() : false;
+  tool_options["fill_valid_tree"] = fill_valid_tree;
 
-  MEC_LimitWeights = cfg.get<std::pair<double, double>>(
-      "Mnv2p2hGaussEnhancement_LimitWeights",
-      {0, std::numeric_limits<double>::max()});
-  tool_options.put(
-      "Mnv2p2hGaussEnhancement_LimitWeights",
-      std::vector<double>{MEC_LimitWeights.first, MEC_LimitWeights.second});
+  MEC_LimitWeights = cfg["Mnv2p2hGaussEnhancement_LimitWeights"] ? 
+    cfg["Mnv2p2hGaussEnhancement_LimitWeights"].as<std::pair<double, double>>() :
+    std::pair<double, double>{0, std::numeric_limits<double>::max()};
+  tool_options["Mnv2p2hGaussEnhancement_LimitWeights"] = YAML::Node();
+  tool_options["Mnv2p2hGaussEnhancement_LimitWeights"].push_back(MEC_LimitWeights.first);
+  tool_options["Mnv2p2hGaussEnhancement_LimitWeights"].push_back(MEC_LimitWeights.second);
 
   return smd;
 }
 
 bool MINERvAq0q3Weighting::SetupResponseCalculator(
-    fhicl::ParameterSet const &tool_options) {
+    YAML::Node const &tool_options) {
 
   if (HasParam(GetSystMetaData(), "MINERvATune_RPA")) {
     ConfiguredParameters[param_t::kMINERvARPA] =
         GetParamIndex(GetSystMetaData(), "MINERvATune_RPA");
 
-    if (!tool_options.has_key("MINERvATune_RPA_input_manifest")) {
+    if (!tool_options["MINERvATune_RPA_input_manifest"]) {
       throw systtools::invalid_ToolOptions()
           << "[ERROR]: MINERvATune_RPA parameter exists in the SystMetaData, "
              "but no MINERvATune_RPA_input_manifest key can be found on the "
@@ -126,8 +125,7 @@ bool MINERvAq0q3Weighting::SetupResponseCalculator(
     }
 
     RPATemplateReweighter = std::make_unique<MINERvARPAq0q3_ReWeight>(
-        tool_options.get<fhicl::ParameterSet>(
-            "MINERvATune_RPA_input_manifest"));
+        tool_options["MINERvATune_RPA_input_manifest"]);
   }
 
   if (HasParam(GetSystMetaData(), "Mnv2p2hGaussEnhancement")) {
@@ -196,14 +194,14 @@ bool MINERvAq0q3Weighting::SetupResponseCalculator(
     }
   }
 
-  fill_valid_tree = tool_options.get<bool>("fill_valid_tree", false);
+  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
   if (fill_valid_tree) {
     InitValidTree();
   }
 
-  MEC_LimitWeights = tool_options.get<std::pair<double, double>>(
-      "Mnv2p2hGaussEnhancement_LimitWeights",
-      {0, std::numeric_limits<double>::max()});
+  MEC_LimitWeights = tool_options["Mnv2p2hGaussEnhancement_LimitWeights"] ?
+    std::pair<double, double>{tool_options["Mnv2p2hGaussEnhancement_LimitWeights"][0].as<double>(), tool_options["Mnv2p2hGaussEnhancement_LimitWeights"][1].as<double>()} :
+    std::pair<double, double>{0, std::numeric_limits<double>::max()};
 
   return true;
 }

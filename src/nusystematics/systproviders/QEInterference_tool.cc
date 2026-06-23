@@ -1,13 +1,13 @@
 #include "nusystematics/systproviders/QEInterference_tool.hh"
 #include "nusystematics/utility/exceptions.hh"
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 #include "Framework/GHEP/GHepParticle.h"
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
+using namespace systtools;
 
-QEInterference::QEInterference(ParameterSet const & ps) :
+QEInterference::QEInterference(YAML::Node const & ps) :
   IGENIESystProvider_tool(ps),
   QEIntfResponseCalculator(nullptr)/*,
 				     ResponseParameterIdx(kParamUnhandled<size_t>) {}*/
@@ -16,14 +16,14 @@ QEInterference::QEInterference(ParameterSet const & ps) :
 
 QEInterference::~QEInterference() {}
 
-bool QEInterference::SetupResponseCalculator(ParameterSet const & tool_options)
+bool QEInterference::SetupResponseCalculator(YAML::Node const & tool_options)
 {
   // Silence GENIE
   genie::Messenger::Instance()->SetPrioritiesFromXmlFile("Messenger_whisper.xml");
 
-  verbosity_level = tool_options.get<int>("verbosity_level", 0);
+  verbosity_level = tool_options["verbosity_level"] ? tool_options["verbosity_level"].as<int>() : 0;
 
-  q0BinEdges = tool_options.get<std::vector<double>>("q0_bin_edges");
+  q0BinEdges = tool_options["q0_bin_edges"].as<std::vector<double>>();
   if( verbosity_level > 3 ) {
     std::cout << "[INFO]: Using bin edges: ";
     for(const auto q0BinEdge: q0BinEdges) std::cout << q0BinEdge << ", ";
@@ -59,7 +59,7 @@ bool QEInterference::SetupResponseCalculator(ParameterSet const & tool_options)
   } // loop over descriptors
 
   // Get manifests for options
-  if (!tool_options.has_key("QEInterference_input_manifest")) {
+  if (!tool_options["QEInterference_input_manifest"]) {
     throw systtools::invalid_ToolOptions()
         << "[ERROR]: QEInterference parameter exists in the "
            "SystMetaData, but "
@@ -71,9 +71,8 @@ bool QEInterference::SetupResponseCalculator(ParameterSet const & tool_options)
            "please report to the maintainer.";
   }
 
-  fhicl::ParameterSet const &templateManifest =
-      tool_options.get<fhicl::ParameterSet>(
-          "QEInterference_input_manifest");
+    YAML::Node const &templateManifest =
+      tool_options["QEInterference_input_manifest"];
 
   // Initialise the calculator
   QEIntfResponseCalculator = std::make_unique<QEInterferenceResponseCalculator>(templateManifest);
@@ -81,16 +80,16 @@ bool QEInterference::SetupResponseCalculator(ParameterSet const & tool_options)
   return true;
 }
 
-SystMetaData QEInterference::BuildSystMetaData(ParameterSet const & cfg,
+SystMetaData QEInterference::BuildSystMetaData(YAML::Node const & cfg,
 						     paramId_t id) 
 {
 
   SystMetaData smd;
 
-  std::vector<double> this_q0BinEdges = cfg.get<std::vector<double>>("q0_bin_edges");
+  std::vector<double> this_q0BinEdges = cfg["q0_bin_edges"].as<std::vector<double>>();
   unsigned int this_Nq0Bins = this_q0BinEdges.size()-1;
 
-  int this_verbosity_level = cfg.get<int>("verbosity_level", 0);
+  int this_verbosity_level = cfg["verbosity_level"] ? cfg["verbosity_level"].as<int>() : 0;
   if( this_verbosity_level > 3 ) {
     std::cout << "[INFO]: Using bin edges: ";
     for(const auto q0BinEdge: this_q0BinEdges) std::cout << q0BinEdge << ", ";
@@ -103,7 +102,7 @@ SystMetaData QEInterference::BuildSystMetaData(ParameterSet const & cfg,
 
     SystParamHeader phdr;
     std::string pname = desc;
-    if( ParseFhiclToolConfigurationParameter(cfg, pname, phdr, id) ) {
+    if( ParseYAMLToolConfigurationParameter(cfg, pname, phdr, id) ) {
       if( this_verbosity_level > 4 ) {
         std::cout << "[DEBUG]: Found parameter " << pname << " with id = " << id << std::endl;
       } // verbose output
@@ -112,28 +111,30 @@ SystMetaData QEInterference::BuildSystMetaData(ParameterSet const & cfg,
     }
   } // loop over named parameters
 
-  tool_options.put("q0_bin_edges", this_q0BinEdges);
-
-  if( !cfg.has_key("QEInterference_input_manifest") ) {
-    throw invalid_ToolConfigurationFHiCL() << "No q0 bin edges!!!";
+  tool_options["q0_bin_edges"] = YAML::Node();
+  for (auto v : this_q0BinEdges) {
+    tool_options["q0_bin_edges"].push_back(v);
   }
-  ParameterSet templateManifest =
-      cfg.get<ParameterSet>("QEInterference_input_manifest");
 
-  if (!cfg.has_key("QEInterference_input_manifest") ||
-      !cfg.is_key_to_table("QEInterference_input_manifest")) {
-    throw invalid_ToolConfigurationFHiCL()
+  if( !cfg["QEInterference_input_manifest"] ) {
+    throw invalid_ToolConfigurationYAML() << "No q0 bin edges!!!";
+  }
+  YAML::Node templateManifest =
+      cfg["QEInterference_input_manifest"];
+
+  if (!cfg["QEInterference_input_manifest"]) {
+    throw invalid_ToolConfigurationYAML()
         << "[ERROR]: When configuring calculated variations for "
-           "QEInterference, expected to find a FHiCL table keyed by "
+           "QEInterference, expected to find a YAML table keyed by "
            "QEInterference_input_manifest describing the location of "
            "the histogram inputs. See "
            "nusystematics/responsecalculators/"
            "TemplateResponseCalculatorBase.hh for the layout.";
   }
 
-  tool_options.put("QEInterference_input_manifest", templateManifest);
+  tool_options["QEInterference_input_manifest"] = templateManifest;
 
-  tool_options.put("verbosity_level", this_verbosity_level);
+  tool_options["verbosity_level"] = this_verbosity_level;
 
   return smd;
 }

@@ -15,20 +15,20 @@ namespace nusyst {
 
 class MECq0q3InterpWeighting : public IGENIESystProvider_tool {
 public:
-  explicit MECq0q3InterpWeighting(const fhicl::ParameterSet& pset);
+  explicit MECq0q3InterpWeighting(const YAML::Node& pset);
 
-  systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const &,
+  systtools::SystMetaData BuildSystMetaData(YAML::Node const &,
                                             systtools::paramId_t) override;
 
-  bool SetupResponseCalculator(fhicl::ParameterSet const &) override;
+  bool SetupResponseCalculator(YAML::Node const &) override;
 
-  fhicl::ParameterSet GetExtraToolOptions() { return tool_options; }
+  YAML::Node GetExtraToolOptions() { return tool_options; }
 
   systtools::event_unit_response_t
   GetEventResponse(genie::EventRecord const& ev) override;
 
 private:
-  fhicl::ParameterSet tool_options;
+  YAML::Node tool_options;
 
   enum class Topo { np = 0, nn = 1, unknown = 2 };
 

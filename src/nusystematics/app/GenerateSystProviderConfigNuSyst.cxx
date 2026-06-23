@@ -8,26 +8,50 @@
 
 #include "nusystematics/utility/make_instance.hh"
 
-#include "fhiclcpp/ParameterSet.h"
+#include "yaml-cpp/yaml.h"
 
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 
 namespace cliopts {
-std::string fclname = "";
+std::string yamlname = "";
 std::string outputfile = "";
-std::string envvar = "FHICL_FILE_PATH";
-std::string fhicl_key = "syst_providers";
+std::string envvar = "YAML_FILE_PATH";
+std::string yaml_key = "syst_providers";
 bool WrapWithPROLOG = false;
 } // namespace cliopts
+
+namespace {
+
+void SetAllSequencesToFlow(YAML::Node node) {
+  if (!node) {
+    return;
+  }
+
+  if (node.IsSequence()) {
+    node.SetStyle(YAML::EmitterStyle::Flow);
+    for (auto const &child : node) {
+      SetAllSequencesToFlow(child);
+    }
+    return;
+  }
+
+  if (node.IsMap()) {
+    for (auto const &kv : node) {
+      SetAllSequencesToFlow(kv.second);
+    }
+  }
+}
+
+} // namespace
 
 void SayUsage(char const *argv[]) {
   std::cout << "[USAGE]: " << argv[0] << "\n" << std::endl;
   std::cout << "\t-?|--help        : Show this message.\n"
-               "\t-c <config.fcl>  : fhicl file to read.\n"
-               "\t-o <output.fcl>  : fhicl file to write, stdout by default.\n"
-               "\t-k <list key>    : fhicl key to look for list of providers,\n"
+               "\t-c <config.yaml> : YAML file to read.\n"
+               "\t-o <output.yaml> : YAML file to write, stdout by default.\n"
+               "\t-k <list key>    : YAML key to look for list of providers,\n"
                "\t                   \"syst_providers\" by default.\n"
             << std::endl;
 }
@@ -40,11 +64,11 @@ void HandleOpts(int argc, char const *argv[]) {
       SayUsage(argv);
       exit(0);
     } else if (std::string(argv[opt]) == "-c") {
-      cliopts::fclname = argv[++opt];
+      cliopts::yamlname = argv[++opt];
     } else if (std::string(argv[opt]) == "-o") {
       cliopts::outputfile = argv[++opt];
     } else if (std::string(argv[opt]) == "-k") {
-      cliopts::fhicl_key = argv[++opt];
+      cliopts::yaml_key = argv[++opt];
     } else {
       std::cout << "[ERROR]: Unknown option: " << argv[opt] << std::endl;
       SayUsage(argv);
@@ -56,7 +80,7 @@ void HandleOpts(int argc, char const *argv[]) {
 
 int main(int argc, char const *argv[]) {
   HandleOpts(argc, argv);
-  if (!cliopts::fclname.size()) {
+  if (!cliopts::yamlname.size()) {
     std::cout << "[ERROR]: Expected to be passed a -c option." << std::endl;
     SayUsage(argv);
     exit(1);
@@ -74,25 +98,21 @@ int main(int argc, char const *argv[]) {
       exit(1);
     }
 
-    fhicl::ParameterSet in_ps = fhicl::ParameterSet::make(cliopts::fclname,
+    YAML::Node in_ps = YAML::Node::make(cliopts::yamlname,
     std::make_unique<cet::filepath_lookup>(ev));
   */
 
-  // TODO
-  std::unique_ptr<cet::filepath_maker> fm =
-      std::make_unique<cet::filepath_maker>();
-
-  fhicl::ParameterSet in_ps = fhicl::ParameterSet::make(cliopts::fclname, *fm);
+  YAML::Node in_yaml = YAML::LoadFile(cliopts::yamlname);
 
   std::cout << "[GenerateSystProviderConfigNuSyst] input" << std::endl;
-  std::cout << in_ps.to_indented_string() << std::endl;
+  std::cout << in_yaml << std::endl;
 
   std::vector<std::unique_ptr<nusyst::IGENIESystProvider_tool>> tools =
       systtools::ConfigureISystProvidersFromToolConfig<
-          nusyst::IGENIESystProvider_tool>(in_ps, nusyst::make_instance,
-                                           cliopts::fhicl_key);
+          nusyst::IGENIESystProvider_tool>(in_yaml, nusyst::make_instance,
+                                           cliopts::yaml_key);
 
-  fhicl::ParameterSet out_ps;
+  YAML::Node out_yaml;
   std::vector<std::string> providerNames;
   for (auto &prov : tools) {
     if (!systtools::Validate(prov->GetSystMetaData(), false)) {
@@ -101,14 +121,16 @@ int main(int argc, char const *argv[]) {
           << std::quoted(prov->GetFullyQualifiedName())
           << " failed validation.";
     }
-    fhicl::ParameterSet tool_ps = prov->GetParameterHeadersDocument();
-    out_ps.put(prov->GetFullyQualifiedName(), tool_ps);
+    YAML::Node tool_yaml = prov->GetParameterHeadersDocument();
+    out_yaml[prov->GetFullyQualifiedName()] = tool_yaml;
     providerNames.push_back(prov->GetFullyQualifiedName());
   }
-  out_ps.put("syst_providers", providerNames);
+  out_yaml["syst_providers"] = providerNames;
+  out_yaml["syst_providers"].SetStyle(YAML::EmitterStyle::Flow);
 
-  fhicl::ParameterSet wrapped_out_ps;
-  wrapped_out_ps.put("generated_systematic_provider_configuration", out_ps);
+  YAML::Node wrapped_out_yaml;
+  wrapped_out_yaml["generated_systematic_provider_configuration"] = out_yaml;
+  SetAllSequencesToFlow(wrapped_out_yaml);
 
   std::ostream *os(nullptr);
 
@@ -125,23 +147,20 @@ int main(int argc, char const *argv[]) {
   }
 
   if (cliopts::WrapWithPROLOG) {
-    (*os) << "BEGIN_PROLOG" << std::endl;
+    (*os) << "# YAML Configuration" << std::endl;
   }
 
-  (*os) << wrapped_out_ps.to_indented_string() << std::endl;
-
-  if (cliopts::WrapWithPROLOG) {
-    (*os) << "END_PROLOG" << std::endl;
-  }
+  (*os) << wrapped_out_yaml << std::endl;
 
   if (cliopts::outputfile.size()) {
     static_cast<std::ofstream *>(os)->close();
     delete os;
   }
 
+  std::string yaml_str = YAML::Dump(out_yaml);
   std::cout << (cliopts::outputfile.size() ? "Wrote" : "Built")
             << " systematic provider configuration with md5: "
-            << std::quoted(systtools::md5(out_ps.to_compact_string()))
+            << std::quoted(systtools::md5(yaml_str))
             << std::flush;
   if (cliopts::outputfile.size()) {
     std::cout << " to " << std::quoted(cliopts::outputfile) << std::flush;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "yaml-cpp/yaml.h"
 #include "systematicstools/utility/ROOTUtility.hh"
 
 #include "nusystematics/responsecalculators/TemplateResponseCalculatorBase.hh"
@@ -33,72 +34,71 @@ private:
   std::vector<double> EnuBinning;
   std::vector<TRC> EnuResponses;
 
-  /// Reads and loads input fhicl
+  /// Reads and loads input YAML
   ///
-  /// Expected fhicl like:
-  /// <inputs_key>: {
-  ///    input_file_pattern: "example.%EGeV_%V.root" # optional, %E replaced
-  ///                                                # with enu bin center in
-  ///                                                # GeV to one decimal
-  ///                                                # place, %V replace with
-  ///                                                # parameter value to one
-  ///                                                # decimal place.
-  ///    input_hist_pattern: "hist_%EGeV_%V" # optional, %E replaced with enu
-  ///                                        # bin center in GeV to one decimal
-  ///                                        # place, %V replace with parameter
-  ///                                        # value to one  decimal place.
-  ///    e_uniform: [<nbins>,<e_low>,<e_high>] # optional
-  //     param_values: [<val1>,<val2>,...] # optional
-  ///    e_stops: [ {
-  ///      enu_range: [1.5,2.5] # optional
-  ///      value_uniform: [<nvalues>,<v_min>,<v_max>] # optional
-  ///      input_file_pattern: example.1GeV_%V.root # optional
-  ///      input_hist_pattern: myhist_2GeV_%V # optional
-  ///      param_values: [ {
-  ///          value: 1 # optional
-  ///          input_file: example.1GeV_2.root # optional
-  ///          input_hist: myhist_2GeV_2 # optional
-  ///        }
-  ///      ] # optional if <inputs_key>.param_values has been specified
-  ///      }
-  ///    ] # optional if all of input_file_pattern, input_hist_pattern,
-  ///      # e_uniform, and param_values are specified
-  /// }
-  void LoadInputHistograms(fhicl::ParameterSet const &ps) {
+  /// Expected YAML like:
+  /// inputs:
+  ///   input_file_pattern: "example.%EGeV_%V.root" # optional, %E replaced with
+  ///                                           # the enu bin center in GeV to
+  ///                                           # one decimal place, %V replaced
+  ///                                           # with the parameter value to one
+  ///                                           # decimal place.
+  ///   input_hist_pattern: "hist_%EGeV_%V" # optional, %E replaced with enu
+  ///                                       # bin center in GeV to one decimal
+  ///                                       # place, %V replaced with parameter
+  ///                                       # value.
+  ///   e_uniform: [<nbins>, <e_low>, <e_high>] # optional
+  ///   param_values: [<val1>, <val2>, ...] # optional
+  ///   e_stops:
+  ///     - enu_range: [1.5, 2.5] # optional
+  ///       value_uniform: [<nvalues>, <v_min>, <v_max>] # optional
+  ///       input_file_pattern: "example.1GeV_%V.root" # optional
+  ///       input_hist_pattern: "myhist_2GeV_%V" # optional
+  ///       param_values:
+  ///         - value: 1 # optional
+  ///           input_file: "example.1GeV_2.root" # optional
+  ///           input_hist: "myhist_2GeV_2" # optional
+  ///
+  /// The e_stops sequence is optional when input_file_pattern,
+  /// input_hist_pattern, e_uniform, and param_values are provided.
+  void LoadInputHistograms(YAML::Node const &config) {
     bool uniform_enu = false;
     bool consistent_param_values = false;
 
     std::vector<double> param_values;
 
-    if (ps.has_key("e_uniform")) {
-      std::tuple<size_t, double, double> e_uniform_descriptor =
-          ps.get<std::tuple<size_t, double, double>>("e_uniform");
+    if (config["e_uniform"]) {
+      std::vector<double> e_uniform_descriptor =
+          config["e_uniform"].as<std::vector<double>>();
 
-      double step = (std::get<2>(e_uniform_descriptor) -
-                     std::get<1>(e_uniform_descriptor)) /
-                    double(std::get<0>(e_uniform_descriptor));
+      double step = (e_uniform_descriptor[2] - e_uniform_descriptor[1]) /
+                    double(e_uniform_descriptor[0]);
 
-      for (size_t i = 0; i <= std::get<0>(e_uniform_descriptor); ++i) {
-        EnuBinning.push_back(std::get<1>(e_uniform_descriptor) + i * step);
+      for (size_t i = 0; i <= size_t(e_uniform_descriptor[0]); ++i) {
+        EnuBinning.push_back(e_uniform_descriptor[1] + i * step);
       }
       uniform_enu = true;
     }
 
-    if (ps.has_key("param_values")) {
+    if (config["param_values"]) {
       consistent_param_values = true;
-      param_values = ps.get<std::vector<double>>("param_values");
+      param_values = config["param_values"].as<std::vector<double>>();
     }
 
-    std::string input_file_pattern =
-        ps.get<std::string>("input_file_pattern", "");
-    std::string input_hist_pattern =
-        ps.get<std::string>("input_hist_pattern", "");
+    std::string input_file_pattern;
+    if (config["input_file_pattern"]) {
+      input_file_pattern = config["input_file_pattern"].as<std::string>();
+    }
+    std::string input_hist_pattern;
+    if (config["input_hist_pattern"]) {
+      input_hist_pattern = config["input_hist_pattern"].as<std::string>();
+    }
 
-    if (!ps.has_key("e_stops")) { // all specified by patterns
+    if (!config["e_stops"]) { // all specified by patterns
       if (!consistent_param_values || !uniform_enu) {
         throw;
       }
-      std::vector<fhicl::ParameterSet> value_descriptors;
+      YAML::Node value_descriptors(YAML::NodeType::Sequence);
       for (size_t e_stop_ctr = 0; e_stop_ctr < (EnuBinning.size() - 1);
            ++e_stop_ctr) {
         std::pair<double, double> enu_range =
@@ -110,6 +110,7 @@ private:
         std::string input_hist_pattern_stop = systtools::str_replace(
             input_hist_pattern, "%E", StringifyNumberToOneDP(enu_mid));
 
+        YAML::Node value_descriptor_list(YAML::NodeType::Sequence);
         for (size_t pval_ctr = 0; pval_ctr < param_values.size(); ++pval_ctr) {
           std::string input_file = systtools::str_replace(
               input_file_pattern_stop, "%V",
@@ -118,14 +119,15 @@ private:
               input_hist_pattern_stop, "%V",
               StringifyNumberToOneDP(param_values[pval_ctr]));
 
-          fhicl::ParameterSet value_descriptor;
-          value_descriptor.put("value", param_values[pval_ctr]);
-          value_descriptor.put("input_file", input_file);
-          value_descriptor.put("input_hist", input_hist);
-          value_descriptors.push_back(std::move(value_descriptor));
+          YAML::Node value_descriptor(YAML::NodeType::Map);
+          value_descriptor["value"] = param_values[pval_ctr];
+          value_descriptor["input_file"] = input_file;
+          value_descriptor["input_hist"] = input_hist;
+          value_descriptor_list.push_back(value_descriptor);
         }
-        fhicl::ParameterSet estop_descriptor;
-        estop_descriptor.put("inputs", value_descriptors);
+
+        YAML::Node estop_descriptor(YAML::NodeType::Map);
+        estop_descriptor["inputs"] = value_descriptor_list;
         EnuResponses.emplace_back();
         EnuResponses.back().LoadInputHistograms(estop_descriptor);
       }
@@ -133,13 +135,12 @@ private:
     }
 
     size_t e_stop_ctr = 0;
-    for (fhicl::ParameterSet const &e_stop :
-         ps.get<std::vector<fhicl::ParameterSet>>("e_stops")) {
+    for (const YAML::Node &e_stop : config["e_stops"]) {
 
-      fhicl::ParameterSet estop_descriptor;
+      YAML::Node estop_descriptor(YAML::NodeType::Map);
       std::pair<double, double> enu_range;
 
-      if (!e_stop.has_key("enu_range") && uniform_enu) {
+      if (!e_stop["enu_range"] && uniform_enu) {
         if (EnuBinning.size() >= (e_stop_ctr + 1)) {
           throw incompatible_number_of_bins()
               << "[ERROR]: Evaluating e_stop #" << e_stop_ctr
@@ -149,7 +150,8 @@ private:
         enu_range =
             std::make_pair(EnuBinning[e_stop_ctr], EnuBinning[e_stop_ctr + 1]);
       } else {
-        enu_range = e_stop.get<std::pair<double, double>>("enu_range");
+        std::vector<double> range_vec = e_stop["enu_range"].as<std::vector<double>>();
+        enu_range = std::make_pair(range_vec[0], range_vec[1]);
         if (fabs(EnuBinning.back() - enu_range.first) > 1E-6) {
           throw non_contiguous_enu_range()
               << "[ERROR]: Found enu stop {" << enu_range.first << " -- "
@@ -161,50 +163,61 @@ private:
       }
       double enu_mid = (enu_range.second + enu_range.first) / 2.0;
 
-      std::string input_file_pattern_stop = e_stop.get<std::string>(
-          "input_file_pattern",
-          systtools::str_replace(input_file_pattern, "%E",
-                                 StringifyNumberToOneDP(enu_mid)));
-      std::string input_hist_pattern_stop = e_stop.get<std::string>(
-          "input_hist_pattern",
-          systtools::str_replace(input_hist_pattern, "%E",
-                                 StringifyNumberToOneDP(enu_mid)));
+      std::string input_file_pattern_stop = input_file_pattern;
+      if (e_stop["input_file_pattern"]) {
+        input_file_pattern_stop = e_stop["input_file_pattern"].as<std::string>();
+      } else {
+        input_file_pattern_stop = systtools::str_replace(input_file_pattern, "%E",
+                                 StringifyNumberToOneDP(enu_mid));
+      }
+      std::string input_hist_pattern_stop = input_hist_pattern;
+      if (e_stop["input_hist_pattern"]) {
+        input_hist_pattern_stop = e_stop["input_hist_pattern"].as<std::string>();
+      } else {
+        input_hist_pattern_stop = systtools::str_replace(input_hist_pattern, "%E",
+                                 StringifyNumberToOneDP(enu_mid));
+      }
 
-      if (!e_stop.has_key("param_values")) {
+      if (!e_stop["param_values"]) {
         if (!consistent_param_values) {
           throw;
         }
         continue; // next_estop
       }
 
-      std::vector<fhicl::ParameterSet> value_descriptors;
+      YAML::Node value_descriptor_list(YAML::NodeType::Sequence);
       size_t param_value_it = 0;
-      for (fhicl::ParameterSet const &param_value :
-           e_stop.get<std::vector<fhicl::ParameterSet>>("param_values")) {
+      for (const YAML::Node &param_value : e_stop["param_values"]) {
         double value;
-        if (!param_value.has_key("value") && consistent_param_values) {
+        if (!param_value["value"] && consistent_param_values) {
           value = param_values[param_value_it];
         } else {
-          value = param_value.get<double>("value");
+          value = param_value["value"].as<double>();
         }
         param_value_it++;
 
-        std::string input_file = param_value.get<std::string>(
-            "input_file",
-            systtools::str_replace(input_file_pattern_stop, "%V",
-                                   StringifyNumberToOneDP(value)));
-        std::string input_hist = param_value.get<std::string>(
-            "input_hist",
-            systtools::str_replace(input_hist_pattern_stop, "%V",
-                                   StringifyNumberToOneDP(value)));
+        std::string input_file = input_file_pattern_stop;
+        if (param_value["input_file"]) {
+          input_file = param_value["input_file"].as<std::string>();
+        } else {
+          input_file = systtools::str_replace(input_file_pattern_stop, "%V",
+                                   StringifyNumberToOneDP(value));
+        }
+        std::string input_hist = input_hist_pattern_stop;
+        if (param_value["input_hist"]) {
+          input_hist = param_value["input_hist"].as<std::string>();
+        } else {
+          input_hist = systtools::str_replace(input_hist_pattern_stop, "%V",
+                                   StringifyNumberToOneDP(value));
+        }
 
-        fhicl::ParameterSet value_descriptor;
-        value_descriptor.put("value", value);
-        value_descriptor.put("input_file", input_file);
-        value_descriptor.put("input_hist", input_hist);
-        value_descriptors.push_back(std::move(value_descriptor));
+        YAML::Node value_descriptor(YAML::NodeType::Map);
+        value_descriptor["value"] = value;
+        value_descriptor["input_file"] = input_file;
+        value_descriptor["input_hist"] = input_hist;
+        value_descriptor_list.push_back(value_descriptor);
       }
-      estop_descriptor.put("inputs", value_descriptors);
+      estop_descriptor["inputs"] = value_descriptor_list;
       EnuResponses.emplace_back();
       EnuResponses.back().LoadInputHistograms(estop_descriptor);
     }
@@ -227,7 +240,7 @@ private:
   }
 
 public:
-  EnuBinnedTemplateResponseCalculator(fhicl::ParameterSet const &ps) {
+  EnuBinnedTemplateResponseCalculator(YAML::Node const &ps) {
     LoadInputHistograms(ps);
   };
 
