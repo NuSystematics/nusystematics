@@ -363,16 +363,21 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
   ComputeQ0Q3(ev, q0, q3, Enu);
 
   // Helper lambda to create zero-weight response (suppress events)
+  // Same as setting w_eff_cv = 0 or one_sigma = -1.0
   auto GetZeroWeightResponse = [this]() {
     auto const& smd = this->GetSystMetaData();
     systtools::event_unit_response_t resp;
     resp.reserve(smd.size());
     for(auto const& sph : smd) {
-      // Create zero-weight response for this parameter
       if (sph.isCorrection) {
-        resp.push_back({sph.systParamId, std::vector<double>{0.0}});
+        double this_rw = 1.0 + (sph.centralParamValue) * (-1.);
+        resp.push_back({sph.systParamId, std::vector<double>{this_rw}});
       } else {
-        resp.push_back({sph.systParamId, std::vector<double>(sph.paramVariations.size(), 0.0)});
+        std::vector<double> arr_rw;
+        for (double d : sph.paramVariations) {
+          arr_rw.push_back(1.0 + d * (-1.));
+        }
+        resp.push_back({sph.systParamId, arr_rw});
       }
     }
     return resp;
