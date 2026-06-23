@@ -293,6 +293,7 @@ struct TweakSummaryTree {
           continue;
         }
 
+        // Backward-compatibility; isCorrection header used to have empty paramVariations
         if (hdr.isCorrection) {
           ntweaks.emplace_back(1);
         } else {
@@ -358,7 +359,7 @@ struct TweakSummaryTree {
 
         *meta_name = this_full_name.c_str();
         meta_n = ntweaks[idx];
-        // For a correction dial, hdr.paramVariations is empty, so manually fill the vector
+        // Backward-compatibility; isCorrection header used to have empty paramVariations
         if (hdr.isCorrection) {
           meta_tweak_values[0] = hdr.centralParamValue;
         } else {
