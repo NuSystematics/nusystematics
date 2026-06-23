@@ -376,11 +376,14 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
     for(auto const& sph : smd) {
       if (sph.isCorrection) {
         double this_rw = 1.0 + (sph.centralParamValue) * (-1.);
+        this_rw = std::clamp(this_rw, 0., fWmax);
         resp.push_back({sph.systParamId, std::vector<double>{this_rw}});
       } else {
         std::vector<double> arr_rw;
         for (double d : sph.paramVariations) {
-          arr_rw.push_back(1.0 + d * (-1.));
+          double this_rw = 1.0 + d * (-1.);
+          this_rw = std::clamp(this_rw, 0., fWmax);
+          arr_rw.push_back(this_rw);
         }
         resp.push_back({sph.systParamId, arr_rw});
       }
