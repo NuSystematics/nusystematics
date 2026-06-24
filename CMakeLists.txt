@@ -85,6 +85,7 @@ install(TARGETS
 add_subdirectory(src/nusystematics)
 
 add_subdirectory(data)
+add_subdirectory(config)
 add_subdirectory(fcl)
 
 include(CMakePackageConfigHelpers)

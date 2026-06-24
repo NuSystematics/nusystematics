@@ -1,0 +1,11 @@
+MINERvAE2p2h_toolconfig:
+  E2p2h_A_nu_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  E2p2h_A_nubar_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  E2p2h_B_nu_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  E2p2h_B_nubar_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  LimitWeights: [0, 1e6]
+  fill_valid_tree: false
+  ignore_parameter_dependence: true
+  instance_name: MnvE2p2h
+  tool_type: MINERvAE2p2h
+syst_providers: [MINERvAE2p2h_toolconfig]

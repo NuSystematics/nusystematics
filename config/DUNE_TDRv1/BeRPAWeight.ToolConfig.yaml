@@ -1,0 +1,11 @@
+BeRPAWeight_toolconfig:
+  ApplyCV: false
+  BeRPA_A_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  BeRPA_B_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  BeRPA_D_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  BeRPA_E_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  fill_valid_tree: false
+  ignore_parameter_dependence: true
+  instance_name: BeRPA
+  tool_type: BeRPAWeight
+syst_providers: [BeRPAWeight_toolconfig]

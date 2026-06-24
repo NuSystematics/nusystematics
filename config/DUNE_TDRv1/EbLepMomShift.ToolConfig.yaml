@@ -1,0 +1,9 @@
+EbLepMomShift_toolconfig:
+  EbFSLepMomShift_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  EbLepMomShift_Template_input_manifest:
+    input_file: ${NUSYST}/data/EbLepMomShift_templates.root
+    inputs: [{input_hist: EbLep_m3sigma, value: -3}, {input_hist: EbLep_m2sigma, value: -2}, {input_hist: EbLep_m1sigma, value: -1}, {input_hist: EbLep_CV, value: 0}, {input_hist: EbLep_p1sigma, value: 1}, {input_hist: EbLep_p2sigma, value: 2}, {input_hist: EbLep_p3sigma, value: 3}]
+  fill_valid_tree: false
+  instance_name: EbLepShift
+  tool_type: EbLepMomShift
+syst_providers: [EbLepMomShift_toolconfig]

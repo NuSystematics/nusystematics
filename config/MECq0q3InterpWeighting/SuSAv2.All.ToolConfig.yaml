@@ -1,0 +1,4 @@
+includes:
+  - SuSAv2ToValenica_MEC_reweight.ToolConfig.yaml
+  - SuSAv2ToMartini_MEC_reweight.ToolConfig.yaml
+syst_providers: [SuSAv2ToValenica_MECInterp, SuSAv2ToMartini_MECInterp]

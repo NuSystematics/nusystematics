@@ -1,0 +1,12 @@
+WSReweight_toolconfig:
+  OPT_BOOL: false
+  OPT_STRING: ""
+  estimate_emiss: false
+  fill_valid_tree: false
+  instance_name: WS
+  nucleus_radius_central_value: 3.53
+  nucleus_radius_variation_descriptor: "[2.5, 3, 3.53, 4, 4.5]"
+  surface_thickness_central_value: 0.54
+  surface_thickness_variation_descriptor: "[0.45, 0.50, 0.54, 0.59, 0.64]"
+  tool_type: WSReweight
+syst_providers: [WSReweight_toolconfig]

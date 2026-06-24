@@ -1,0 +1,10 @@
+MiscInteractionSysts_toolconfig:
+  C12ToAr40_2p2hScaling_nu_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  C12ToAr40_2p2hScaling_nubar_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  SPPLowQ2Suppression_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  fill_valid_tree: false
+  instance_name: MiscSysts
+  nuenuebar_xsec_ratio_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  nuenumu_xsec_ratio_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  tool_type: MiscInteractionSysts
+syst_providers: [MiscInteractionSysts_toolconfig]

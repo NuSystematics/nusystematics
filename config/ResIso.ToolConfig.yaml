@@ -1,0 +1,6 @@
+ResIso_toolconfig:
+  alldial_variation_descriptor: (-3,3,1)
+  instance_name: ResonanceIsolation
+  tool_type: ResIso
+  verbosity_level: 5
+syst_providers: [ResIso_toolconfig]

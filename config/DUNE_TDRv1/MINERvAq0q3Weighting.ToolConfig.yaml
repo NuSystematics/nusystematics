@@ -1,0 +1,13 @@
+MINERvAq0q3Weighting_toolconfig:
+  MINERvATune_RPA_input_manifest:
+    input_file: ${NUSYST}/data/MINERvA_RPA_q0q3.root
+    inputs: [{input_hist: RPA_m1sigma, value: -1}, {input_hist: RPA_CV, value: 0}, {input_hist: RPA_p1sigma, value: 1}]
+  Mnv2p2hGaussEnhancement_LimitWeights: [0, 1e6]
+  Mnv2p2hGaussEnhancement_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  fill_valid_tree: false
+  instance_name: Mnvq0q3
+  parameter_per_2p2h_universe: false
+  tool_type: MINERvAq0q3Weighting
+  use_MINERvA_2p2h_tunes: true
+  use_MINERvA_RPA_tunes: true
+syst_providers: [MINERvAq0q3Weighting_toolconfig]

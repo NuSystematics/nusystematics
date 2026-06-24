@@ -11,12 +11,16 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include <cstdlib>
 #include <filesystem>
 #include "Framework/Messenger/Messenger.h"
 
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
 
 namespace cliopts {
 std::string yamlname = "";
@@ -49,12 +53,68 @@ void SetAllSequencesToFlow(YAML::Node node) {
   }
 }
 
+std::vector<std::filesystem::path> GetYamlSearchPaths() {
+  std::vector<std::filesystem::path> search_paths;
+
+  char const *config_dirs = std::getenv("NUSYST_CONFIG_DIR");
+  if (!config_dirs || !*config_dirs) {
+    return search_paths;
+  }
+
+  std::stringstream dirs_stream(config_dirs);
+  std::string dir;
+  while (std::getline(dirs_stream, dir, ':')) {
+    if (!dir.empty()) {
+      search_paths.emplace_back(dir);
+    }
+  }
+
+  return search_paths;
+}
+
+std::filesystem::path ResolveYamlPath(std::string const &filepath,
+                                      std::filesystem::path const &base_dir = {}) {
+  std::filesystem::path path(systtools::expand_env_vars(filepath));
+
+  auto const exists = [](std::filesystem::path const &candidate) {
+    return !candidate.empty() && std::filesystem::exists(candidate);
+  };
+
+  if (path.is_absolute()) {
+    if (exists(path)) {
+      return path;
+    }
+  } else {
+    if (!base_dir.empty()) {
+      std::filesystem::path candidate = base_dir / path;
+      if (exists(candidate)) {
+        return candidate;
+      }
+    }
+
+    if (exists(path)) {
+      return path;
+    }
+
+    for (auto const &search_dir : GetYamlSearchPaths()) {
+      std::filesystem::path candidate = search_dir / path;
+      if (exists(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  throw std::runtime_error("Unable to locate YAML file: " + path.string());
+}
+
 // Recursively load a YAML file, merging any files listed under an
 // "includes" key (paths resolved relative to the including file).
 // Keys from the including file overwrite keys from included files.
 // The "includes" key itself is consumed and not forwarded.
-YAML::Node LoadYAMLWithIncludes(std::string const &filepath) {
-  YAML::Node node = YAML::LoadFile(filepath);
+YAML::Node LoadYAMLWithIncludes(std::string const &filepath,
+                                std::filesystem::path const &base_dir = {}) {
+  std::filesystem::path resolved_filepath = ResolveYamlPath(filepath, base_dir);
+  YAML::Node node = YAML::LoadFile(resolved_filepath.string());
 
   if (!node["includes"]) {
     return node;
@@ -63,21 +123,16 @@ YAML::Node LoadYAMLWithIncludes(std::string const &filepath) {
   // base_dir: the directory containing the current file, used to resolve
   // relative paths in "includes". E.g. if filepath is "/a/b/top.yaml",
   // base_dir is "/a/b", so "sub/foo.yaml" resolves to "/a/b/sub/foo.yaml".
-  std::filesystem::path base_dir =
-      std::filesystem::path(filepath).parent_path();
+  std::filesystem::path next_base_dir = resolved_filepath.parent_path();
 
   // Start with merged content from all included files (in order).
   YAML::Node merged;
   for (auto const &inc : node["includes"]) {
     // inc_path: path to the included file as written in the YAML.
     // Environment variables in ${VAR} syntax are expanded first, then if the
-    // result is still a relative path it is resolved against base_dir so the
-    // lookup is always relative to the including file, not the working directory.
-    std::filesystem::path inc_path(systtools::expand_env_vars(inc.as<std::string>()));
-    if (inc_path.is_relative()) {
-      inc_path = base_dir / inc_path;
-    }
-    YAML::Node inc_node = LoadYAMLWithIncludes(inc_path.string());
+    // result is still a relative path we try the including file's directory
+    // first, then the directories listed in NUSYST_CONFIG_DIR.
+    YAML::Node inc_node = LoadYAMLWithIncludes(inc.as<std::string>(), next_base_dir);
     for (auto const &kv : inc_node) {
       std::string key = kv.first.as<std::string>();
       if (key == "includes") continue;

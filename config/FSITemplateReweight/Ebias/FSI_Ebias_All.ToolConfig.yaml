@@ -1,0 +1,5 @@
+includes:
+  - FSI_Ebias_G4BC.ToolConfig.yaml
+  - FSI_Ebias_INCL.ToolConfig.yaml
+  - FSI_Ebias_hN.ToolConfig.yaml
+syst_providers: [FSI_Ebias_hN_Tool_Config, FSI_Ebias_INCL_Tool_Config, FSI_Ebias_G4BC_Tool_Config]

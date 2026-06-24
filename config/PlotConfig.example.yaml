@@ -1,0 +1,49 @@
+plot_config:
+  EHadTotal:
+    formula: Sum$( fsparticles_E * (abs(fsparticles_pdg)>=100) )
+    label: E_{had}^{total}
+    nbins: 50
+    units: GeV
+    xmax: 5
+    xmin: 0
+  Q2:
+    nbins: 60
+    xmax: 3
+    xmin: 0
+  pIS_Nucleon:
+    formula: Max$( sqrt(isparticles_px*isparticles_px + isparticles_py*isparticles_py + isparticles_pz*isparticles_pz) * (abs(isparticles_pdg)==2112 || abs(isparticles_pdg)==2212) )
+    label: "|p_{N}^{IS}|"
+    nbins: 25
+    units: GeV
+    xmax: 5e-1
+    xmin: 0
+  pLeadCpi:
+    formula: Max$( sqrt(fsparticles_px*fsparticles_px + fsparticles_py*fsparticles_py + fsparticles_pz*fsparticles_pz) * (abs(fsparticles_pdg)==211) )
+    label: p_{#pi^{#pm}}^{lead}
+    nbins: 30
+    units: GeV
+    xmax: 1.5
+    xmin: 0
+  pLeadPi0:
+    formula: Max$( sqrt(fsparticles_px*fsparticles_px + fsparticles_py*fsparticles_py + fsparticles_pz*fsparticles_pz) * (fsparticles_pdg==111) )
+    label: p_{#pi^{0}}^{lead}
+    nbins: 30
+    units: GeV
+    xmax: 1.5
+    xmin: 0
+  pLeadProton_preFSI:
+    formula: Max$( sqrt(prefsi_particles_px*prefsi_particles_px + prefsi_particles_py*prefsi_particles_py + prefsi_particles_pz*prefsi_particles_pz) * (prefsi_particles_pdg==2212) )
+    label: p_{p}^{lead, pre-FSI}
+    nbins: 40
+    units: GeV
+    xmax: 2
+    xmin: 0
+  pTLeadProton:
+    formula: Max$( sqrt(fsparticles_px*fsparticles_px + fsparticles_py*fsparticles_py) * (fsparticles_pdg==2212) )
+    label: p_{T,p}^{lead}
+    nbins: 30
+    units: GeV
+    xmax: 1.5
+    xmin: 0
+  plots_per_page: 6
+  ratio_min_cv_count: 1e-2

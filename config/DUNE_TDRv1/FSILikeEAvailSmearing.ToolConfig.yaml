@@ -1,0 +1,11 @@
+FSILikeEAvailSmearing_toolconfig:
+  FSILikeEAvailSmearing_input_manifest:
+    CCQE:
+      input_file: ${NUSYST}/data/FSILike_EAvail_smearing_CCQE.root
+      inputs: [{input_hist: CCQE_m3sigma, value: -3}, {input_hist: CCQE_m2sigma, value: -2}, {input_hist: CCQE_m1sigma, value: -1}, {input_hist: CCQE_CV, value: 0}, {input_hist: CCQE_p1sigma, value: 1}, {input_hist: CCQE_p2sigma, value: 2}, {input_hist: CCQE_p3sigma, value: 3}]
+  FSILikeEAvailSmearing_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  LimitWeights: [0, 1e6]
+  fill_valid_tree: false
+  instance_name: FSISmear
+  tool_type: FSILikeEAvailSmearing
+syst_providers: [FSILikeEAvailSmearing_toolconfig]

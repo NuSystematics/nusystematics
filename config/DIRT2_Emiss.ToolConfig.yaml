@@ -1,0 +1,19 @@
+DIRT2_Emiss_toolconfig:
+  Emiss_CorrTail_Ar_n_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_CorrTail_Ar_p_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_CorrTail_C_n_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_CorrTail_C_p_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_Linear_Ar_n_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_Linear_Ar_p_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_Linear_C_n_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_Linear_C_p_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_ShiftPeak_Ar_n_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_ShiftPeak_Ar_p_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_ShiftPeak_C_n_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  Emiss_ShiftPeak_C_p_variation_descriptor: "[-3,-2,-1,0,1,2,3]"
+  OPT_BOOL: false
+  OPT_STRING: ""
+  fill_valid_tree: false
+  instance_name: DIRT2
+  tool_type: DIRT2_Emiss
+syst_providers: [DIRT2_Emiss_toolconfig]
