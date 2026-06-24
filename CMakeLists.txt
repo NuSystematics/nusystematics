@@ -28,6 +28,8 @@ if(nusyst_DUNETDRv1_ENABLED)
   message(STATUS "Building DUNE TDR v1 dials")
 endif()
 
+option(nusyst_DOWNLOAD_DATA "Download nusyst_data" ON)
+
 find_package(ROOT 6.10 REQUIRED)
 
 CPMFindPackage(
