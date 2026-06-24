@@ -70,6 +70,8 @@ std::vector<std::string> skip_providers;
 const std::set<std::string> kDevelopmentTemplates = {
   "SkeleWeighter.ToolConfig.fcl",
 };
+
+bool DoDebug = false;
 } // namespace cliopts
 
 void SayUsage(char const *argv[]) {
@@ -80,7 +82,7 @@ void SayUsage(char const *argv[]) {
     "    --mode <m>             genierw | providers | all (default: all)\n"
     "    -o <output.yaml>        Output file (default: stdout)\n"
     "    --fcl-dir <dir>        Tool-config fcl directory\n"
-    "                           (default: $NUSYST/fcl)\n"
+    "                           (default: $nusystematics_ROOT/fcl)\n"
     "    --variation-descriptor \"[-3,-2,-1,0,1,2,3]\"\n"
     "                           Variation descriptor used for every GENIE RW\n"
     "                           dial (default shown).\n"
@@ -99,6 +101,7 @@ void SayUsage(char const *argv[]) {
     "                           additionally skip in providers mode\n"
     "                           (default skip list already covers the\n"
     "                           templates above).\n"
+    "    --debug                Run debug mode.\n"
     "    -?|--help              Show this message\n"
     << std::endl;
 }
@@ -113,11 +116,13 @@ void HandleOpts(int argc, char const *argv[]) {
     else if (s == "--fcl-dir") cliopts::fcl_dir = argv[++opt];
     else if (s == "--variation-descriptor") cliopts::variation_descriptor = argv[++opt];
     else if (s == "--single-instance") cliopts::single_instance = true;
-    else if (s == "--include-skeleton") cliopts::include_skeleton = true;
+    else if (s == "--include-skeleton") cliopts::DoDebug = true;
     else if (s == "--skip") {
       std::string tok; std::istringstream ss(argv[++opt]);
       while (std::getline(ss, tok, ',')) if (!tok.empty()) cliopts::skip_providers.push_back(tok);
-    } else {
+    }
+    else if (s == "--debug") cliopts::include_skeleton = true;
+    else {
       std::cout << "[ERROR]: Unknown option: " << s << std::endl;
       SayUsage(argv); exit(1);
     }
@@ -627,7 +632,7 @@ int main(int argc, char const *argv[]) {
 
   // Resolve fcl-dir default
   if (cliopts::fcl_dir.empty()) {
-    char const *nusyst_env = std::getenv("NUSYST");
+    char const *nusyst_env = std::getenv("nusystematics_ROOT");
     if (nusyst_env) cliopts::fcl_dir = std::string(nusyst_env) + "/fcl";
   }
 
@@ -969,7 +974,9 @@ int main(int argc, char const *argv[]) {
   } else {
     os = &std::cout;
   }
-  (*os) << wrapped_out_ps << std::endl;
+  if(cliopts::DoDebug){
+    (*os) << wrapped_out_ps << std::endl;
+  }
   if (cliopts::outputfile.size()) fs.close();
 
   std::cerr << "\n=== Summary ===" << std::endl;

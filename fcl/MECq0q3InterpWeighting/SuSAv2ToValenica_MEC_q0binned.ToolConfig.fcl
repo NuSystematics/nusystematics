@@ -37,7 +37,7 @@ SuSAv2ToValenica_MECInterp_q0binned: {
     Model: "valencia"  # Options: "valencia" or "martini"
     
     # Base data directory
-    DataBaseDir: "/exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/data"
+    DataBaseDir: "${NUSYST_DATA_DIR}/CCMEC_template"
 
     # ============================================================
     # Q0 BINNING: Define bin edges for multiple dials

@@ -1,16 +1,19 @@
 #pragma once
 
 #include "nusystematics/interface/IGENIESystProvider_tool.hh"
+#include "nusystematics/systproviders/GENIEReWeight_tool.hh"
 
+#ifdef nusyst_DUNETDRv1_ENABLED
 #include "nusystematics/systproviders/BeRPAWeight_tool.hh"
 #include "nusystematics/systproviders/EbLepMomShift_tool.hh"
 #include "nusystematics/systproviders/FSILikeEAvailSmearing_tool.hh"
-#include "nusystematics/systproviders/GENIEReWeight_tool.hh"
 #include "nusystematics/systproviders/MINERvAE2p2h_tool.hh"
 #include "nusystematics/systproviders/MINERvAq0q3Weighting_tool.hh"
 #include "nusystematics/systproviders/MKSinglePiTemplate_tool.hh"
 #include "nusystematics/systproviders/MiscInteractionSysts_tool.hh"
 #include "nusystematics/systproviders/NOvAStyleNonResPionNorm_tool.hh"
+#endif
+
 #include "nusystematics/systproviders/SkeleWeighter_tool.hh"
 #include "nusystematics/systproviders/ZExpPCAWeighter_tool.hh"
 #include "nusystematics/systproviders/ResIso_tool.hh"
@@ -37,6 +40,7 @@ make_instance(YAML::Node const &paramset) {
 
   if (tool_type == "GENIEReWeight") {
     return std::make_unique<GENIEReWeight>(paramset);
+#ifdef nusyst_DUNETDRv1_ENABLED
   } else if (tool_type == "MKSinglePiTemplate") {
     return std::make_unique<MKSinglePiTemplate>(paramset);
   } else if (tool_type == "MINERvAq0q3Weighting") {
@@ -53,6 +57,7 @@ make_instance(YAML::Node const &paramset) {
     return std::make_unique<EbLepMomShift>(paramset);
   } else if (tool_type == "FSILikeEAvailSmearing") {
     return std::make_unique<FSILikeEAvailSmearing>(paramset);
+#endif
   } else if (tool_type == "SkeleWeighter") {
     return std::make_unique<SkeleWeighter>(paramset);
   } else if (tool_type == "ZExpPCAWeighter") {

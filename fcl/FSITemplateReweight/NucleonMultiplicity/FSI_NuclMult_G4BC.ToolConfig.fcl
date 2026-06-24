@@ -7,7 +7,7 @@ FSI_NuclMult_G4BC_Tool_Config: {
     FSIReweightMult_variation_descriptor: "[0, 1]"
 
     FSIReweightMult_input_manifest: {
-      input_file: "${NUSYST_FSI_TEMPLATE_DIR}/FSI_KOAbs_reweight_template.root"
+      input_file: "${NUSYST_DATA_DIR}/FSI/FSI_KOAbs_reweight_template.root"
       inputs: [
         {
           input_hist: "hA2018_protonPlus_NuclMult"

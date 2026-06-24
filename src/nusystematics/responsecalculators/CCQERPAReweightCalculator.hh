@@ -6,6 +6,7 @@
 #include "systematicstools/interpreters/PolyResponse.hh"
 
 #include "systematicstools/utility/ROOTUtility.hh"
+#include "systematicstools/utility/string_parsers.hh"
 #include "systematicstools/utility/exceptions.hh"
 
 #include "yaml-cpp/yaml.h"
@@ -125,14 +126,7 @@ namespace nusyst {
         input_file = val_config["input_file"].as<std::string>();
       }
 
-      // if it does not start with "/", find it under ${NUSYSTEMATICS_FQ_DIR}/data/
-      if (input_file.find("/") != 0) {
-        std::string tmp_NUSYSTEMATICS_ROOT = std::getenv("nusystematics_ROOT");
-        if (tmp_NUSYSTEMATICS_ROOT == "") {
-          throw invalid_CCQE_RPA_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set but put relative path:" << input_file;
-        }
-        input_file = tmp_NUSYSTEMATICS_ROOT + "/data/" + input_file;
-      }
+      input_file = systtools::expand_env_vars(input_file);
 
       if (hName == "LowE_WithRPA") {
         map_ENuRange_to_WithRPAXSec[0] = std::unique_ptr<TH3D>(GetHistogram<TH3D>(input_file, input_hist));

@@ -55,7 +55,14 @@ fi
 export nusystematics_ROOT=@CMAKE_INSTALL_PREFIX@
 export nusystematics_VERSION=@PROJECT_VERSION@
 export FHICL_FILE_PATH=.:${nusystematics_ROOT}/fcl:${FHICL_FILE_PATH}
+export NUSYST_DATA_DIR=${nusystematics_ROOT}/data
 
 add_to_PATH "@CMAKE_INSTALL_PREFIX@/bin"
 
 add_to_LD_LIBRARY_PATH "@CMAKE_INSTALL_PREFIX@/lib"
+
+echo "# NuSystematics environment"
+echo "# - nusystematics_ROOT: ${nusystematics_ROOT}"
+echo "# - nusystematics_VERSION: ${nusystematics_VERSION}"
+echo "# - FHICL_FILE_PATH: ${FHICL_FILE_PATH}"
+echo "# - NUSYST_DATA_DIR: ${NUSYST_DATA_DIR}"

@@ -7,10 +7,13 @@
 #include "systematicstools/utility/string_parsers.hh"
 
 #include "nusystematics/utility/make_instance.hh"
+#include "nusystematics/utility/silence_genie.hh"
 
 #include "yaml-cpp/yaml.h"
 
 #include <filesystem>
+#include "Framework/Messenger/Messenger.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -21,6 +24,7 @@ std::string outputfile = "";
 std::string envvar = "YAML_FILE_PATH";
 std::string yaml_key = "syst_providers";
 bool WrapWithPROLOG = false;
+bool DoDebug = false;
 } // namespace cliopts
 
 namespace {
@@ -102,11 +106,13 @@ void SayUsage(char const *argv[]) {
                "\t-o <output.yaml> : YAML file to write, stdout by default.\n"
                "\t-k <list key>    : YAML key to look for list of providers,\n"
                "\t                   \"syst_providers\" by default.\n"
+               "\t--debug         : Run debug mode.\n"
             << std::endl;
 }
 
 void HandleOpts(int argc, char const *argv[]) {
   int opt = 1;
+  
   while (opt < argc) {
     if ((std::string(argv[opt]) == "-?") ||
         (std::string(argv[opt]) == "--help")) {
@@ -118,6 +124,8 @@ void HandleOpts(int argc, char const *argv[]) {
       cliopts::outputfile = argv[++opt];
     } else if (std::string(argv[opt]) == "-k") {
       cliopts::yaml_key = argv[++opt];
+    } else if (std::string(argv[opt]) == "--debug") {
+      cliopts::DoDebug = true;
     } else {
       std::cout << "[ERROR]: Unknown option: " << argv[opt] << std::endl;
       SayUsage(argv);
@@ -135,31 +143,26 @@ int main(int argc, char const *argv[]) {
     exit(1);
   }
 
-  /*
-    char const *ev = getenv(cliopts::envvar.c_str());
-    if (!ev) {
-      std::cout << "[ERROR]: Could not read environment variable:\""
-                << cliopts::envvar
-                << "\". Please supply a variable containing a valid path list "
-                   "via the -p command line option."
-                << std::endl;
-      SayUsage(argv);
-      exit(1);
-    }
-
-    YAML::Node in_ps = YAML::Node::make(cliopts::yamlname,
-    std::make_unique<cet::filepath_lookup>(ev));
-  */
-
   YAML::Node in_yaml = LoadYAMLWithIncludes(cliopts::yamlname);
 
-  std::cout << "[GenerateSystProviderConfigNuSyst] input" << std::endl;
-  std::cout << in_yaml << std::endl;
+  if(cliopts::DoDebug){
+    std::cout << "[GenerateSystProviderConfigNuSyst] input" << std::endl;
+    std::cout << in_yaml << std::endl;
+  }
 
-  std::vector<std::unique_ptr<nusyst::IGENIESystProvider_tool>> tools =
-      systtools::ConfigureISystProvidersFromToolConfig<
-          nusyst::IGENIESystProvider_tool>(in_yaml, nusyst::make_instance,
+  nusyst::quiet::SetGlobalQuiet();
+
+  std::vector<std::unique_ptr<nusyst::IGENIESystProvider_tool>> tools;
+  {
+    // Suppress GENIE/provider chatter during config load and provider build.
+    nusyst::quiet::StdoutSink _quiet;
+    genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
+        "Messenger_whisper.xml");
+
+    tools = systtools::ConfigureISystProvidersFromToolConfig<
+            nusyst::IGENIESystProvider_tool>(in_yaml, nusyst::make_instance,
                                            cliopts::yaml_key);
+  }
 
   YAML::Node out_yaml;
   std::vector<std::string> providerNames;
