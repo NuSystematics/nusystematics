@@ -26,6 +26,7 @@ include(CPM)
 option(nusyst_DUNETDRv1_ENABLED "Build DUNETDRv1" OFF)
 if(nusyst_DUNETDRv1_ENABLED)
   message(STATUS "Building DUNE TDR v1 dials")
+  add_compile_definitions(nusyst_DUNETDRv1_ENABLED)
 endif()
 
 option(nusyst_DOWNLOAD_DATA "Download nusyst_data" ON)
