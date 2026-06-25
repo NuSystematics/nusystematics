@@ -203,18 +203,18 @@ using ResponseMap = std::map<std::string, std::map<std::string, std::vector<std:
 
 // ===== Cache resolution + provider-level filter (shared with nusyst tweaks) =
 // If `-c` is omitted while `-p` is given, resolve yamlname against the cached
-// kitchen-sink path: $NUSYST_INVENTORY_YAML, then $nusystematics_ROOT/fcl/
-// nusyst_inventory.yaml, then $NUSYST/fcl/..., then /tmp/...
+// kitchen-sink path: $NUSYST_INVENTORY_YAML, then $nusystematics_ROOT/config/
+// nusyst_inventory.yaml, then $NUSYST/config/..., then /tmp/...
 // Auto-generating via `nusyst config` on first use.
 constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_YAML";
 
 std::string InventoryDefaultPath() {
 #ifdef NUSYST_INSTALL_PREFIX
-  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.yaml";
+  return std::string(NUSYST_INSTALL_PREFIX) + "/config/nusyst_inventory.yaml";
 #else
   for (char const *var : {"nusystematics_ROOT", "NUSYST"}) {
     char const *val = std::getenv(var);
-    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.yaml";
+    if (val && *val) return std::string(val) + "/config/nusyst_inventory.yaml";
   }
   return "/tmp/nusyst_inventory.yaml";
 #endif

@@ -71,18 +71,18 @@ int lookup_policy = 1;
 
 // Cache-resolution constants mirror those in DeclaredDialTestNuSyst so the
 // two tools share the same auto-generation behaviour: if no -c is passed,
-// fall back to $NUSYST_INVENTORY_YAML and then $nusystematics_ROOT/fcl/
-// nusyst_inventory.yaml (then $NUSYST/fcl/..., then /tmp/...), auto-
+// fall back to $NUSYST_INVENTORY_YAML and then $nusystematics_ROOT/config/
+// nusyst_inventory.yaml (then $NUSYST/config/..., then /tmp/...), auto-
 // generating via GenerateAllDialsConfigNuSyst on first use.
 constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_YAML";
 
 std::string InventoryDefaultPath() {
 #ifdef NUSYST_INSTALL_PREFIX
-  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.yaml";
+  return std::string(NUSYST_INSTALL_PREFIX) + "/config/nusyst_inventory.yaml";
 #else
   for (char const *var : {"nusystematics_ROOT", "NUSYST"}) {
     char const *val = std::getenv(var);
-    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.yaml";
+    if (val && *val) return std::string(val) + "/config/nusyst_inventory.yaml";
   }
   return "/tmp/nusyst_inventory.yaml";
 #endif
@@ -440,7 +440,7 @@ void SayUsage(char const *argv[]) {
                "\t                   format, i.e. the output of\n"
                "\t                   `nusyst config`). Optional: if omitted,\n"
                "\t                   resolves to $NUSYST_INVENTORY_YAML\n"
-               "\t                   then $NUSYST/fcl/nusyst_inventory.yaml,\n"
+               "\t                   then $NUSYST/config/nusyst_inventory.yaml,\n"
                "\t                   auto-generating via `nusyst config`\n"
                "\t                   if absent.\n"
                "\t-p <par1,par2,...>: Filter to dials whose prettyName\n"
@@ -574,7 +574,7 @@ int DispatchWorkers();
 
 int RunSerial() {
   // Cache fallback: a `-p` filter implicitly says "I want some reweights,
-  // configure them from the cached kitchen sink". Resolve fclname against
+  // configure them from the cached kitchen sink". Resolve yaml name against
   // $NUSYST_INVENTORY_YAML / /tmp/nusyst_inventory.yaml and auto-generate via
   // `nusyst config` if missing, mirroring DeclaredDialTestNuSyst's logic.
   // Plain `nusyst tweaks -i ghep.root -o out.root` (no -c, no -p) keeps the
@@ -627,7 +627,7 @@ int RunSerial() {
   if(RunNuSyst){
     // Load the parameter-headers YAML as a ParameterSet so a -p filter can
     // drop providers before they're constructed. Without the filter, the
-    // effect is identical to the old `response_helper(fclname)` one-shot.
+    // effect is identical to the old `response_helper(yamlname)` one-shot.
     YAML::Node raw_ps;
     raw_ps = YAML::LoadFile(cliopts::yamlname);
     YAML::Node gen_ps = raw_ps[cliopts::yaml_key];

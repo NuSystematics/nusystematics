@@ -2293,11 +2293,11 @@ constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_YAML";
 
 std::string InventoryDefaultPath() {
 #ifdef NUSYST_INSTALL_PREFIX
-  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.yaml";
+  return std::string(NUSYST_INSTALL_PREFIX) + "/config/nusyst_inventory.yaml";
 #else
   for (char const *var : {"nusystematics_ROOT", "NUSYST"}) {
     char const *val = std::getenv(var);
-    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.yaml";
+    if (val && *val) return std::string(val) + "/config/nusyst_inventory.yaml";
   }
   return "/tmp/nusyst_inventory.yaml";
 #endif
