@@ -41,18 +41,7 @@ private:
   size_t pidx_nucleus_radius;
   size_t pidx_surface_thickness;
 
-  void InitValidTree();
-
-  bool fill_valid_tree;
-  TFile *valid_file;
-  TTree *valid_tree;
-
   bool estimate_emiss;
 
-
-  // TH: change these!
-  int NEUTMode, Pdgnu, pdgfslep, QELTarget;
-  double Enu, momfslep, cthetafslep, Q2, q0, q3, W, Emiss, Emiss_preFSI, KF_tree, radius, ref_prob_density, new_prob_density;
-  TVector3 pmiss, pmiss_preFSI;
 };
 

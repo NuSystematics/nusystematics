@@ -16,8 +16,7 @@ using namespace systtools;
 WSReweight::WSReweight(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       pidx_nucleus_radius(systtools::kParamUnhandled<size_t>),
-      pidx_surface_thickness(systtools::kParamUnhandled<size_t>),
-      valid_file(nullptr), valid_tree(nullptr) {}
+      pidx_surface_thickness(systtools::kParamUnhandled<size_t>) {}
 
 SystMetaData WSReweight::BuildSystMetaData(YAML::Node const &cfg,
                                                      paramId_t firstId) {
@@ -33,17 +32,9 @@ SystMetaData WSReweight::BuildSystMetaData(YAML::Node const &cfg,
     }
   }
 
-  // OPTION_IN_CONF_FILE can be defined in the configuration file
-  // then it is copied to tool_option when running "GenerateSystProviderConfig" to generation paramHeader
-
-  std::string OPT_STRING = cfg["OPT_STRING"] ? cfg["OPT_STRING"].as<std::string>() : ""; // second argument is the default when OPT_STRING does not exist
-  tool_options["OPT_STRING"] = OPT_STRING;
-
-  bool OPT_BOOL = cfg["OPT_BOOL"] ? cfg["OPT_BOOL"].as<bool>() : false;
-  tool_options["OPT_BOOL"] = OPT_BOOL;
-
-  fill_valid_tree = cfg["fill_valid_tree"] ? cfg["fill_valid_tree"].as<bool>() : false;
-  tool_options["fill_valid_tree"] = fill_valid_tree;
+  if(cfg["estimate_emiss"]){
+    tool_options["estimate_emiss"] = cfg["estimate_emiss"].as<bool>();
+  }
 
   return smd;
 }
@@ -51,12 +42,7 @@ SystMetaData WSReweight::BuildSystMetaData(YAML::Node const &cfg,
 bool WSReweight::SetupResponseCalculator(
     YAML::Node const &tool_options) {
 
-  std::cout << "[WSReweight::SetupResponseCalculator] OPT_STRING = " << (tool_options["OPT_STRING"] ? tool_options["OPT_STRING"].as<std::string>() : "") << std::endl;
-  std::cout << "[WSReweight::SetupResponseCalculator] OPT_BOOL = " << (tool_options["OPT_BOOL"] ? tool_options["OPT_BOOL"].as<bool>() : false) << std::endl;
-
   systtools::SystMetaData const &md = GetSystMetaData();
-
-
 
   if (HasParam(md, "nucleus_radius")) {
     pidx_nucleus_radius = GetParamIndex(md, "nucleus_radius");
@@ -64,11 +50,6 @@ bool WSReweight::SetupResponseCalculator(
 
   if (HasParam(md, "surface_thickness")) {
     pidx_surface_thickness = GetParamIndex(md, "surface_thickness");
-  }
-
-  fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
-  if (fill_valid_tree) {
-    InitValidTree();
   }
 
   estimate_emiss = tool_options["estimate_emiss"] ? tool_options["estimate_emiss"].as<bool>() : false;
@@ -161,75 +142,10 @@ WSReweight::GetEventResponse(genie::EventRecord const &ev) {
     }
   }
 
-  if (fill_valid_tree) {
-
-    pdgfslep = ev.FinalStatePrimaryLepton()->Pdg();
-    momfslep = FSLepP4.Vect().Mag();
-    cthetafslep = FSLepP4.Vect().CosTheta();
-
-    Pdgnu = ISLep->Pdg();
-    NEUTMode = 0;
-    NEUTMode = genie::utils::ghep::NeutReactionCode(&ev);
-
-    QELikeTarget_t qel_targ = GetQELikeTarget(ev);
-    QELTarget = e2i(qel_targ);
-
-    Enu = ISLepP4.E();
-    Q2 = -emTransfer.Mag2();
-    W = ev.Summary()->Kine().W(true);
-    q0 = emTransfer.E();
-    q3 = emTransfer.Vect().Mag();
-
-    Emiss = Emiss_preFSI;
-    if(nucleon){
-      pmiss = nucleon->P4()->Vect();
-    }
-    else{
-      pmiss = TLorentzVector(0,0,0,0).Vect();
-    }
-    KF_tree = KF;
-    radius = GetRadiusFromKF(KF, isProton);
-    radius = std::max(radius, 0.0); // No negative radii!
-    ref_prob_density = genie::utils::nuclear::Density(radius, 40);
-    new_prob_density = genie::utils::nuclear::DensityWoodsSaxon(radius, 4, kAr40SkinDepth);
-
-    valid_tree->Fill();
-  }
-
   return resp;
 }
 
 std::string WSReweight::AsString() { return ""; }
 
-void WSReweight::InitValidTree() {
-
-  valid_file = new TFile("WSReweightWeights_validTree.root", "RECREATE");
-  valid_tree = new TTree("valid_tree", "");
-
-  valid_tree->Branch("NEUTMode", &NEUTMode);
-  valid_tree->Branch("QELTarget", &QELTarget);
-  valid_tree->Branch("Enu", &Enu);
-  valid_tree->Branch("Pdg_nu", &Pdgnu);
-  valid_tree->Branch("Pdg_FSLep", &pdgfslep);
-  valid_tree->Branch("P_FSLep", &momfslep);
-  valid_tree->Branch("CosTheta_FSLep", &cthetafslep);
-  valid_tree->Branch("Q2", &Q2);
-  valid_tree->Branch("W", &W);
-  valid_tree->Branch("q0", &q0);
-  valid_tree->Branch("q3", &q3);
-  valid_tree->Branch("pmiss", &pmiss);
-  valid_tree->Branch("Emiss", &Emiss);
-  valid_tree->Branch("KF", &KF_tree);
-  valid_tree->Branch("radius", &radius);
-  valid_tree->Branch("ref_prob_density", &ref_prob_density);
-  valid_tree->Branch("new_prob_density", &new_prob_density);
-}
-
 WSReweight::~WSReweight() {
-  if (valid_file) {
-    valid_tree->SetDirectory(valid_file);
-    valid_file->Write();
-    valid_file->Close();
-    delete valid_file;
-  }
 } 
