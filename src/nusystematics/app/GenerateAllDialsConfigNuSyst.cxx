@@ -3,7 +3,7 @@
 // containing every available dial:
 //   - all GENIE Reweight dials enumerated from genie::rew::GSyst_t at runtime
 //     (no hardcoded dial names -- discovered via GSyst::AsString)
-//   - all standalone nusystematics provider tool configs found in --fcl-dir,
+//   - all standalone nusystematics provider tool configs found in --yaml-dir,
 //     each loaded and validated; ones that fail to instantiate are reported
 //     and skipped.
 //
@@ -49,7 +49,7 @@ using namespace nusyst;
 namespace cliopts {
 std::string mode = "all"; // genierw | providers | all
 std::string outputfile;
-std::string fcl_dir;
+std::string yaml_dir;
 std::string variation_descriptor = "[-3,-2,-1,0,1,2,3]";
 bool single_instance = false;
 bool include_skeleton = false;
@@ -59,7 +59,7 @@ std::vector<std::string> skip_providers;
 // production reweight providers. Skipped by default in providers/all modes;
 // opt back in with --include-skeleton.
 //
-//   SkeleWeighter.ToolConfig.fcl
+//   SkeleWeighter.ToolConfig.yaml
 //     SkeleWeighter is the worked example used in README.md to teach how to
 //     write a new syst provider. As a bonus it exercises a GENIE Reweight bug:
 //     it stores genie::rew::GReWeightNuXSecCCQE *by value* in a std::vector,
@@ -68,7 +68,7 @@ std::vector<std::string> skip_providers;
 //     subsequent destructor double-frees → SIGSEGV. Not a nusystematics bug
 //     to fix here; not a production provider either.
 const std::set<std::string> kDevelopmentTemplates = {
-  "SkeleWeighter.ToolConfig.fcl",
+  "SkeleWeighter.ToolConfig.yaml",
 };
 
 bool DoDebug = false;
@@ -81,8 +81,8 @@ void SayUsage(char const *argv[]) {
     "  Optional:\n"
     "    --mode <m>             genierw | providers | all (default: all)\n"
     "    -o <output.yaml>        Output file (default: stdout)\n"
-    "    --fcl-dir <dir>        Tool-config fcl directory\n"
-    "                           (default: $nusystematics_ROOT/fcl)\n"
+    "    --yaml-dir <dir>        Tool-config yaml directory\n"
+    "                           (default: $nusystematics_ROOT/config)\n"
     "    --variation-descriptor \"[-3,-2,-1,0,1,2,3]\"\n"
     "                           Variation descriptor used for every GENIE RW\n"
     "                           dial (default shown).\n"
@@ -92,7 +92,7 @@ void SayUsage(char const *argv[]) {
     "                           Disables the channel-aware skip optimisation\n"
     "                           in DumpConfiguredTweaksNuSyst.\n"
     "    --include-skeleton     Include development-template tool configs\n"
-    "                           (currently: SkeleWeighter.ToolConfig.fcl)\n"
+    "                           (currently: SkeleWeighter.ToolConfig.yaml)\n"
     "                           that are skipped by default. SkeleWeighter\n"
     "                           segfaults on instantiation due to an upstream\n"
     "                           GReWeight rule-of-three violation; only use\n"
@@ -113,7 +113,7 @@ void HandleOpts(int argc, char const *argv[]) {
     if (s == "-?" || s == "--help") { SayUsage(argv); exit(0); }
     else if (s == "--mode") cliopts::mode = argv[++opt];
     else if (s == "-o") cliopts::outputfile = argv[++opt];
-    else if (s == "--fcl-dir") cliopts::fcl_dir = argv[++opt];
+    else if (s == "--yaml-dir") cliopts::yaml_dir = argv[++opt];
     else if (s == "--variation-descriptor") cliopts::variation_descriptor = argv[++opt];
     else if (s == "--single-instance") cliopts::single_instance = true;
     else if (s == "--include-skeleton") cliopts::DoDebug = true;
@@ -438,6 +438,22 @@ bool IsToolConfigFile(const std::string &path) {
   }
 }
 
+// Aggregate tool-config files may include other tool-config YAML files
+// explicitly via a top-level `includes` key. We skip these wrappers during
+// recursive discovery to avoid loading the same providers twice.
+bool IsAggregateToolConfig(const std::string &path) {
+  try {
+    YAML::Node ps = YAML::LoadFile(path);
+    YAML::Node includes = ps["includes"];
+    if (!includes) return false;
+    if (includes.IsSequence()) return includes.size() > 0;
+    if (includes.IsScalar()) return !includes.as<std::string>().empty();
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
 // Best-effort tool_type extraction from a tool-config YAML. Walks each
 // provider stanza listed in syst_providers and collects its tool_type
 // string. Returns empty on parse failure (caller falls back gracefully).
@@ -457,10 +473,10 @@ std::vector<std::string> ToolTypesDeclaredIn(const std::string &path) {
   return out;
 }
 
-// List *.fcl files in a directory, recursively. Used to discover
+// List *.yaml files in a directory, recursively. Used to discover
 // tool-config files; some live one level down in per-provider subdirs
 // (e.g. CCQETemplateReweight/, MECq0q3InterpWeighting/, QEInterference/).
-std::vector<std::string> ListFcls(const std::string &dir) {
+std::vector<std::string> ListYAMLs(const std::string &dir) {
   std::vector<std::string> out;
   std::error_code ec;
   std::filesystem::recursive_directory_iterator it(dir, ec);
@@ -468,7 +484,7 @@ std::vector<std::string> ListFcls(const std::string &dir) {
   for (auto const &entry : it) {
     if (!entry.is_regular_file()) continue;
     auto const &p = entry.path();
-    if (p.extension() != ".fcl") continue;
+    if (p.extension() != ".yaml") continue;
     out.push_back(p.string());
   }
   std::sort(out.begin(), out.end());
@@ -630,10 +646,10 @@ void EnsureGENIETuneLoaded() {
 int main(int argc, char const *argv[]) {
   HandleOpts(argc, argv);
 
-  // Resolve fcl-dir default
-  if (cliopts::fcl_dir.empty()) {
+  // Resolve yaml-dir default
+  if (cliopts::yaml_dir.empty()) {
     char const *nusyst_env = std::getenv("nusystematics_ROOT");
-    if (nusyst_env) cliopts::fcl_dir = std::string(nusyst_env) + "/fcl";
+    if (nusyst_env) cliopts::yaml_dir = std::string(nusyst_env) + "/config";
   }
 
   nusyst::quiet::SetGlobalQuiet();
@@ -673,12 +689,12 @@ int main(int argc, char const *argv[]) {
   // value parser tries to interpret if they appear unquoted in a list, which
   // would break round-tripping. The pair-of-arrays form avoids that.
   struct ScanReport {
-    std::string              fcl_dir;
+    std::string              yaml_dir;
     std::vector<std::string> failed_names,            failed_reasons;
     std::vector<std::string> skipped_data_names,      skipped_data_reasons;
     std::vector<std::string> skipped_bug_names,       skipped_bug_reasons;
     std::vector<std::string> skipped_other_names,     skipped_other_reasons;
-    std::vector<std::string> registered_no_fcl;       // dispatchable but no YAML
+    std::vector<std::string> registered_no_yaml;       // dispatchable but no YAML
     // GENIE Reweight dials we filter out from the kitchen-sink config so they
     // never appear in the inventory table. Surfaced in the footer so users
     // know they exist and why they were dropped.
@@ -797,21 +813,21 @@ int main(int argc, char const *argv[]) {
   // ----- providers mode -----
   if (cliopts::mode == "providers" || cliopts::mode == "all") {
     std::cerr << "\n=== Standalone providers ===" << std::endl;
-    if (cliopts::fcl_dir.empty()) {
-      std::cerr << "[ERROR]: --fcl-dir not set and $NUSYST/fcl unavailable; "
+    if (cliopts::yaml_dir.empty()) {
+      std::cerr << "[ERROR]: --yaml-dir not set and $NUSYST/config unavailable; "
                 << "skipping providers." << std::endl;
     } else {
-      scan_report.fcl_dir = cliopts::fcl_dir;
-      std::cerr << "Scanning " << cliopts::fcl_dir << " (recursive)" << std::endl;
-      std::vector<std::string> fcls = ListFcls(cliopts::fcl_dir);
-      std::cerr << "Found " << fcls.size() << " .fcl files" << std::endl;
+      scan_report.yaml_dir = cliopts::yaml_dir;
+      std::cerr << "Scanning " << cliopts::yaml_dir << " (recursive)" << std::endl;
+      std::vector<std::string> yamls = ListYAMLs(cliopts::yaml_dir);
+      std::cerr << "Found " << yamls.size() << " .yaml files" << std::endl;
 
-      for (auto &path : fcls) {
-        // Use the path relative to fcl_dir so subdirectory layout is visible
-        // in the report (e.g. "QEInterference/QEInterference.ToolConfig.fcl").
+      for (auto &path : yamls) {
+        // Use the path relative to yaml_dir so subdirectory layout is visible
+        // in the report (e.g. "QEInterference/QEInterference.ToolConfig.yaml").
         std::string base = path;
-        if (path.rfind(cliopts::fcl_dir + "/", 0) == 0)
-          base = path.substr(cliopts::fcl_dir.size() + 1);
+        if (path.rfind(cliopts::yaml_dir + "/", 0) == 0)
+          base = path.substr(cliopts::yaml_dir.size() + 1);
         std::string leaf = path.substr(path.find_last_of('/') + 1);
 
         // Skip development-template tool configs unless explicitly included
@@ -837,12 +853,24 @@ int main(int argc, char const *argv[]) {
           continue;
         }
 
-        // Skip non-toolconfig files (e.g. paramHeader_FSI.fcl is a generated config)
+        // Skip non-toolconfig files (e.g. paramHeader_FSI.yaml is a generated config)
         if (!IsToolConfigFile(path)) {
           std::cerr << "  [SKIP] " << base << " (not a tool config: no syst_providers key)" << std::endl;
           scan_report.skipped_other_names.push_back(base);
           scan_report.skipped_other_reasons.push_back(
               "not a tool config (no syst_providers key)");
+          continue;
+        }
+
+        // Skip aggregate wrapper files that include other tool-config YAMLs.
+        // The included leaf files are discovered separately by ListYAMLs.
+        if (IsAggregateToolConfig(path)) {
+          std::cerr << "  [SKIP] " << base
+                    << " (aggregate tool config with includes; leaf configs are scanned separately)"
+                    << std::endl;
+          scan_report.skipped_other_names.push_back(base);
+          scan_report.skipped_other_reasons.push_back(
+              "aggregate tool config with includes");
           continue;
         }
 
@@ -885,7 +913,7 @@ int main(int argc, char const *argv[]) {
 
   // ----- Compute "registered but no tool config" -----
   // The accurate definition we want: a registered tool_type appears in
-  // `registered_no_fcl` iff no `.fcl` we scanned declared it. Providers
+  // `registered_no_yaml` iff no `.yaml` we scanned declared it. Providers
   // whose YAML was found but failed/skipped are NOT the same thing -- they
   // have a YAML, it just didn't load -- so those tool_types must also be
   // excluded from this list. Collect tool_types declared by *any* scanned
@@ -899,14 +927,14 @@ int main(int argc, char const *argv[]) {
         if (hdr["tool_type"]) observed_tt.insert(hdr["tool_type"].as<std::string>());
       } catch (...) {}
     }
-    if (!cliopts::fcl_dir.empty()) {
-      for (auto const &path : ListFcls(cliopts::fcl_dir)) {
+    if (!cliopts::yaml_dir.empty()) {
+      for (auto const &path : ListYAMLs(cliopts::yaml_dir)) {
         for (auto const &tt : ToolTypesDeclaredIn(path)) observed_tt.insert(tt);
       }
     }
     for (auto const &tt : nusyst::RegisteredToolTypes()) {
       if (!observed_tt.count(tt))
-        scan_report.registered_no_fcl.push_back(tt);
+        scan_report.registered_no_yaml.push_back(tt);
     }
   }
 
@@ -944,7 +972,7 @@ int main(int argc, char const *argv[]) {
   // and those whose YAML was found but failed/skipped.
   {
     YAML::Node report_ps;
-    report_ps["fcl_dir"] = scan_report.fcl_dir;
+    report_ps["yaml_dir"] = scan_report.yaml_dir;
     report_ps["failed_names"] = scan_report.failed_names;
     report_ps["failed_reasons"] = scan_report.failed_reasons;
     report_ps["skipped_data_names"] = scan_report.skipped_data_names;
@@ -953,7 +981,7 @@ int main(int argc, char const *argv[]) {
     report_ps["skipped_bug_reasons"] = scan_report.skipped_bug_reasons;
     report_ps["skipped_other_names"] = scan_report.skipped_other_names;
     report_ps["skipped_other_reasons"] = scan_report.skipped_other_reasons;
-    report_ps["registered_no_fcl"] = scan_report.registered_no_fcl;
+    report_ps["registered_no_yaml"] = scan_report.registered_no_yaml;
     report_ps["genie_rw_skipped_names"] = scan_report.genie_rw_skipped_names;
     report_ps["genie_rw_skipped_reasons"] = scan_report.genie_rw_skipped_reasons;
     out_ps["_scan_report"] = report_ps;
@@ -974,9 +1002,9 @@ int main(int argc, char const *argv[]) {
   } else {
     os = &std::cout;
   }
-  if(cliopts::DoDebug){
-    (*os) << wrapped_out_ps << std::endl;
-  }
+
+  (*os) << wrapped_out_ps << std::endl;
+
   if (cliopts::outputfile.size()) fs.close();
 
   std::cerr << "\n=== Summary ===" << std::endl;

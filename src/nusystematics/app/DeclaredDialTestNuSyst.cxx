@@ -48,11 +48,11 @@ constexpr const char *kInventoryEnvVar = "NUSYST_INVENTORY_YAML";
 // case the install directory was moved post-build.
 std::string InventoryDefaultPath() {
 #ifdef NUSYST_INSTALL_PREFIX
-  return std::string(NUSYST_INSTALL_PREFIX) + "/fcl/nusyst_inventory.yaml";
+  return std::string(NUSYST_INSTALL_PREFIX) + "/config/nusyst_inventory.yaml";
 #else
   for (char const *var : {"nusystematics_ROOT", "NUSYST"}) {
     char const *val = std::getenv(var);
-    if (val && *val) return std::string(val) + "/fcl/nusyst_inventory.yaml";
+    if (val && *val) return std::string(val) + "/config/nusyst_inventory.yaml";
   }
   return "/tmp/nusyst_inventory.yaml";
 #endif
@@ -158,13 +158,13 @@ void PrintScanReportFooter(const YAML::Node &gen) {
   auto sk_bug_r   = report["skipped_bug_reasons"] ? report["skipped_bug_reasons"].as<std::vector<std::string>>() : std::vector<std::string>{};
   auto sk_other_n = report["skipped_other_names"] ? report["skipped_other_names"].as<std::vector<std::string>>() : std::vector<std::string>{};
   auto sk_other_r = report["skipped_other_reasons"] ? report["skipped_other_reasons"].as<std::vector<std::string>>() : std::vector<std::string>{};
-  auto no_fcl     = report["registered_no_fcl"] ? report["registered_no_fcl"].as<std::vector<std::string>>() : std::vector<std::string>{};
+  auto no_yaml     = report["registered_no_yaml"] ? report["registered_no_yaml"].as<std::vector<std::string>>() : std::vector<std::string>{};
   auto grw_n      = report["genie_rw_skipped_names"] ? report["genie_rw_skipped_names"].as<std::vector<std::string>>() : std::vector<std::string>{};
   auto grw_r      = report["genie_rw_skipped_reasons"] ? report["genie_rw_skipped_reasons"].as<std::vector<std::string>>() : std::vector<std::string>{};
-  auto fcl_dir    = report["fcl_dir"] ? report["fcl_dir"].as<std::string>() : std::string{};
+  auto yaml_dir    = report["yaml_dir"] ? report["yaml_dir"].as<std::string>() : std::string{};
 
   if (failed_n.empty() && sk_data_n.empty() && sk_bug_n.empty() &&
-      sk_other_n.empty() && no_fcl.empty() && grw_n.empty()) return;
+      sk_other_n.empty() && no_yaml.empty() && grw_n.empty()) return;
 
   auto print_paired = [](const char *title,
                          const std::vector<std::string> &names,
@@ -178,16 +178,16 @@ void PrintScanReportFooter(const YAML::Node &gen) {
   };
 
   std::cout << "\n=== Scan report ===\n";
-  if (!fcl_dir.empty())
-    std::cout << "Scanned: " << fcl_dir << " (recursive)\n";
+  if (!yaml_dir.empty())
+    std::cout << "Scanned: " << yaml_dir << " (recursive)\n";
 
-  if (!no_fcl.empty()) {
+  if (!no_yaml.empty()) {
     std::cout << "\nRegistered providers with no tool-config YAML ("
-              << no_fcl.size() << "):\n";
-    for (auto const &t : no_fcl)
+              << no_yaml.size() << "):\n";
+    for (auto const &t : no_yaml)
       std::cout << "  " << t << "\n";
-    std::cout << "  -> add a fcl/<name>.ToolConfig.yaml (and an entry in "
-                 "fcl/CMakeLists.txt) to surface these in the inventory.\n";
+    std::cout << "  -> add a config/<name>.ToolConfig.yaml (and an entry in "
+                 "config/CMakeLists.txt) to surface these in the inventory.\n";
   }
   if (!failed_n.empty())
     print_paired("Tool configs that failed to load", failed_n, failed_r);
@@ -245,8 +245,8 @@ int main(int argc, char const *argv[]) {
   // Resolve which YAML to inventory. Priority:
   //   1. -c <file>                       (explicit)
   //   2. $NUSYST_INVENTORY_YAML          (env var path)
-  //   3. $nusystematics_ROOT/fcl/nusyst_inventory.yaml (built-in default
-  //      (or $NUSYST/fcl/..., or /tmp/... if neither var is exported)
+  //   3. $nusystematics_ROOT/config/nusyst_inventory.yaml (built-in default
+  //      (or $NUSYST/config/..., or /tmp/... if neither var is exported)
   // If the resolved path doesn't exist on disk, shell out to
   // GenerateAllDialsConfigNuSyst to populate it; subsequent calls reuse the
   // file. --refresh forces regeneration even if the file exists.
@@ -266,6 +266,8 @@ int main(int argc, char const *argv[]) {
     std::string cmd =
         "GenerateAllDialsConfigNuSyst --mode all -o " + cliopts::yamlname +
         " > /dev/null 2>&1";
+    cmd =
+        "GenerateAllDialsConfigNuSyst --mode all -o " + cliopts::yamlname;
     int rc = std::system(cmd.c_str());
     if (rc != 0) {
       std::cerr << "[ERROR]: Auto-generation of dial config failed (rc=" << rc

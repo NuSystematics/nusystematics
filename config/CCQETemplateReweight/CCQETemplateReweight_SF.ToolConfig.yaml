@@ -5,7 +5,7 @@ CCQETemplate_SF_Tool_Config:
     input_file: ${NUSYST_DATA_DIR}/CCQEReweight/CCQEReweight_templates_2026Feb5_coarsebins.root
     inputs: [{input_hist: LowE/h_ENuq3q0_With_SF, name: LowE_WithTemplate}, {input_hist: LowE/h_ENuq3q0_Without_SF, name: LowE_WithoutTemplate}]
   instance_name: CCQETemplate_SF
-  q0_bin_edges: "[0.0, 0.05, 0.10, 0.20, 0.7, 10.0]"
+  q0_bin_edges: [0.0, 0.05, 0.10, 0.20, 0.7, 10.0]
   q0bin0_variation_descriptor: "[0, 1]"
   q0bin1_variation_descriptor: "[0, 1]"
   q0bin2_variation_descriptor: "[0, 1]"

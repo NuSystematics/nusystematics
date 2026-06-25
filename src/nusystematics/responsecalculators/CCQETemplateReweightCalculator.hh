@@ -16,6 +16,9 @@
 #include "TH3.h"
 #include "TSpline.h"
 
+#include <iomanip>
+#include <iostream>
+
 NEW_SYSTTOOLS_EXCEPT(invalid_CCQE_Template_tweak);
 NEW_SYSTTOOLS_EXCEPT(invalid_CCQE_Template_FILEPATH);
 
@@ -205,7 +208,9 @@ namespace nusyst {
     }
 
     ENuBoundary = config["ENuBoundary"].as<double>();
-    printf("[CCQETemplateReweightCalculator::GetTemplateReweight] ENuBoundary = %1.2f\n", ENuBoundary);
+    std::cout << std::fixed << std::setprecision(2)
+              << "[CCQETemplateReweightCalculator::GetTemplateReweight] ENuBoundary = "
+              << ENuBoundary << std::endl;
 
     for (const YAML::Node &val_config : config["inputs"]) {
       std::string hName = val_config["name"].as<std::string>();
@@ -243,10 +248,16 @@ namespace nusyst {
       z_FirstBinCenter[enu_range] = ZAxis_WithTemplateXsec->GetBinCenter(1);
       z_LastBinCenter[enu_range] = ZAxis_WithTemplateXsec->GetBinCenter( ZAxis_WithTemplateXsec->GetNbins() );
 
-      printf("@@ Enu range :%d\n", enu_range);
-      printf("@@ - x-range: [%1.3f, %1.3f]\n", x_FirstBinCenter[enu_range], x_LastBinCenter[enu_range]);
-      printf("@@ - y-range: [%1.3f, %1.3f]\n", y_FirstBinCenter[enu_range], y_LastBinCenter[enu_range]);
-      printf("@@ - z-range: [%1.3f, %1.3f]\n", z_FirstBinCenter[enu_range], z_LastBinCenter[enu_range]);
+      std::cout << "@@ Enu range :" << enu_range << std::endl;
+      std::cout << std::fixed << std::setprecision(3)
+                << "@@ - x-range: [" << x_FirstBinCenter[enu_range] << ", "
+                << x_LastBinCenter[enu_range] << "]" << std::endl;
+      std::cout << std::fixed << std::setprecision(3)
+                << "@@ - y-range: [" << y_FirstBinCenter[enu_range] << ", "
+                << y_LastBinCenter[enu_range] << "]" << std::endl;
+      std::cout << std::fixed << std::setprecision(3)
+                << "@@ - z-range: [" << z_FirstBinCenter[enu_range] << ", "
+                << z_LastBinCenter[enu_range] << "]" << std::endl;
 
     }
 

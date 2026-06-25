@@ -16,6 +16,9 @@
 #include "TH3.h"
 #include "TSpline.h"
 
+#include <iomanip>
+#include <iostream>
+
 NEW_SYSTTOOLS_EXCEPT(invalid_CCQE_RPA_tweak);
 NEW_SYSTTOOLS_EXCEPT(invalid_CCQE_RPA_FILEPATH);
 
@@ -97,9 +100,16 @@ namespace nusyst {
 
     if(weight!=weight){
 
-      printf("[CCQERPAReweightCalculator::GetRPAReweight] Nan weight for\n"); 
-      printf("[CCQERPAReweightCalculator::GetRPAReweight] (Enu_GeV, kin_Y, kin_Z) = (%1.3f, %1.3f, %1.3f), enu_range = %d\n", Enu_GeV, bin_kin[0], bin_kin[1], enu_range);
-      printf("[CCQERPAReweightCalculator::GetRPAReweight] -> (Enu_GeV, kin_Y, kin_Z) = (%1.3f, %1.3f, %1.3f)\n", Enu_GeV_ForInterp, kin_Y_ForInterp, kin_Z_ForInterp);
+      std::cout << "[CCQERPAReweightCalculator::GetRPAReweight] Nan weight for"
+                << std::endl;
+      std::cout << std::fixed << std::setprecision(3)
+                << "[CCQERPAReweightCalculator::GetRPAReweight] (Enu_GeV, kin_Y, kin_Z) = ("
+                << Enu_GeV << ", " << bin_kin[0] << ", " << bin_kin[1]
+                << "), enu_range = " << enu_range << std::endl;
+      std::cout << std::fixed << std::setprecision(3)
+                << "[CCQERPAReweightCalculator::GetRPAReweight] -> (Enu_GeV, kin_Y, kin_Z) = ("
+                << Enu_GeV_ForInterp << ", " << kin_Y_ForInterp << ", "
+                << kin_Z_ForInterp << ")" << std::endl;
       weight = 1.;
 
     }
@@ -116,7 +126,9 @@ namespace nusyst {
     }
 
     ENuBoundary = config["ENuBoundary"].as<double>();
-    printf("[CCQERPAReweightCalculator::GetRPAReweight] ENuBoundary = %1.2f\n", ENuBoundary);
+    std::cout << std::fixed << std::setprecision(2)
+              << "[CCQERPAReweightCalculator::GetRPAReweight] ENuBoundary = "
+              << ENuBoundary << std::endl;
 
     for (const YAML::Node &val_config : config["inputs"]) {
       std::string hName = val_config["name"].as<std::string>();
@@ -157,10 +169,16 @@ namespace nusyst {
       z_FirstBinCenter[enu_range] = ZAxis_WithRPAXsec->GetBinCenter(1);
       z_LastBinCenter[enu_range] = ZAxis_WithRPAXsec->GetBinCenter( ZAxis_WithRPAXsec->GetNbins() );
 
-      printf("@@ Enu range :%d\n", enu_range);
-      printf("@@ - x-range: [%1.3f, %1.3f]\n", x_FirstBinCenter[enu_range], x_LastBinCenter[enu_range]);
-      printf("@@ - y-range: [%1.3f, %1.3f]\n", y_FirstBinCenter[enu_range], y_LastBinCenter[enu_range]);
-      printf("@@ - z-range: [%1.3f, %1.3f]\n", z_FirstBinCenter[enu_range], z_LastBinCenter[enu_range]);
+      std::cout << "@@ Enu range :" << enu_range << std::endl;
+      std::cout << std::fixed << std::setprecision(3)
+                << "@@ - x-range: [" << x_FirstBinCenter[enu_range] << ", "
+                << x_LastBinCenter[enu_range] << "]" << std::endl;
+      std::cout << std::fixed << std::setprecision(3)
+                << "@@ - y-range: [" << y_FirstBinCenter[enu_range] << ", "
+                << y_LastBinCenter[enu_range] << "]" << std::endl;
+      std::cout << std::fixed << std::setprecision(3)
+                << "@@ - z-range: [" << z_FirstBinCenter[enu_range] << ", "
+                << z_LastBinCenter[enu_range] << "]" << std::endl;
 
     }
 

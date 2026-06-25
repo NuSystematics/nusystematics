@@ -336,7 +336,8 @@ struct TweakSummaryTree {
           }
         }
         if(matched_idx_sp<0){
-          printf("[WeightUpdater::CreateGlobalTree] IGENIESystProvider_tool not found from pid = %d\n", int(pid));
+          std::cout << "[WeightUpdater::CreateGlobalTree] IGENIESystProvider_tool not found from pid = "
+                    << int(pid) << std::endl;
           abort();
         }
 
@@ -735,7 +736,8 @@ int RunSerial() {
   }
 
   if( cliopts::NSkip >= NEvs ){
-    printf("[ERROR]: NSkip is larger than NEvs; (NSkip, NEvs) = (%ld, %ld)\n", cliopts::NSkip, NEvs);
+    std::cout << "[ERROR]: NSkip is larger than NEvs; (NSkip, NEvs) = ("
+              << cliopts::NSkip << ", " << NEvs << ")" << std::endl;
     return 5;
   }
 
