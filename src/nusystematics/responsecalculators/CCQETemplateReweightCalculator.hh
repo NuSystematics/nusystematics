@@ -2,9 +2,7 @@
 #define nusystematics_RESPONSE_CALCULATORS_CCQETemplateReweightCalculator_HH_SEEN
 
 #include "systematicstools/interface/types.hh"
-
 #include "systematicstools/interpreters/PolyResponse.hh"
-
 #include "systematicstools/utility/ROOTUtility.hh"
 #include "systematicstools/utility/exceptions.hh"
 
@@ -15,242 +13,260 @@
 #include "TH3.h"
 #include "TSpline.h"
 
+#include <map>
+#include <memory>
+#include <string>
+
 NEW_SYSTTOOLS_EXCEPT(invalid_CCQE_Template_tweak);
 NEW_SYSTTOOLS_EXCEPT(invalid_CCQE_Template_FILEPATH);
+NEW_SYSTTOOLS_EXCEPT(invalid_CCQE_Template_PDG);
 
 namespace nusyst {
 
-  // Utility function to find the closest bin center for a value
-  inline double find_closest_bin_center(double val, const std::vector<double>& bin_centers) {
-    double min_dist = std::abs(val - bin_centers[0]);
-    double closest = bin_centers[0];
-    for (const auto& bc : bin_centers) {
-      double dist = std::abs(val - bc);
-      if (dist < min_dist) {
-        min_dist = dist;
-        closest = bc;
-      }
+  // Return the string flavor label for a neutrino PDG code, or "" if
+  // the PDG is not one of the four supported flavors (±12, ±14)
+  inline std::string pdg_to_flavor_label(int pdg) {
+    switch (pdg) {
+      case  12: return "nue";
+      case -12: return "nuebar";
+      case  14: return "numu";
+      case -14: return "numubar";
+      default:  return "";
     }
-    return closest;
   }
 
-  class CCQETemplateReweightCalculator{
-
-    enum ENuRange {
-      LowE = 0,
-      HighE = 2, // don't reweight for high energy
-    };
+  class CCQETemplateReweightCalculator {
 
   protected:
 
-    std::map<int, std::unique_ptr<TH3D>> map_ENuRange_to_WithTemplateXSec;
-    std::map<int, std::unique_ptr<TH3D>> map_ENuRange_to_WithoutTemplateXSec;
+    // Baseline and target absolute cross-section histograms per PDG code
+    // (outer key) and energy range (inner key = 0 for Enu < ENuBoundary)
+    //
+    // Histogram naming convention in the combined ROOT file:
+    //   {flavor_label}_{tune}   e.g. "numu_AR23_20i_01_000"
+    //
+    // enu_range 0 → LowE (Enu < ENuBoundary): loaded from file.
+    // enu_range 1 → HighE (Enu ≥ ENuBoundary): returns weight 1.0, not loaded.
+    std::map<int, std::map<int, std::unique_ptr<TH3D>>> map_PDG_ENuRange_to_BaselineXSec;
+    std::map<int, std::map<int, std::unique_ptr<TH3D>>> map_PDG_ENuRange_to_TargetXSec;
 
-    std::map<int, double> x_FirstBinCenter, x_LastBinCenter;
-    std::map<int, double> y_FirstBinCenter, y_LastBinCenter;
-    std::map<int, double> z_FirstBinCenter, z_LastBinCenter;
+    // Per-PDG, per-enu_range axis clamping limits (bin-center coordinates)
+    // Stored to avoid repeated calls to GetBinCenter during event processing
+    // Both baseline and target should share identical binning
+    std::map<int, std::map<int, double>> pdg_x_FirstBinCenter, pdg_x_LastBinCenter;
+    std::map<int, std::map<int, double>> pdg_y_FirstBinCenter, pdg_y_LastBinCenter;
+    std::map<int, std::map<int, double>> pdg_z_FirstBinCenter, pdg_z_LastBinCenter;
 
-    double ENuBoundary;
+    double ENuBoundary{2.0};
+    std::string baseline_tune{};
+    std::string target_tune{};
 
   public:
 
-    CCQETemplateReweightCalculator(fhicl::ParameterSet const &InputManifest) {
+    explicit CCQETemplateReweightCalculator(fhicl::ParameterSet const &InputManifest) {
       LoadInputHistograms(InputManifest);
     }
-    ~CCQETemplateReweightCalculator(){}
+    ~CCQETemplateReweightCalculator() {}
 
     void LoadInputHistograms(fhicl::ParameterSet const &ps);
 
-    double GetTemplateReweight(double Enu_GeV, std::array<double, 2> bin_kin, double parameter_value);
+    // Compute the reweight for a single event
+    //
+    // Enu_GeV         : neutrino energy 
+    // bin_kin         : kinematic coordinates {Y, Z} matching the histogram axis layout
+    //                   (ex. Y=q0, Z=q3 for q3q0 mode)
+    // parameter_value : 0 → no change, 1 → reweight
+    // pdg_nu          : neutrino PDG code -- must be one of ±12, ±14
+
+    double GetTemplateReweight(double Enu_GeV, std::array<double, 2> bin_kin,
+                               double parameter_value, int pdg_nu);
 
     std::string GetCalculatorName() const { return "CCQETemplateReweightCalculator"; }
-
   };
 
-  inline double CCQETemplateReweightCalculator::GetTemplateReweight(double Enu_GeV, std::array<double, 2> bin_kin, double parameter_value){
 
-    int enu_range = (Enu_GeV<ENuBoundary) ? 0 : 1;
+  // ---------------------------------------------------------------------------
+  // GetTemplateReweight
+  // ---------------------------------------------------------------------------
 
-    if (enu_range == 0){
+  inline double CCQETemplateReweightCalculator::GetTemplateReweight(
+      double Enu_GeV, std::array<double, 2> bin_kin,
+      double parameter_value, int pdg_nu) {
 
-      static double epsil = 1E-6;
-      double Enu_GeV_ForInterp = Enu_GeV;
-      Enu_GeV_ForInterp = std::max( Enu_GeV_ForInterp, x_FirstBinCenter[enu_range] + epsil );
-      Enu_GeV_ForInterp = std::min( Enu_GeV_ForInterp, x_LastBinCenter[enu_range] - epsil );
-
-      double kin_Y_ForInterp = bin_kin[0];
-      kin_Y_ForInterp = std::max( kin_Y_ForInterp, y_FirstBinCenter[enu_range] + epsil );
-      kin_Y_ForInterp = std::min( kin_Y_ForInterp, y_LastBinCenter[enu_range] - epsil );
-
-      double kin_Z_ForInterp = bin_kin[1];
-      kin_Z_ForInterp = std::max( kin_Z_ForInterp, z_FirstBinCenter[enu_range] + epsil );
-      kin_Z_ForInterp = std::min( kin_Z_ForInterp, z_LastBinCenter[enu_range] - epsil );
-
-      /*
-      printf("[CCQETemplateReweightCalculator::GetTemplateReweight] -> (Enu_GeV, kin_Y, kin_Z) = (%1.3f, %1.3f, %1.3f)\n", Enu_GeV_ForInterp, kin_Y_ForInterp, kin_Z_ForInterp);
-      printf("[CCQETemplateReweightCalculator::GetTemplateReweight] xsec (With Template, Without Template) = (%1.3f, %1.3e)\n", xsec_WithTemplate, xsec_WithoutTemplate);
-      */
-      double xsec_WithTemplate = map_ENuRange_to_WithTemplateXSec[enu_range]->Interpolate(Enu_GeV_ForInterp, kin_Y_ForInterp, kin_Z_ForInterp); // CV
-      double xsec_WithoutTemplate = map_ENuRange_to_WithoutTemplateXSec[enu_range]->Interpolate(Enu_GeV_ForInterp, kin_Y_ForInterp, kin_Z_ForInterp);
-
-      double weight = ( xsec_WithoutTemplate * (1.-parameter_value) + xsec_WithTemplate * parameter_value ) / xsec_WithoutTemplate;
-      // std::cout << "[CCQETemplateReweightCalculator] weight = " << weight << std::endl;
-
-      // If weight is nan, find the closest grid point that isn't nan
-      // TODO: is there some existing function I can use for this?
-      if(weight!=weight){
-
-        double best_weight = 1.0;
-        bool found_valid = false;
-
-        // Try the closest grid point first
-        std::vector<double> x_centers, y_centers, z_centers;
-        {
-          int nx = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetXaxis()->GetNbins();
-          int ny = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetYaxis()->GetNbins();
-          int nz = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetZaxis()->GetNbins();
-          for (int ix = 1; ix <= nx; ++ix)
-            x_centers.push_back(map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetXaxis()->GetBinCenter(ix));
-          for (int iy = 1; iy <= ny; ++iy)
-            y_centers.push_back(map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetYaxis()->GetBinCenter(iy));
-          for (int iz = 1; iz <= nz; ++iz)
-            z_centers.push_back(map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetZaxis()->GetBinCenter(iz));
-        }
-
-        double test_x = find_closest_bin_center(Enu_GeV_ForInterp, x_centers);
-        double test_y = find_closest_bin_center(kin_Y_ForInterp, y_centers);
-        double test_z = find_closest_bin_center(kin_Z_ForInterp, z_centers);
-
-        double x_for_interp;
-        double y_for_interp;
-        double z_for_interp;
-        x_for_interp = std::max( test_x, x_FirstBinCenter[enu_range] + epsil );
-        x_for_interp = std::min( x_for_interp, x_LastBinCenter[enu_range] - epsil );
-        y_for_interp = std::max( test_y, y_FirstBinCenter[enu_range] + epsil );
-        y_for_interp = std::min( y_for_interp, y_LastBinCenter[enu_range] - epsil );
-        z_for_interp = std::max( test_z, z_FirstBinCenter[enu_range] + epsil );
-        z_for_interp = std::min( z_for_interp, z_LastBinCenter[enu_range] - epsil );
-
-        double xsec_WithTemplate_grid = map_ENuRange_to_WithTemplateXSec[enu_range]->Interpolate(x_for_interp, y_for_interp, z_for_interp);
-        double xsec_WithoutTemplate_grid = map_ENuRange_to_WithoutTemplateXSec[enu_range]->Interpolate(x_for_interp, y_for_interp, z_for_interp);
-
-        double grid_weight = ( xsec_WithoutTemplate_grid * (1.-parameter_value) + xsec_WithTemplate_grid * parameter_value ) / xsec_WithoutTemplate_grid;
-        if(grid_weight == grid_weight) { 
-          best_weight = grid_weight;
-          found_valid = true;
-        } 
-        else {
-          // If still nan, search all grid points for the closest non-nan
-          double min_dist = std::numeric_limits<double>::max();
-          int nx = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetXaxis()->GetNbins();
-          int ny = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetYaxis()->GetNbins();
-          int nz = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetZaxis()->GetNbins();
-          for (int ix = 1; ix <= nx; ++ix) {
-            double x = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetXaxis()->GetBinCenter(ix);
-            for (int iy = 1; iy <= ny; ++iy) {
-              double y = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetYaxis()->GetBinCenter(iy);
-              for (int iz = 1; iz <= nz; ++iz) {
-                double z = map_ENuRange_to_WithoutTemplateXSec[enu_range]->GetZaxis()->GetBinCenter(iz);
-                double dist = std::sqrt(
-                  std::pow(x-Enu_GeV_ForInterp,2) +
-                  std::pow(y-kin_Y_ForInterp,2) +
-                  std::pow(z-kin_Z_ForInterp,2)
-                );
-                
-                x_for_interp = std::max( x, x_FirstBinCenter[enu_range] + epsil );
-                x_for_interp = std::min( x_for_interp, x_LastBinCenter[enu_range] - epsil );
-                y_for_interp = std::max( y, y_FirstBinCenter[enu_range] + epsil );
-                y_for_interp = std::min( y_for_interp, y_LastBinCenter[enu_range] - epsil );
-                z_for_interp = std::max( z, z_FirstBinCenter[enu_range] + epsil );
-                z_for_interp = std::min( z_for_interp, z_LastBinCenter[enu_range] - epsil );
-
-                double xsec_WithTemplate_try = map_ENuRange_to_WithTemplateXSec[enu_range]->Interpolate(x_for_interp, y_for_interp, z_for_interp);
-                double xsec_WithoutTemplate_try = map_ENuRange_to_WithoutTemplateXSec[enu_range]->Interpolate(x_for_interp, y_for_interp, z_for_interp);
-                double try_weight = ( xsec_WithoutTemplate_try * (1.-parameter_value) + xsec_WithTemplate_try * parameter_value ) / xsec_WithoutTemplate_try;
-                if(try_weight == try_weight) { 
-                  if(dist < min_dist) {
-                    min_dist = dist;
-                    best_weight = try_weight;
-                    found_valid = true;
-                  }
-                }
-              }
-            }
-          }
-        }
-        weight = best_weight;
-        if(!found_valid) {
-          // fallback
-          weight = 1.;
-        }
-      }
-
-      return weight;
+    // ------------------------------------------------------------------
+    // Validate PDG
+    // ------------------------------------------------------------------
+    std::string flavor = pdg_to_flavor_label(pdg_nu);
+    if (flavor.empty()) {
+      throw invalid_CCQE_Template_PDG()
+          << "[ERROR]: Neutrino PDG " << pdg_nu
+          << " is not one of the four supported flavors (±12, ±14).";
+    }
+    if (map_PDG_ENuRange_to_BaselineXSec.find(pdg_nu) ==
+        map_PDG_ENuRange_to_BaselineXSec.end()) {
+      throw invalid_CCQE_Template_PDG()
+          << "[ERROR]: No template loaded for flavor " << flavor
+          << " (PDG " << pdg_nu << "). "
+          << "Check that make_reweight_templates.py was run for this flavor "
+          << "and that combine_flavor_templates.py included it.";
     }
 
-  else if (enu_range == 1){
-    return 1.;
+    // ------------------------------------------------------------------
+    // Energy-range gate
+    // ------------------------------------------------------------------
+    if (Enu_GeV >= ENuBoundary) {
+      return 1.0;  // No reweighting above ENuBoundary
     }
 
-    // fallback
-    return 1.;
+    // ------------------------------------------------------------------
+    // Clamp coordinates to the innermost bin centers to avoid extrapolation
+    // ------------------------------------------------------------------
+    static const double epsil = 1E-6;
+    const int er = 0;  // enu_range for LowE
+
+    double Enu_c = std::max(Enu_GeV,    pdg_x_FirstBinCenter.at(pdg_nu).at(er) + epsil);
+    Enu_c        = std::min(Enu_c,      pdg_x_LastBinCenter .at(pdg_nu).at(er) - epsil);
+
+    double Y_c   = std::max(bin_kin[0], pdg_y_FirstBinCenter.at(pdg_nu).at(er) + epsil);
+    Y_c          = std::min(Y_c,        pdg_y_LastBinCenter .at(pdg_nu).at(er) - epsil);
+
+    double Z_c   = std::max(bin_kin[1], pdg_z_FirstBinCenter.at(pdg_nu).at(er) + epsil);
+    Z_c          = std::min(Z_c,        pdg_z_LastBinCenter .at(pdg_nu).at(er) - epsil);
+
+    // ------------------------------------------------------------------
+    // Compute ratio = sigma_target / sigma_baseline 
+    // ------------------------------------------------------------------
+    double sigma_baseline =
+        map_PDG_ENuRange_to_BaselineXSec.at(pdg_nu).at(er)->Interpolate(Enu_c, Y_c, Z_c);
+    double sigma_target   =
+        map_PDG_ENuRange_to_TargetXSec  .at(pdg_nu).at(er)->Interpolate(Enu_c, Y_c, Z_c);
+
+    if (sigma_baseline <= 0.0) {
+      // Baseline has no cross-section here 
+      // return weight = 1 (no change)
+      return 1.0;
+    }
+
+    double ratio = sigma_target / sigma_baseline;
+
+    // Guard against NaN from interpolation at sparse template regions.
+    if (ratio != ratio) {
+      std::cout << "[CCQETemplateReweightCalculator] WARNING: NaN ratio for "
+                << flavor << " (PDG=" << pdg_nu << ") at"
+                << " Enu=" << Enu_GeV << " Y=" << bin_kin[0] << " Z=" << bin_kin[1]
+                << "; returning weight=1." << std::endl;
+      return 1.0;
+    }
+
+    // Linear interpolation between no-change (param=0) and full reweight (param=1).
+    //   weight = 1 + parameter_value * (ratio - 1)
+    return 1.0 + parameter_value * (ratio - 1.0);
   }
 
-  inline void CCQETemplateReweightCalculator::LoadInputHistograms(fhicl::ParameterSet const &ps) {
 
-    std::string const &default_root_file = ps.get<std::string>("input_file", "");
-    ENuBoundary = ps.get<double>("ENuBoundary");
-    printf("[CCQETemplateReweightCalculator::GetTemplateReweight] ENuBoundary = %1.2f\n", ENuBoundary);
+  // ---------------------------------------------------------------------------
+  // LoadInputHistograms
+  // ---------------------------------------------------------------------------
 
-    for (fhicl::ParameterSet const &val_config :
-         ps.get<std::vector<fhicl::ParameterSet>>("inputs")) {
-      std::string hName = val_config.get<std::string>("name");
-      std::string input_hist = val_config.get<std::string>("input_hist");
-      std::string input_file = val_config.get<std::string>("input_file", default_root_file); // If specified per hist, replace it
+  inline void CCQETemplateReweightCalculator::LoadInputHistograms(
+      fhicl::ParameterSet const &ps) {
 
-      // if it does not start with "/", find it under ${NUSYSTEMATICS_FQ_DIR}/data/
-      if(input_file.find("/")!=0){
-        std::string tmp_NUSYSTEMATICS_ROOT = std::getenv("nusystematics_ROOT");
-        if(tmp_NUSYSTEMATICS_ROOT==""){
-          throw invalid_CCQE_Template_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set but put relative path:" << input_file;
-        }
-        input_file = tmp_NUSYSTEMATICS_ROOT+"/data/"+input_file;
-      }
+    // -----------------------------------------------------------------------
+    // Read configuration
+    // -----------------------------------------------------------------------
+    const std::string input_file_cfg = ps.get<std::string>("input_file");
+    ENuBoundary   = ps.get<double>("ENuBoundary");
+    baseline_tune = ps.get<std::string>("baseline_tune");
+    target_tune   = ps.get<std::string>("target_tune");
 
-      if(hName=="LowE_WithTemplate"){
-        std::cout << "--------LOADED HISTOGRAM: " << hName << std::endl;
-        map_ENuRange_to_WithTemplateXSec[0] = std::unique_ptr<TH3D>( GetHistogram<TH3D>(input_file, input_hist) );
-      }
-      else if(hName=="LowE_WithoutTemplate"){
-        std::cout << "--------LOADED HISTOGRAM: " << hName << std::endl;
-        map_ENuRange_to_WithoutTemplateXSec[0] = std::unique_ptr<TH3D>( GetHistogram<TH3D>(input_file, input_hist) );
-      }
+    printf("[CCQETemplateReweightCalculator] ENuBoundary  = %1.2f GeV\n", ENuBoundary);
+    printf("[CCQETemplateReweightCalculator] baseline_tune = %s\n", baseline_tune.c_str());
+    printf("[CCQETemplateReweightCalculator] target_tune   = %s\n", target_tune.c_str());
+
+    if (baseline_tune == target_tune) {
+      std::cout << "[CCQETemplateReweightCalculator] WARNING: baseline_tune == target_tune ("
+                << baseline_tune << "); all weights will be 1." << std::endl;
     }
 
-    for(int enu_range=0; enu_range<1; enu_range++){
-
-      const auto& h_WithTemplateXsec = map_ENuRange_to_WithTemplateXSec[enu_range];
-
-      const auto& XAxis_WithTemplateXsec = h_WithTemplateXsec->GetXaxis();
-      const auto& YAxis_WithTemplateXsec = h_WithTemplateXsec->GetYaxis();
-      const auto& ZAxis_WithTemplateXsec = h_WithTemplateXsec->GetZaxis();
-
-      x_FirstBinCenter[enu_range] = XAxis_WithTemplateXsec->GetBinCenter(1);
-      x_LastBinCenter[enu_range] = XAxis_WithTemplateXsec->GetBinCenter( XAxis_WithTemplateXsec->GetNbins() );
-
-      y_FirstBinCenter[enu_range] = YAxis_WithTemplateXsec->GetBinCenter(1);
-      y_LastBinCenter[enu_range] = YAxis_WithTemplateXsec->GetBinCenter( YAxis_WithTemplateXsec->GetNbins() );
-
-      z_FirstBinCenter[enu_range] = ZAxis_WithTemplateXsec->GetBinCenter(1);
-      z_LastBinCenter[enu_range] = ZAxis_WithTemplateXsec->GetBinCenter( ZAxis_WithTemplateXsec->GetNbins() );
-
-      printf("@@ Enu range :%d\n", enu_range);
-      printf("@@ - x-range: [%1.3f, %1.3f]\n", x_FirstBinCenter[enu_range], x_LastBinCenter[enu_range]);
-      printf("@@ - y-range: [%1.3f, %1.3f]\n", y_FirstBinCenter[enu_range], y_LastBinCenter[enu_range]);
-      printf("@@ - z-range: [%1.3f, %1.3f]\n", z_FirstBinCenter[enu_range], z_LastBinCenter[enu_range]);
-
+    // Resolve relative paths under ${nusystematics_ROOT}/data/
+    std::string input_file = input_file_cfg;
+    if (input_file.find('/') != 0) {
+      const char* env = std::getenv("nusystematics_ROOT");
+      if (!env || std::string(env).empty()) {
+        throw invalid_CCQE_Template_FILEPATH()
+            << "[ERROR]: ${nusystematics_ROOT} is not set but a relative "
+            << "input_file path was given: " << input_file;
+      }
+      input_file = std::string(env) + "/data/" + input_file;
     }
 
+    printf("[CCQETemplateReweightCalculator] input_file    = %s\n", input_file.c_str());
+
+    // -----------------------------------------------------------------------
+    // Load baseline and target histograms for all four supported flavors
+    // -----------------------------------------------------------------------
+    const int er = 0;  // enu_range index for LowE
+    const std::vector<int> supported_pdgs = {12, -12, 14, -14};
+    int n_loaded = 0;
+
+    for (const int pdg : supported_pdgs) {
+      const std::string flavor = pdg_to_flavor_label(pdg);
+      const std::string baseline_hist_name = flavor + "_" + baseline_tune;
+      const std::string target_hist_name   = flavor + "_" + target_tune;
+
+      printf("[CCQETemplateReweightCalculator] Loading histograms for %s (PDG %d):\n",
+             flavor.c_str(), pdg);
+      printf("  baseline: %s\n", baseline_hist_name.c_str());
+      printf("  target  : %s\n", target_hist_name.c_str());
+
+      // -- Baseline --
+      TH3D* h_baseline = GetHistogram<TH3D>(input_file, baseline_hist_name);
+      if (!h_baseline) {
+        throw invalid_CCQE_Template_FILEPATH()
+            << "[ERROR]: Failed to load baseline TH3D '" << baseline_hist_name
+            << "' from '" << input_file << "' for flavor " << flavor
+            << " (PDG " << pdg << "). "
+            << "Run make_reweight_templates.py for this flavor with baseline_tune='"
+            << baseline_tune << "' then rerun combine_flavor_templates.py.";
+      }
+
+      // -- Target --
+      TH3D* h_target = GetHistogram<TH3D>(input_file, target_hist_name);
+      if (!h_target) {
+        throw invalid_CCQE_Template_FILEPATH()
+            << "[ERROR]: Failed to load target TH3D '" << target_hist_name
+            << "' from '" << input_file << "' for flavor " << flavor
+            << " (PDG " << pdg << "). "
+            << "Run make_reweight_templates.py for this flavor with target_tune='"
+            << target_tune << "' then rerun combine_flavor_templates.py.";
+      }
+
+      // Transfer to maps
+      map_PDG_ENuRange_to_BaselineXSec[pdg][er] = std::unique_ptr<TH3D>(h_baseline);
+      map_PDG_ENuRange_to_TargetXSec  [pdg][er] = std::unique_ptr<TH3D>(h_target);
+
+      // Cache axis bin-center limits for clamping
+      const TAxis* xax = h_baseline->GetXaxis();
+      const TAxis* yax = h_baseline->GetYaxis();
+      const TAxis* zax = h_baseline->GetZaxis();
+
+      pdg_x_FirstBinCenter[pdg][er] = xax->GetBinCenter(1);
+      pdg_x_LastBinCenter [pdg][er] = xax->GetBinCenter(xax->GetNbins());
+      pdg_y_FirstBinCenter[pdg][er] = yax->GetBinCenter(1);
+      pdg_y_LastBinCenter [pdg][er] = yax->GetBinCenter(yax->GetNbins());
+      pdg_z_FirstBinCenter[pdg][er] = zax->GetBinCenter(1);
+      pdg_z_LastBinCenter [pdg][er] = zax->GetBinCenter(zax->GetNbins());
+
+      printf("[CCQETemplateReweightCalculator]   %s x=[%.3f, %.3f] y=[%.3f, %.3f] z=[%.3f, %.3f]\n",
+             flavor.c_str(),
+             pdg_x_FirstBinCenter[pdg][er], pdg_x_LastBinCenter[pdg][er],
+             pdg_y_FirstBinCenter[pdg][er], pdg_y_LastBinCenter[pdg][er],
+             pdg_z_FirstBinCenter[pdg][er], pdg_z_LastBinCenter[pdg][er]);
+      ++n_loaded;
+    }
+
+    printf("[CCQETemplateReweightCalculator] Loaded baseline+target histograms for %d flavor(s).\n",
+           n_loaded);
   }
 
 } // namespace nusyst
