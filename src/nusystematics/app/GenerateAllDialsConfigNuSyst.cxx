@@ -984,9 +984,7 @@ int main(int argc, char const *argv[]) {
   } else {
     os = &std::cout;
   }
-  if(cliopts::DoDebug){
-    (*os) << wrapped_out_ps.to_indented_string() << std::endl;
-  }
+  (*os) << wrapped_out_ps.to_indented_string() << std::endl;
   if (cliopts::outputfile.size()) fs.close();
 
   std::cerr << "\n=== Summary ===" << std::endl;
