@@ -118,12 +118,12 @@ void HandleOpts(int argc, char const *argv[]) {
     else if (s == "--fcl-dir") cliopts::fcl_dir = argv[++opt];
     else if (s == "--variation-descriptor") cliopts::variation_descriptor = argv[++opt];
     else if (s == "--single-instance") cliopts::single_instance = true;
-    else if (s == "--include-skeleton") cliopts::DoDebug = true;
+    else if (s == "--include-skeleton") cliopts::include_skeleton = true;
     else if (s == "--skip") {
       std::string tok; std::istringstream ss(argv[++opt]);
       while (std::getline(ss, tok, ',')) if (!tok.empty()) cliopts::skip_providers.push_back(tok);
     }
-    else if (s == "--debug") cliopts::include_skeleton = true;
+    else if (s == "--debug") cliopts::DoDebug = true;
     else {
       std::cout << "[ERROR]: Unknown option: " << s << std::endl;
       SayUsage(argv); exit(1);
