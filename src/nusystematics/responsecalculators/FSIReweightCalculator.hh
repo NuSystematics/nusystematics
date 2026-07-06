@@ -59,7 +59,6 @@ namespace nusyst {
 
   };
 
-
   inline double FSIReweightCalculator::GetFSIReweight(double KEini, double Ebias, double parameter_value, int parpdg){
     TH2D *hist_nom, *hist_alt;
     if (parpdg == 2212) {
@@ -87,34 +86,17 @@ namespace nusyst {
     }
     int idx_KEini = hist_nom->GetXaxis()->FindBin(KEini);
     int idx_Ebias = hist_nom->GetYaxis()->FindBin(Ebias);
-    int nY        = hist_nom->GetNbinsY();
-    if (KEini<0.05) return 1;
-    auto findFirstY = [&](TH2D* h, int ix) {
-        for (int iy = 1; iy <= nY; iy++)
-            if (h->GetBinContent(ix, iy) > 0.00) return iy;
-        return 1;
-    };
-    auto findLastY = [&](TH2D* h, int ix) {
-        for (int iy = nY; iy >= 1; iy--)
-            if (h->GetBinContent(ix, iy) > 0.00) return iy;
-        return nY;
-    };
+    double weight_nom = hist_nom->GetBinContent(idx_KEini, idx_Ebias); // CV
+    double weight_alt = hist_alt->GetBinContent(idx_KEini, idx_Ebias);
+    //cout<<"idx_KEini "<<idx_KEini<<"; idx_Ebias "<<idx_Ebias<<endl;
+    //cout<<"weight_nom "<<weight_nom<<endl;
+    //cout<<"weight_alt "<<weight_alt<<endl;
 
-    int yMin = findFirstY(hist_nom, idx_KEini);
-    int yMax = findLastY (hist_nom, idx_KEini);
-
-    double norm_nom = hist_nom->Integral(idx_KEini, idx_KEini, yMin, yMax + 1);
-    double norm_alt = hist_alt->Integral(idx_KEini, idx_KEini, yMin, yMax + 1);
-    if (norm_nom==0 || norm_alt==0) return 1;
-
-    double weight_nom = hist_nom->GetBinContent(idx_KEini, idx_Ebias) / norm_nom;
-    double weight_alt = hist_alt->GetBinContent(idx_KEini, idx_Ebias) / norm_alt;
-
-    if(weight_nom<0.01){
-      weight_nom=0.01;
+    if(weight_nom==0.){
+      return 1.;
     }
-    if(weight_alt<0.01){
-      weight_alt=0.01;
+    if(weight_alt==0.){
+      weight_alt=0.001;
     }
     double weight = ( weight_nom * (1.-parameter_value) + weight_alt * parameter_value ) / weight_nom;
     //cout<<"weight "<<weight<<endl;

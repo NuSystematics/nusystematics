@@ -745,12 +745,10 @@ inline void computeMultDiffWeights(int pdg, int target, int mult, int diff,
                                    bool isPion,
                                    double& hAEst, double& AltEst)
 {
-
    hAEst   = 1.0;
     AltEst  = 1.0;
     
     int A = (target/10) % 1000;
-    if (target!=1000060120 && target!=1000180400 && target!=1000080160) target=1000180400;
     max=A;
     if (isPion) {
         const auto& tp = getPion(pdg, target);
