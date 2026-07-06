@@ -7,8 +7,11 @@
 #include "systematicstools/utility/string_parsers.hh"
 
 #include "nusystematics/utility/make_instance.hh"
+#include "nusystematics/utility/silence_genie.hh"
 
 #include "fhiclcpp/ParameterSet.h"
+
+#include "Framework/Messenger/Messenger.h"
 
 #include <fstream>
 #include <iomanip>
@@ -20,6 +23,7 @@ std::string outputfile = "";
 std::string envvar = "FHICL_FILE_PATH";
 std::string fhicl_key = "syst_providers";
 bool WrapWithPROLOG = false;
+bool DoDebug = false;
 } // namespace cliopts
 
 void SayUsage(char const *argv[]) {
@@ -29,11 +33,13 @@ void SayUsage(char const *argv[]) {
                "\t-o <output.fcl>  : fhicl file to write, stdout by default.\n"
                "\t-k <list key>    : fhicl key to look for list of providers,\n"
                "\t                   \"syst_providers\" by default.\n"
+               "\t--debug         : Run debug mode.\n"
             << std::endl;
 }
 
 void HandleOpts(int argc, char const *argv[]) {
   int opt = 1;
+  
   while (opt < argc) {
     if ((std::string(argv[opt]) == "-?") ||
         (std::string(argv[opt]) == "--help")) {
@@ -45,6 +51,8 @@ void HandleOpts(int argc, char const *argv[]) {
       cliopts::outputfile = argv[++opt];
     } else if (std::string(argv[opt]) == "-k") {
       cliopts::fhicl_key = argv[++opt];
+    } else if (std::string(argv[opt]) == "--debug") {
+      cliopts::DoDebug = true;
     } else {
       std::cout << "[ERROR]: Unknown option: " << argv[opt] << std::endl;
       SayUsage(argv);
@@ -82,15 +90,26 @@ int main(int argc, char const *argv[]) {
   std::unique_ptr<cet::filepath_maker> fm =
       std::make_unique<cet::filepath_maker>();
 
-  fhicl::ParameterSet in_ps = fhicl::ParameterSet::make(cliopts::fclname, *fm);
+  nusyst::quiet::SetGlobalQuiet();
 
-  std::cout << "[GenerateSystProviderConfigNuSyst] input" << std::endl;
-  std::cout << in_ps.to_indented_string() << std::endl;
+  fhicl::ParameterSet in_ps;
+  std::vector<std::unique_ptr<nusyst::IGENIESystProvider_tool>> tools;
+  {
+    // Suppress GENIE/provider chatter during config load and provider build.
+    nusyst::quiet::StdoutSink _quiet;
+    genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
+        "Messenger_whisper.xml");
 
-  std::vector<std::unique_ptr<nusyst::IGENIESystProvider_tool>> tools =
-      systtools::ConfigureISystProvidersFromToolConfig<
-          nusyst::IGENIESystProvider_tool>(in_ps, nusyst::make_instance,
-                                           cliopts::fhicl_key);
+    in_ps = fhicl::ParameterSet::make(cliopts::fclname, *fm);
+    tools = systtools::ConfigureISystProvidersFromToolConfig<
+        nusyst::IGENIESystProvider_tool>(in_ps, nusyst::make_instance,
+                                         cliopts::fhicl_key);
+  }
+
+  if(cliopts::DoDebug){
+    std::cout << "[GenerateSystProviderConfigNuSyst] Input" << std::endl;
+    std::cout << in_ps.to_indented_string() << std::endl;
+  }
 
   fhicl::ParameterSet out_ps;
   std::vector<std::string> providerNames;

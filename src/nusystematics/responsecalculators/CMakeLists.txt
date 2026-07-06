@@ -2,6 +2,17 @@
 SET(RSPC_IMPLFILES)
 
 SET(RSPC_HDRFILES
+  DIRT2_EmissEngine_Reweight.hh
+  CCQERPAReweightCalculator.hh
+  CCQETemplateReweightCalculator.hh
+  FSIReweightCalculator.hh
+  FSIReweightCalculatorMult.hh
+  QEInterferenceResponseCalculator.hh
+  MECq0q3ResponseCalc.hh
+)
+
+if(nusyst_DUNETDRv1_ENABLED)
+  LIST(APPEND RSPC_HDRFILES
   BeRPA.hh
   MINERvA2p2hEnergyDependenceScale.hh
   MKSinglePiTemplate_ReWeight.hh
@@ -15,14 +26,8 @@ SET(RSPC_HDRFILES
   FSILikeEAvailSmearing.hh
   MINERvAq0q3Weighting_data.hh
   nuenuebar_xsec_ratio.hh
-  DIRT2_EmissEngine_Reweight.hh
-  CCQERPAReweightCalculator.hh
-  CCQETemplateReweightCalculator.hh
-  FSIReweightCalculator.hh
-  FSIReweightCalculatorMult.hh
-  QEInterferenceResponseCalculator.hh
-  MECq0q3ResponseCalc.hh
-)
+  )
+endif()
 
 
 add_library(nusystematics_responsecalculators INTERFACE)
