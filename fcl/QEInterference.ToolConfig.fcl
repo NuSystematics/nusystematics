@@ -14,7 +14,7 @@ QEInterference_toolconfig: {
     verbosity_level: 5
 
     QEInterference_input_manifest: {
-      input_file: "ACHILLES_weights.root"
+      input_file: "${NUSYST_DATA_DIR}/QEInterference/ACHILLES_weights.root"
       inputs: [
           {
 	    name: "numu_cc"

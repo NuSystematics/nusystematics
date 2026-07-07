@@ -9,7 +9,7 @@ CCQERPA_Tool_Config: {
     CCQERPAReweight_input_manifest: {
       RWMode: "q3q0"
       ENuBoundary: 2.1
-      input_file: "output_RPAReweight.root"
+      input_file: "${NUSYST_DATA_DIR}/CCQERPAReweight/output_RPAReweight.root"
       inputs: [
           {
             name: "LowE_WithRPA"

@@ -16,7 +16,7 @@ CCQETemplate_CRPA_Tool_Config: {
     CCQETemplateReweight_input_manifest: {
       RWMode: "q3q0"
       ENuBoundary: 1.0
-      input_file: "/exp/sbnd/data/users/munjung/ccqe_rw/CCQEReweight_templates_2026Feb5_coarsebins.root"
+      input_file: "${NUSYST_DATA_DIR}/CCQEReweight/CCQEReweight_templates_2026Feb5_coarsebins.root"
       inputs: [
           {
             name: "LowE_WithTemplate"
