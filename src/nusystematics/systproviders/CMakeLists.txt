@@ -4,22 +4,10 @@ SET(SYSTP_IMPLFILES
   CCQERPAReweight_tool.cc
   CCQETemplateReweight_tool.cc
   FSIReweight_tool.cc
-  FSIReweightMult_tool.cc
   WSReweight_tool.cc
   QEInterference_tool.cc
   MECq0q3InterpWeighting_tool.cc
-)
-
-if(nusyst_DUNETDRv1_ENABLED)
-  LIST(APPEND SYSTP_IMPLFILES
-  BeRPAWeight_tool.cc
-  EbLepMomShift_tool.cc
-  FSILikeEAvailSmearing_tool.cc
-  MINERvAE2p2h_tool.cc
-  MINERvAq0q3Weighting_tool.cc
-  MKSinglePiTemplate_tool.cc
-  MiscInteractionSysts_tool.cc
-  NOvAStyleNonResPionNorm_tool.cc
+  FSIReweightMult_tool.cc
   )
 endif()
 
@@ -38,10 +26,10 @@ SET(SYSTP_HDRFILES
   CCQERPAReweight_tool.hh
   CCQETemplateReweight_tool.hh
   FSIReweight_tool.hh
-  FSIReweightMult_tool.hh
   WSReweight_tool.hh
   QEInterference_tool.hh
   MECq0q3InterpWeighting_tool.hh
+  FSIReweightMult_tool.hh
 )
 
 if(nusyst_DUNETDRv1_ENABLED)

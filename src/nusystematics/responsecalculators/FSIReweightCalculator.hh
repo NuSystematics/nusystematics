@@ -7,7 +7,6 @@
 
 #include "systematicstools/utility/ROOTUtility.hh"
 #include "systematicstools/utility/exceptions.hh"
-#include "systematicstools/utility/string_parsers.hh"
 
 #include "fhiclcpp/ParameterSet.h"
 
@@ -96,13 +95,12 @@ namespace nusyst {
     if(weight_nom==0.){
       return 1.;
     }
-
+    if(weight_alt==0.){
+      weight_alt=0.001;
+    }
     double weight = ( weight_nom * (1.-parameter_value) + weight_alt * parameter_value ) / weight_nom;
     //cout<<"weight "<<weight<<endl;
-     if(weight<0.001){
-    //cout<<"weight_nom==0."<<endl;
-    return 0.001;
-  }
+   
     return weight;
 
   }
@@ -136,13 +134,22 @@ inline double FSIReweightCalculator::GetFSIReweight_2par(double KEini_0, double 
 
   inline void FSIReweightCalculator::LoadInputHistograms(fhicl::ParameterSet const &ps) {
 
-    std::string const &default_root_file = systtools::expand_env_vars( ps.get<std::string>("input_file", "") );
+    std::string const &default_root_file = ps.get<std::string>("input_file", "");
 
     for (fhicl::ParameterSet const &val_config :
          ps.get<std::vector<fhicl::ParameterSet>>("inputs")) {
       std::string hName = val_config.get<std::string>("name");
       std::string input_hist = val_config.get<std::string>("input_hist");
-      std::string input_file = systtools::expand_env_vars( val_config.get<std::string>("input_file", default_root_file) ); // If specified per hist, replace it
+      std::string input_file = val_config.get<std::string>("input_file", default_root_file); // If specified per hist, replace it
+
+      // if it does not start with "/", find it under ${NUSYSTEMATICS_FQ_DIR}/data/
+      if(input_file.find("/")!=0){
+        std::string tmp_NUSYSTEMATICS_ROOT = std::getenv("nusystematics_ROOT");
+        if(tmp_NUSYSTEMATICS_ROOT==""){
+          throw invalid_FSI_FILEPATH() << "[ERROR]: ${nusystematics_ROOT} not set but put relative path:" << input_file;
+        }
+        input_file = tmp_NUSYSTEMATICS_ROOT+"/data/"+input_file;
+      }
 
       if(hName=="hist_nom_protonPlus"){
         hist_nom_protonPlus = GetHistogram<TH2D>(input_file, input_hist);

@@ -16,7 +16,7 @@ using namespace fhicl;
 
 FSIReweightMult::FSIReweightMult(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-      fsiReweightCalculatorMult(nullptr),
+      fsiReweightMultCalculator(nullptr),
       ResponseParameterIdx(systtools::kParamUnhandled<size_t>),
       valid_file(nullptr), valid_tree(nullptr) {}
 
@@ -58,7 +58,7 @@ bool FSIReweightMult::SetupResponseCalculator(
   fhicl::ParameterSet templateManifest =
       tool_options.get<fhicl::ParameterSet>("FSIReweightMult_input_manifest");
 
-  fsiReweightCalculatorMult = std::make_unique<nusyst::FSIReweightCalculatorMult>( templateManifest );
+  fsiReweightMultCalculator = std::make_unique<nusyst::FSIReweightMultCalculator>( templateManifest );
 
   ResponseParameterIdx =
       GetParamIndex(GetSystMetaData(), "FSIReweightMult");
@@ -140,7 +140,7 @@ FSIReweightMult::GetEventResponse(genie::EventRecord const &ev) {
   for (double var : hdr.paramVariations) {
     double weight = 1;
     if ((!allevents)&&!(preFSIhadron_list.size() == np)) { // selection on the number of pre-FSI particles
-      weight = -199;
+      weight = 1;
       //weight = 1; // do not reweight events with no pre-FSI particles at all
     }
     else {
@@ -190,13 +190,60 @@ FSIReweightMult::GetEventResponse(genie::EventRecord const &ev) {
                 if (FSpar->KinE() <= 0.005*A) continue;
 
 
-                n_protons+=Z; n_neutrons+=A;
+                n_protons+=Z; n_neutrons+=A-Z;
 
             }
 
 
         
       }
+        double Eini = IShad->E();
+
+        double Ehad = 0;
+            int idx = 0;
+    for (auto FSpar : FSdaughter_list) {
+          int pdg = FSpar->Pdg();
+          double totE = FSpar->E();
+          double kinE = FSpar->KinE();
+          if ( pdg==211 || pdg==-211 || pdg==111) // pion
+            if (pdg==111 || (abs(pdg)==211 && kinE>0.025)) Ehad += kinE;
+          else if ( pdg==2212 ) // proton
+            if (kinE>0.05) Ehad += kinE;
+          else if ( pdg==2112 ) // neutron
+            ;
+          else if ( pdg==22 ) // gamma
+            Ehad += totE;
+          //else cout<<"$#@ "<<FSpar->Name()<<endl;
+        }
+        double Ebias = 0;
+
+        if (IShad->RescatterCode()==1 ) { // non-FSI
+          //weight = 1.6;
+          continue;
+        }
+
+        switch (IShad->Pdg()) {
+          case 2212:
+            Ebias = (KEini - Ehad) / KEini;
+            break;
+          case 2112:
+            Ebias = (KEini - Ehad) / KEini;
+            break;
+          case 211:
+            Ebias = (Eini - Ehad) / Eini;
+            break;
+          case 111:
+            Ebias = (Eini - Ehad) / Eini;
+            break;
+          case -211:
+            Ebias = (Eini - Ehad) / Eini;
+            break;
+          default:
+            //weight = -99;
+            //break;
+            weight = 1;
+            continue;
+        }
 
     int pdg = IShad->Pdg();
     int fsi = IShad->RescatterCode();
@@ -206,18 +253,25 @@ FSIReweightMult::GetEventResponse(genie::EventRecord const &ev) {
       accept = true;
     else if ((pdg == 2212 || pdg == 2112) && n_protons+n_neutrons>2 && n_pions==0)
       accept = true;
+ 
+    if (accept){ double this_reweight = fsiReweightMultCalculator->GetFSIMultReweight(
+        KEini,
+        Ebias,
+        n_protons + n_neutrons,   // mult
+        n_protons - n_neutrons,   // diff
+        var,                      // parameter_value
+        IShad->Pdg(),
+        ISNuc->Pdg(),                   // nuclear PDG, e.g. 1000180400
+        40        );              // upper mult bin edge, e.g. 40
+       //std::cout<<ISNuc->Pdg()<<","<<IShad->Pdg()<<","<<this_reweight<<std::endl;
+    weight *= this_reweight;  }   
+  }  // end loop over preFSIhadron_list
 
-    if (!accept) continue;
-        //cout<<IShad->Name()<<": KEini "<<KEini<<"; Ehad "<<Ehad<<"; Ebias "<<Ebias<<endl;
-        double this_reweight = fsiReweightCalculatorMult->GetFSIReweightMultSum(KEini, n_protons+n_neutrons, var, IShad->Pdg());
-        double this_reweight2 = fsiReweightCalculatorMult->GetFSIReweightMultDiff(KEini, n_protons-n_neutrons, var, IShad->Pdg());
-        
-        weight *= this_reweight*this_reweight2;
+  }  // end else block
 
-    }
-    }
-    resp.back().responses.push_back( weight );
-  }
+  resp.back().responses.push_back( weight );
+  }  // end loop over paramVariations
+
   if (fill_valid_tree) {
 
     pdgfslep = ev.FinalStatePrimaryLepton()->Pdg();
