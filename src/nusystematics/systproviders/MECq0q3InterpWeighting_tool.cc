@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <limits>
 
 // SystematicsTools helper
@@ -230,19 +231,21 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   // Histogram sourcing:
   //  (A) WeightFile with conventional names: h_weights_map_{np|nn}_<E>GeV
   //  (B) Arrays np_files/nn_files with explicit histogram names: HistNameNP/HistNameNN
-  //  (C) Auto-generate file paths based on Model parameter
-  
-  // Read DataBaseDir for auto-generation (model already read earlier for outOfRangeWeight)
-  std::string dataBaseDir = manifest.get<std::string>("DataBaseDir", "");
+  //  (C) Flavor-selected external files under NuisFlatWeightMapBaseDir
+  //  (D) Legacy auto-generated file paths based on Model and DataBaseDir
+  const bool haveSingle = manifest.has_key("WeightFile");
 
+  std::string dataBaseDir =
+      manifest.get<std::string>("DataBaseDir", "");
   dataBaseDir = systtools::expand_env_vars(dataBaseDir);
 
+  const std::string nuisFlatBaseDir =
+      manifest.get<std::string>("NuisFlatWeightMapBaseDir", "");
+
   std::vector<std::string> np_files, nn_files;
-  
-  // If Model is specified, auto-generate file paths
-  if (!model.empty() && !dataBaseDir.empty()) {
-    std::string modelDir, filePrefix;
-    
+
+  auto set_legacy_model_info = [&](std::string& modelDir,
+                                   std::string& filePrefix) {
     if (model == "valencia") {
       modelDir = "ValenciaMECq0q3";
       filePrefix = "reweight_data_SuSAv2_to_valencia";
@@ -252,33 +255,125 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     } else {
       throw std::runtime_error("Unknown Model: '" + model + "'. Expected 'valencia' or 'martini'");
     }
-    
-    std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
-    std::cout << "  Model directory: " << modelDir << "\n";
-    
-    // Generate file paths for each energy point
-    for (double E : fEgrid) {
-  std::string np_file = dataBaseDir + "/" + modelDir + "/" + 
-           filePrefix + "_np_" + Form("%0.2f", E) + "GeV.root";
-  std::string nn_file = dataBaseDir + "/" + modelDir + "/" + 
-           filePrefix + "_nn_" + Form("%0.2f", E) + "GeV.root";
-      np_files.push_back(np_file);
-      nn_files.push_back(nn_file);
-      std::cout << "  Generated np file: " << np_file << "\n";
-      std::cout << "  Generated nn file: " << nn_file << "\n";
+  };
+
+  auto external_model_tune = [&]() -> std::string {
+    if (model == "valencia")
+      return "g18_10a";
+    if (model == "martini")
+      return "g24_12a";
+    throw std::runtime_error("Unknown Model: '" + model + "'. Expected 'valencia' or 'martini'");
+  };
+
+  auto flavor_tag = [](const std::string& flavor) -> std::string {
+    if (flavor == "numu")
+      return "NUMU";
+    if (flavor == "nue")
+      return "NUE";
+    if (flavor == "numubar")
+      return "NUMUBAR";
+    if (flavor == "nuebar")
+      return "NUEBAR";
+    throw std::runtime_error("Unknown Flavor: '" + flavor + "'. Expected 'numu', 'nue', 'numubar', or 'nuebar'");
+  };
+
+  auto energy_label = [](double E) -> std::string {
+    return std::string(Form("%0.2f", E));
+  };
+
+  auto is_numu_local_energy = [](double E) -> bool {
+    constexpr double tol = 1e-6;
+    return E >= (0.40 - tol) && E <= (2.50 + tol);
+  };
+
+  auto require_existing_map = [&](const std::string& fname,
+                                  const std::string& flavor,
+                                  const std::string& topo,
+                                  double E) {
+    std::ifstream fin(fname.c_str());
+    if (!fin.good()) {
+      throw std::runtime_error("Missing MEC q0/q3 weight map for Model '" +
+                               model + "', Flavor '" + flavor +
+                               "', topology '" + topo + "', energy " +
+                               energy_label(E) + " GeV: " + fname);
     }
-  } else {
-    // Fallback to explicitly provided file lists
-    if (manifest.has_key("np_files") && manifest.has_key("nn_files")) {
+  };
+
+  if (!haveSingle) {
+    if (manifest.has_key("np_files") || manifest.has_key("nn_files")) {
+      if (!(manifest.has_key("np_files") && manifest.has_key("nn_files"))) {
+        throw std::runtime_error("Both np_files and nn_files are required when either is specified");
+      }
       np_files = manifest.get<std::vector<std::string>>("np_files");
       nn_files = manifest.get<std::vector<std::string>>("nn_files");
+    } else if (!nuisFlatBaseDir.empty()) {
+      if (model.empty()) {
+        throw std::runtime_error("NuisFlatWeightMapBaseDir requires Model to be 'valencia' or 'martini'");
+      }
+
+      const std::string flavor =
+          manifest.get<std::string>("Flavor", "numu");
+      const std::string flavorTag = flavor_tag(flavor);
+      const std::string tune = external_model_tune();
+
+      std::string legacyModelDir, legacyFilePrefix;
+      set_legacy_model_info(legacyModelDir, legacyFilePrefix);
+
+      std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
+      std::cout << "  Flavor: " << flavor << "\n";
+      std::cout << "  External weight map base: " << nuisFlatBaseDir << "\n";
+      if (flavor == "numu") {
+        std::cout << "  numu middle-grid folder: "
+                  << nuisFlatBaseDir << "/" << model << "/" << flavor << "\n";
+      }
+
+      auto external_path = [&](const std::string& topo, double E) {
+        return nuisFlatBaseDir + "/" + model + "/" + flavor +
+               "/weight_map_ar23_to_" + tune + "_" + flavorTag + "_" +
+               topo + "_" + energy_label(E) + "GeV.root";
+      };
+
+      auto numu_middle_grid_path = [&](const std::string& topo, double E) {
+        return nuisFlatBaseDir + "/" + model + "/" + flavor + "/" + legacyFilePrefix +
+               "_" + topo + "_" + energy_label(E) + "GeV.root";
+      };
+
+      for (double E : fEgrid) {
+        const bool useNumuMiddleGrid = (flavor == "numu" && is_numu_local_energy(E));
+        const std::string np_file = useNumuMiddleGrid ? numu_middle_grid_path("np", E)
+                                                      : external_path("np", E);
+        const std::string nn_file = useNumuMiddleGrid ? numu_middle_grid_path("nn", E)
+                                                      : external_path("nn", E);
+        require_existing_map(np_file, flavor, "np", E);
+        require_existing_map(nn_file, flavor, "nn", E);
+        np_files.push_back(np_file);
+        nn_files.push_back(nn_file);
+        std::cout << "  Generated np file: " << np_file << "\n";
+        std::cout << "  Generated nn file: " << nn_file << "\n";
+      }
+    } else if (!model.empty() && !dataBaseDir.empty()) {
+      std::string modelDir, filePrefix;
+      set_legacy_model_info(modelDir, filePrefix);
+
+      std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
+      std::cout << "  Model directory: " << modelDir << "\n";
+
+      for (double E : fEgrid) {
+        const std::string np_file = dataBaseDir + "/" + modelDir + "/" +
+            filePrefix + "_np_" + energy_label(E) + "GeV.root";
+        const std::string nn_file = dataBaseDir + "/" + modelDir + "/" +
+            filePrefix + "_nn_" + energy_label(E) + "GeV.root";
+        np_files.push_back(np_file);
+        nn_files.push_back(nn_file);
+        std::cout << "  Generated np file: " << np_file << "\n";
+        std::cout << "  Generated nn file: " << nn_file << "\n";
+      }
     }
   }
-  
-  const bool haveSingle = manifest.has_key("WeightFile");
+
   const bool haveArrays = !np_files.empty() && !nn_files.empty();
   if (!haveSingle && !haveArrays)
-    throw std::runtime_error("Need either WeightFile, (np_files & nn_files), or (Model & DataBaseDir)");
+    throw std::runtime_error("Need either WeightFile, (np_files & nn_files), (NuisFlatWeightMapBaseDir & Model), or (Model & DataBaseDir)");
 
   fCalcs.clear();
 
@@ -367,49 +462,16 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
   double q0 = 0.0, q3 = 0.0, Enu = 0.0;
   ComputeQ0Q3(ev, q0, q3, Enu);
 
-  // Helper lambda to create zero-weight response (suppress events)
-  // Same as setting w_eff_cv = 0 or one_sigma = -1.0
-  auto GetZeroWeightResponse = [this]() {
-    auto const& smd = this->GetSystMetaData();
-    systtools::event_unit_response_t resp;
-    resp.reserve(smd.size());
-    for(auto const& sph : smd) {
-      if (sph.isCorrection) {
-        const double this_rw = std::clamp(1.0 + (sph.centralParamValue) * (-1.), 0., fWmax);
-        resp.push_back({sph.systParamId, std::vector<double>{this_rw}});
-      } else {
-        std::vector<double> arr_rw;
-        arr_rw.reserve(sph.paramVariations.size());
-        for (double d : sph.paramVariations) {
-          const double this_rw = std::clamp(1.0 + d * (-1.), 0., fWmax);
-          arr_rw.push_back(this_rw);
-        }
-        resp.push_back({sph.systParamId, arr_rw});
-      }
-    }
-    return resp;
-  };
-
-  // Determine if Q0 selection/binning is enabled
-  // Either Q0SelectMin/Max OR Q0Bins means we want weight=1 outside apply windows
+  // Determine if Q0 selection is enabled.
   const bool q0SelectionEnabled = (fQ0SelectMax > 0.0);
-  const bool q0BinningEnabled = (!fQ0Bins.empty());
 
-  // NEW: q3/q0 apply window gate logic
-  // If Q0 selection OR Q0 binning is ENABLED: return weight=1 if outside apply windows
-  // If BOTH are DISABLED: return weight=0 if outside apply windows
+  // q3/q0 apply-window gate. Outside the apply window the dial has no effect,
+  // including in single-dial reweight mode.
   const bool outsideQ3Apply = (q3 <= fQ3ApplyMin + 1e-6 || q3 >= fQ3ApplyMax - 1e-6);
   const bool outsideQ0Apply = (q0 <= fQ0ApplyMin + 1e-6 || q0 >= fQ0ApplyMax - 1e-6);
-  
-  if (outsideQ3Apply || outsideQ0Apply) {
-    if (q0SelectionEnabled || q0BinningEnabled) {
-      // When Q0 selection or binning is enabled, return weight=1 outside apply region
-      return this->GetDefaultEventResponse();
-    } else {
-      // When both are disabled, return weight=0 outside apply region
-      return GetZeroWeightResponse();
-    }
-  }
+
+  if (outsideQ3Apply || outsideQ0Apply)
+    return this->GetDefaultEventResponse();
 
   // NEW: Q0 selection range: weight=1 if outside the selected range (if enabled)
   // This allows fine-grained control: e.g., apply reweight only in 0.05 < q0 < 0.1 GeV
