@@ -407,7 +407,7 @@ PionAbsProvider_toolconfig: {
     tool_type: "PionAbsWeighter"
     instance_name: "SBN_v3"
 
-    QuasiDeuteronFraction_variation_descriptor: "(-3,3,1)"
+    QuasiDeuteronFraction_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
 
     verbosity_level: 5
 
