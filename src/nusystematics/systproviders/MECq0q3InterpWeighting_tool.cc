@@ -227,11 +227,9 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
 
 
   // Histogram sourcing:
-  //  (A) WeightFile with conventional names: h_weights_map_{np|nn}_<E>GeV
-  //  (B) Arrays np_files/nn_files with explicit histogram names: HistNameNP/HistNameNN
-  //  (C) Flavor-selected external files under NuisFlatWeightMapBaseDir
-  //  (D) Legacy auto-generated file paths based on Model and DataBaseDir
-  const bool haveSingle = manifest.has_key("WeightFile");
+  //  (A) Arrays np_files/nn_files with explicit histogram names: HistNameNP/HistNameNN
+  //  (B) Flavor-selected external files under NuisFlatWeightMapBaseDir
+  //  (C) Legacy auto-generated file paths based on Model and DataBaseDir
 
   std::string dataBaseDir =
       manifest.get<std::string>("DataBaseDir", "");
@@ -297,7 +295,8 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     }
   };
 
-  if (!haveSingle) {
+  // Populate the per-energy map file lists.
+  {
     if (manifest.has_key("np_files") || manifest.has_key("nn_files")) {
       if (!(manifest.has_key("np_files") && manifest.has_key("nn_files"))) {
         throw std::runtime_error("Both np_files and nn_files are required when either is specified");
@@ -368,44 +367,14 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       }
     }
   }
-
   const bool haveArrays = !np_files.empty() && !nn_files.empty();
-  if (!haveSingle && !haveArrays)
-    throw std::runtime_error("Need either WeightFile, (np_files & nn_files), (NuisFlatWeightMapBaseDir & Model), or (Model & DataBaseDir)");
+  if (!haveArrays)
+    throw std::runtime_error("Need either (np_files & nn_files), (NuisFlatWeightMapBaseDir & Model), or (Model & DataBaseDir)");
 
   fCalcs.clear();
 
-  if (haveSingle) {
-    const std::string fname = manifest.get<std::string>("WeightFile");
-    TFile fin(fname.c_str(), "READ");
-    if (!fin.IsOpen())
-      throw std::runtime_error("Cannot open WeightFile: " + fname);
-
-    for (Topo topo : {Topo::np, Topo::nn}) {
-      const char* tag = (topo == Topo::np ? "np" : "nn");
-      auto& vec = fCalcs[topo];
-      vec.reserve(fEgrid.size());
-
-      for (double E : fEgrid) {
-  const std::string hname = Form("h_weights_map_%s_%0.2fGeV", tag, E);
-        TH2D* h = dynamic_cast<TH2D*>(fin.Get(hname.c_str()));
-        if (!h) throw std::runtime_error("Missing histogram '" + hname +
-                                         "' in file " + fname);
-
-        std::cout << "  Loaded " << fname << " :: " << hname
-                  << "  X:[" << h->GetXaxis()->GetXmin() << "," << h->GetXaxis()->GetXmax() << "]"
-                  << "  Y:[" << h->GetYaxis()->GetXmin() << "," << h->GetYaxis()->GetXmax() << "]\n";
-
-        auto calc = std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0);
-        calc->SetUseNearestBin(useNearestBin);
-        calc->SetEdgeClamp(edgeClamp);
-        calc->SetOutOfRangeWeight(outOfRangeWeight);
-        vec.emplace_back(std::move(calc));
-      }
-    }
-    fin.Close();
-  } else {
-    // arrays: explicit TH2 names are REQUIRED
+  {
+    // Per-energy map files use explicit TH2 names.
     if (np_files.size() != fEgrid.size() || nn_files.size() != fEgrid.size())
       throw std::runtime_error("np_files/nn_files sizes must match EnergyGrid size");
 
