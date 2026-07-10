@@ -35,6 +35,8 @@ public:
   systtools::event_unit_response_t GetEventResponse(genie::EventRecord const &,
                                                     systtools::paramId_t);
 
+  nusyst::GENIEResponseParameter& GetGENIEResponseParameter(size_t idx);
+
   std::string AsString();
 
   ~GENIEReWeight();

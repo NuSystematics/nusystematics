@@ -1,6 +1,9 @@
 #pragma once
 
 #include "nusystematics/interface/IGENIESystProvider_tool.hh"
+
+#include "nusystematics/systproviders/GENIEReWeight_tool.hh"
+
 #include "nusystematics/utility/make_instance.hh"
 
 #include "systematicstools/interface/SystParamHeader.hh"
@@ -10,6 +13,10 @@
 #include "systematicstools/utility/ParameterAndProviderConfigurationUtility.hh"
 
 #include "Framework/EventGen/EventRecord.h"
+
+#include "nusystematics/utility/Flatness.h" //header added ~MM
+
+#include "nusystematics/utility/RoundRobin.h" //header added ~MM
 
 #include "TFile.h"
 #include "TTree.h"
@@ -185,5 +192,171 @@ public:
     }
     return weight;
   }
-}; // namespace nusyst
+
+  // Improved spline-based response
+  std::vector<std::vector<double>> GetImprovedParameterResponse(
+    systtools::paramId_t pid, 
+    genie::EventRecord const &GenieGHep){
+
+    //std::cout << "[JSKIMDEBUG][GetImprovedParameterResponse] syst_providers.size() = " << syst_providers.size() << std::endl;
+    //std::cout << "[JSKIMDEBUG][GetImprovedParameterResponse] pid = " << pid << std::endl;
+
+    // Get SystProvider that contains param with this given pid
+    size_t sp_idx = systtools::kParamUnhandled<size_t>;
+    for(size_t i=0; i<syst_providers.size(); i++){
+      if(syst_providers[i]->ParamIsHandled(pid)){
+        sp_idx = i;
+        break;
+      }
+    }
+    if(sp_idx==systtools::kParamUnhandled<size_t>){
+      throw response_helper_found_no_parameters()
+          << "[ERROR]: ParamID = " << pid << " is not found from configured parameter headers";
+    }
+
+    std::unique_ptr<IGENIESystProvider_tool> const &sp = syst_providers[sp_idx];
+    IGENIESystProvider_tool* rawPtr = sp.get();
+    GENIEReWeight* genie_sp = dynamic_cast<GENIEReWeight*>(rawPtr);
+
+    // Now this only works for GENIEReWeight tool
+    // if(sp->GetToolType()!="GENIEReWeight"){
+    //   return GetParameterResponse(pid, v, eur);
+    // }
+
+    // Getting the header
+    std::vector<double> og_nodes;
+    systtools::SystParamHeader const & sph = GetHeader(pid);
+    //std::cout << "[JSKIMDEBUG][GetImprovedParameterResponse] Prining variations set by fcl" << std::endl;
+    for(const auto& v: sph.paramVariations){
+      //std::cout << v << std::endl;
+      og_nodes.push_back(v);
+    }
+
+    // now we know i-th systprovider is GENIEReWeight
+    // get the GENIEResponseParameter with this given pid
+    std::vector<std::string> rw_calc_names;
+    GENIEResponseParameter& genieRP = genie_sp->GetGENIEResponseParameter(pid);
+    //std::cout << "[JSKIMDEBUG][GetImprovedParameterResponse] Number of GReWeights: " << genieRP.Herg.size() << std::endl;
+    for(auto& grw: genieRP.Herg){
+    // grw is our std::unique_ptr<genie::rew::GReWeight>
+    //std::cout << "[JSKIMDEBUG][GetImprovedParameterResponse] - Printing Infos of this GReWeight" << std::endl;
+    //std::cout << "[JSKIMDEBUG][GetImprovedParameterResponse]   - WghtCalcNames" << std::endl;
+    for(auto& name: grw->WghtCalcNames()){
+      //std::cout << name << std::endl;
+    }
+      //std::cout << "[JSKIMDEBUG][GetImprovedParameterResponse]   - GSystSet" << std::endl;
+    genie::rew::GSystSet &gss = grw->Systematics();
+    for(auto& gs: gss.AllIncluded()){
+    //     std::string gs_string = genie::rew::GSyst::AsString(gs);
+    //     //printf("%s %d\n", gs_string.c_str(), gs);
+     }
+
+    }
+
+    //std::cout << "[JSKIMDEBUG][GetImprovedParameterResponse] Printing GSysts" << std::endl;
+    for(auto& grw: genieRP.Herg){
+      // grw is our std::unique_ptr<genie::rew::GReWeight
+      for(auto& name: grw->WghtCalcNames()){
+        //std::cout << name << std::endl;
+      }
+    }
+
+    //BEGIN TEST AND FIX
+    bool passed=false;
+    int iteration=0;
+    std::vector<std::vector<double>> response_vec;
+    //This is where initial parameter node points and weights are stored
+    //Ensures that the whatever is stored is not altered, so the vectors below will be alterd
+    std::vector<double> og_weights; //= eur[0].responses;
+    //Scrap above and use the below code to set up the weights since the method below returns correct values
+    //std::cout << "[MazenMalak] size of file of systematics " << genieRP.Herg.size() << std::endl;
+    for(int i=0; i<og_nodes.size(); i++){
+      genieRP.Herg[0]->Systematics().Set(genieRP.Herg[0]->Systematics().AllIncluded()[0],og_nodes[i]);
+      genieRP.Herg[0]->Reconfigure();
+      og_weights.push_back(genieRP.Herg[0]->CalcWeight(GenieGHep));
+    }
+    // genieRP.Herg[pid]->Systematics().Set(genieRP.Herg[pid]->Systematics().AllIncluded()[pid],-3.0);
+    // genieRP.Herg[pid]->Reconfigure();
+    // std::cout << "ASK GENIE (1)" <<  genieRP.Herg[pid]->CalcWeight(GenieGHep) << std::endl;
+    // for(int i=0; i<eur[0].responses.size(); i++){
+    //   // og_weights.push_back(eur[0].responses[i]);
+    //   std::cout << "[Mazen_Malak resp by GENIE] node, wieght--> " << og_nodes[i] << ", " << og_weights[i] << std::endl;
+    //   std::cout << "ASK GENIE (2)" <<  genieRP.Herg[pid]->CalcWeight(GenieGHep) << std::endl;
+    // }
+    // std::cout << "ASK GENIE (3)" <<  genieRP.Herg[pid]->CalcWeight(GenieGHep) << std::endl;
+    // std::cout << "Improved SPlining Alg" << std::endl;
+    while(passed==false && iteration<10){
+      if(iteration>0){ //we dont want to fix for fully flat splines (causes alot of trouble so put first iter through round robin)
+        std::vector<double> Piecewise_check = Flatness(GenieGHep, pid, genieRP.Herg[0],og_nodes,og_weights);
+        //if flatness check returns a size of 1, it was never flat
+        if(Piecewise_check.size()!=1){
+          //proabbaly a better way to do this, but this is the erasing and addtion
+          //method of new nodes/weights to the vector
+          int genie_stop_index=0;
+          for(int i=0; i<og_nodes.size(); i++){
+              if(og_nodes[i]<Piecewise_check[0]){
+                  genie_stop_index++;
+              }
+          }
+          //std::cout << "flat event" << std::endl;
+          //std::cout << Piecewise_check[0] << std::endl; 
+          if(Piecewise_check[0]>0){ //flatness on right side
+            og_nodes.erase(og_nodes.begin()+genie_stop_index, og_nodes.end());
+            og_weights.erase(og_weights.begin()+genie_stop_index, og_weights.end());
+            og_nodes.push_back(Piecewise_check[0]);
+            og_weights.push_back(Piecewise_check[1]);
+          }
+          else{ //flatness on left side
+            og_nodes.erase(og_nodes.begin(), og_nodes.begin()+genie_stop_index);
+            og_weights.erase(og_weights.begin(), og_weights.begin()+genie_stop_index);
+            og_nodes.insert(og_nodes.begin(), Piecewise_check[0]);
+            og_weights.insert(og_weights.begin(), Piecewise_check[1]);
+          }
+          //std::cout << Piecewise_check[1] << std::endl;
+        }
+      }
+      //begin the round robin test
+      std::array<double, 3> RoundRobin_Test = RoundRobin(og_nodes, og_weights);
+      if(RoundRobin_Test[0]==0.0){
+        //Find index of acquired max point deviation and append the node points to the left
+        //and right of the max point along with the asociated weight]
+        auto it = find(og_nodes.begin(), og_nodes.end(), RoundRobin_Test[1]);
+        int index = it-og_nodes.begin();
+        double left_point=RoundRobin_Test[1]-0.5*abs(RoundRobin_Test[1]-og_nodes[index-1]);
+        double right_point=RoundRobin_Test[1]+0.5*abs(RoundRobin_Test[1]-og_nodes[index+1]);
+        og_nodes.push_back(left_point);
+        og_nodes.push_back(right_point);
+        sort(og_nodes.begin(), og_nodes.end());
+        if(og_nodes[0]==og_nodes[1]){
+            og_nodes.erase(og_nodes.begin());
+        }
+        auto it_r = find(og_nodes.begin(), og_nodes.end(), right_point);
+        auto it_l = find(og_nodes.begin(), og_nodes.end(), left_point);
+        int index_r = it_r-og_nodes.begin();
+        int index_l = it_l-og_nodes.begin();
+        genieRP.Herg[0]->Systematics().Set(genieRP.Herg[0]->Systematics().AllIncluded()[0],right_point);//.Set(kINukeTwkDial_FrAbs_pi, right_point); //Change per syst
+        genieRP.Herg[0]->Reconfigure();
+        og_weights.insert(og_weights.begin()+index_r-1, genieRP.Herg[0]->CalcWeight(GenieGHep));
+        genieRP.Herg[0]->Systematics().Set(genieRP.Herg[0]->Systematics().AllIncluded()[0], left_point); //Change per syst
+        genieRP.Herg[0]->Reconfigure();
+        og_weights.insert(og_weights.begin()+index_l, genieRP.Herg[0]->CalcWeight(GenieGHep));
+        iteration++;
+        //std::cout << "max dev= " << RoundRobin_Test[2] << " : new point added at param =" << right_point << " and " << left_point << std::endl;
+      }
+      else{
+        passed=true;
+        response_vec.push_back(og_nodes);
+        response_vec.push_back(og_weights);
+        //std::cout << response_vec[0].size() << " by " << response_vec[1].size() << std::endl;
+      }
+      if(iteration>9 && passed==false){
+        response_vec.push_back(og_nodes);
+        response_vec.push_back(og_weights);
+      }
+    }
+    return response_vec;
+  }
+
+}; // class def response_helper 
+
 } // namespace nusyst

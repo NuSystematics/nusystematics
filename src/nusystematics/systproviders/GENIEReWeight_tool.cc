@@ -234,6 +234,9 @@ GENIEReWeight::GetEventResponse(genie::EventRecord const &gev) {
 
   return event_responses;
 }
+nusyst::GENIEResponseParameter& GENIEReWeight::GetGENIEResponseParameter(size_t pid){
+  return nusyst::GetResponseParameter(ResponseToGENIEParameters, pid);
+}
 
 double GENIEReWeight::GetEventWeightResponse(
     genie::EventRecord const &gev,
