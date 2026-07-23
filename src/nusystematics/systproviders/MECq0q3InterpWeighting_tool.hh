@@ -38,6 +38,10 @@ private:
 
   // ---- configuration/state ----
   std::vector<double> fEgrid; ///< GeV
+  // Signed incoming-neutrino PDG for flavor-specific maps. Zero leaves flavor
+  // filtering disabled for legacy manifests that do not provide Flavor.
+  int fExpectedProbePdg{0};
+
 
 
   
