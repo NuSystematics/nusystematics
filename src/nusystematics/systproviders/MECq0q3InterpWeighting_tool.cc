@@ -93,6 +93,25 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   const auto manifest =
       tool_opts.get<fhicl::ParameterSet>("MECResponse_input_manifest");
 
+  // Flavor-specific maps must only be applied to events with the matching
+  // incoming neutrino. Keep filtering disabled for legacy manifests that do
+  // not explicitly configure Flavor.
+  fExpectedProbePdg = 0;
+  if (manifest.has_key("Flavor")) {
+    const std::string flavor = manifest.get<std::string>("Flavor");
+    if (flavor == "numu")
+      fExpectedProbePdg = genie::kPdgNuMu;
+    else if (flavor == "nue")
+      fExpectedProbePdg = genie::kPdgNuE;
+    else if (flavor == "numubar")
+      fExpectedProbePdg = genie::kPdgAntiNuMu;
+    else if (flavor == "nuebar")
+      fExpectedProbePdg = genie::kPdgAntiNuE;
+    else
+      throw std::runtime_error("Unknown Flavor: '" + flavor +
+                               "'. Expected 'numu', 'nue', 'numubar', or 'nuebar'");
+  }
+
   // Energy grid (required)
   if (!manifest.has_key("EnergyGrid"))
     throw std::runtime_error("Missing EnergyGrid");
@@ -420,6 +439,12 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
 systtools::event_unit_response_t
 MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
 {
+  if (fExpectedProbePdg != 0) {
+    const auto* probe = ev.Probe();
+    if (!probe || probe->Pdg() != fExpectedProbePdg)
+      return this->GetDefaultEventResponse();
+  }
+
   // classify topology
   const Topo topo = ClassifyEvent(ev);
   if (topo == Topo::unknown)
