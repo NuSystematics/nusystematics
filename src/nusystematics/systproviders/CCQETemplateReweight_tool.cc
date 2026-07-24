@@ -122,8 +122,9 @@ bool CCQETemplateReweight::SetupResponseCalculator(
 
   if(rwmode_str=="q3q0"){
     rwMode = q3q0;
-    kin_Y_str = "q3";
-    kin_Z_str = "q0";
+    // Template histogram axes (from make_reweight_templates.py): X=E_nu, Y=q0, Z=q3
+    kin_Y_str = "q0";
+    kin_Z_str = "q3";
   }
   else if(rwmode_str=="PCTheta"){
     rwMode = PCTheta;
@@ -193,11 +194,11 @@ CCQETemplateReweight::GetEventResponse(genie::EventRecord const &ev) {
 
   std::array<double, 2> bin_kin;
   if(rwMode==q3q0){
-    //bin_kin = {emTransfer.Vect().Mag(), emTransfer.E()};
-    // TEST; cutoff for non-physical reweights
+    // Template histogram axes (from make_reweight_templates.py): X=E_nu, Y=q0, Z=q3
+    // bin_kin[0] -> Y axis (q0), bin_kin[1] -> Z axis (q3)
     double this_q3 = emTransfer.Vect().Mag();
     double this_q0 = emTransfer.E()>q0BinEdges[Nq0Bins] ? q0BinEdges[Nq0Bins] : emTransfer.E();
-    bin_kin = {this_q3, this_q0};
+    bin_kin = {this_q0, this_q3};
   }
   else if(rwMode==PCTheta){
     bin_kin = {FSLepP4.Vect().Mag(), CAngleLeps};
@@ -232,13 +233,14 @@ CCQETemplateReweight::GetEventResponse(genie::EventRecord const &ev) {
   SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIndices[q0_bin_index]];
   unsigned i_var = 0;
   for (double var : hdr.paramVariations) {
-    double this_reweight = ccqeTemplateReweightCalculator->GetTemplateReweight( 
+    double this_reweight = ccqeTemplateReweightCalculator->GetTemplateReweight(
       ISLepP4.E(),
       bin_kin,
-      var
+      var,
+      ISLep->Pdg()
     );
     resp[q0_bin_index].responses[i_var] = this_reweight;
-    i_var ++;
+    i_var++;
   }
 
   if (fill_valid_tree) {
@@ -285,7 +287,8 @@ int CCQETemplateReweight::GetQ0BinIndex(double q0_value) const {
   }
   
   if (q0_cutoff >= q0BinEdges[Nq0Bins]) {
-    return Nq0Bins;
+    // q0_cutoff equals the upper edge exactly; clamp to last valid bin.
+    return static_cast<int>(Nq0Bins) - 1;
   }
   
   // Fallback 

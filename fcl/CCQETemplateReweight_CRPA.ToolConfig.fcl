@@ -1,0 +1,28 @@
+CCQETemplate_Tool_Config: {
+
+    tool_type: "CCQETemplateReweight"
+    instance_name: "SBNNuSyst_CCQETemplateReweight_multisigma"
+
+    q0_bin_edges: "[0.0, 0.05, 0.10, 0.20, 0.7, 10.0]"
+
+    q0bin0_variation_descriptor: "[0, 1]"
+    q0bin1_variation_descriptor: "[0, 1]"
+    q0bin2_variation_descriptor: "[0, 1]"
+    q0bin3_variation_descriptor: "[0, 1]"
+    q0bin4_variation_descriptor: "[0, 1]"
+
+    verbosity_level: 5
+
+    CCQETemplateReweight_input_manifest: {
+      RWMode: "q3q0"
+      ENuBoundary: 1.0
+      // Single combined file containing all tunes for all four neutrino flavors.
+      // loads {flavor_label}_{baseline_tune} and {flavor_label}_{target_tune}
+      input_file: "/exp/sbnd/data/users/munjung/ccqe_rw/CCQEReweight_templates_all_tunes.root"
+      baseline_tune: "AR23_20i_01_000"
+      target_tune:   "G21_13a_00_000"
+    }
+
+  }
+
+syst_providers: [CCQETemplate_Tool_Config]
