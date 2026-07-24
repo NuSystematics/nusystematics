@@ -32,19 +32,22 @@ private:
 
   enum class Topo { np = 0, nn = 1, unknown = 2 };
 
+  struct FlavorResponseData {
+    std::vector<double> energyGrid; ///< GeV
+    double enuMin{0.4};             ///< GeV
+    double enuMax{2.5};             ///< GeV
+    std::unordered_map<Topo,
+        std::vector<std::unique_ptr<MECq0q3ResponseCalc>>> calcs;
+  };
+
   static Topo  ClassifyEvent(genie::EventRecord const&);
   static void  ComputeQ0Q3(genie::EventRecord const&, double& q0, double& q3,
                            double& Enu);
 
   // ---- configuration/state ----
-  std::vector<double> fEgrid; ///< GeV
-  // Signed incoming-neutrino PDG for flavor-specific maps. Zero leaves flavor
-  // filtering disabled for legacy manifests that do not provide Flavor.
-  int fExpectedProbePdg{0};
-
-
-
-  
+  // Keyed by signed incoming-neutrino PDG. Key zero is the legacy,
+  // flavor-independent map set used when neither Flavor nor Flavors is given.
+  std::unordered_map<int, FlavorResponseData> fFlavorResponses;
 
   // Clamp range
   double fWmin{0.0};
@@ -74,16 +77,11 @@ private:
   // Empty vector means single dial mode (backward compatible)
   std::vector<double> fQ0Bins;  // GeV bin edges
   
-  // Energy-guard window and snapping
-  // Only energies within [fEnuMin, fEnuMax] are reweighted.
+  // Energy-grid snapping. Each FlavorResponseData stores the effective energy
+  // guard after intersecting the configured window with its available grid.
   // If |Enu - grid_point| <= fEnuSnapTol, use the exact map (no blending).
-  double fEnuMin{0.4};      // GeV
-  double fEnuMax{2.5};      // GeV
   double fEnuSnapTol{5e-3}; // GeV
 
-  std::unordered_map<Topo,
-      std::vector<std::unique_ptr<MECq0q3ResponseCalc>>> fCalcs;
-  
   // Helper to determine which q0 bin (dial index) an event belongs to
   // Returns -1 if outside all bins
   int GetQ0BinIndex(double q0) const;

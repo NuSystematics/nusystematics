@@ -16,6 +16,7 @@
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <utility>
 
 // SystematicsTools helper
 #include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
@@ -93,31 +94,77 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   const auto manifest =
       tool_opts.get<fhicl::ParameterSet>("MECResponse_input_manifest");
 
-  // Flavor-specific maps must only be applied to events with the matching
-  // incoming neutrino. Keep filtering disabled for legacy manifests that do
-  // not explicitly configure Flavor.
-  fExpectedProbePdg = 0;
-  if (manifest.has_key("Flavor")) {
+  auto flavor_pdg = [](const std::string& flavor) -> int {
+    if (flavor == "numu") return genie::kPdgNuMu;
+    if (flavor == "nue") return genie::kPdgNuE;
+    if (flavor == "numubar") return genie::kPdgAntiNuMu;
+    if (flavor == "nuebar") return genie::kPdgAntiNuE;
+    throw std::runtime_error("Unknown flavor: '" + flavor +
+                             "'. Expected 'numu', 'nue', 'numubar', or 'nuebar'");
+  };
+
+  if (manifest.has_key("Flavor") && manifest.has_key("Flavors"))
+    throw std::runtime_error("Specify either Flavor or Flavors, not both");
+
+  // A zero PDG key preserves the legacy behavior: one map set applies to all
+  // incoming flavors. Explicit Flavor/Flavors entries are keyed by probe PDG.
+  std::vector<std::pair<std::string, int>> requestedFlavors;
+  if (manifest.has_key("Flavors")) {
+    const auto flavors = manifest.get<std::vector<std::string>>("Flavors");
+    if (flavors.empty())
+      throw std::runtime_error("Flavors must be non-empty");
+    for (const auto& flavor : flavors) {
+      const int pdg = flavor_pdg(flavor);
+      const auto duplicate = std::find_if(
+          requestedFlavors.begin(), requestedFlavors.end(),
+          [pdg](const auto& entry) { return entry.second == pdg; });
+      if (duplicate != requestedFlavors.end())
+        throw std::runtime_error("Duplicate flavor in Flavors: '" + flavor + "'");
+      requestedFlavors.emplace_back(flavor, pdg);
+    }
+  } else if (manifest.has_key("Flavor")) {
     const std::string flavor = manifest.get<std::string>("Flavor");
-    if (flavor == "numu")
-      fExpectedProbePdg = genie::kPdgNuMu;
-    else if (flavor == "nue")
-      fExpectedProbePdg = genie::kPdgNuE;
-    else if (flavor == "numubar")
-      fExpectedProbePdg = genie::kPdgAntiNuMu;
-    else if (flavor == "nuebar")
-      fExpectedProbePdg = genie::kPdgAntiNuE;
-    else
-      throw std::runtime_error("Unknown Flavor: '" + flavor +
-                               "'. Expected 'numu', 'nue', 'numubar', or 'nuebar'");
+    requestedFlavors.emplace_back(flavor, flavor_pdg(flavor));
+  } else {
+    requestedFlavors.emplace_back("", 0);
   }
 
-  // Energy grid (required)
-  if (!manifest.has_key("EnergyGrid"))
-    throw std::runtime_error("Missing EnergyGrid");
-  fEgrid = manifest.get<std::vector<double>>("EnergyGrid");
-  if (fEgrid.empty())
-    throw std::runtime_error("EnergyGrid must be non-empty");
+  std::vector<double> defaultEnergyGrid;
+  if (manifest.has_key("EnergyGrid"))
+    defaultEnergyGrid = manifest.get<std::vector<double>>("EnergyGrid");
+
+  fhicl::ParameterSet energyGrids;
+  const bool haveFlavorEnergyGrids = manifest.has_key("EnergyGrids");
+  if (haveFlavorEnergyGrids)
+    energyGrids = manifest.get<fhicl::ParameterSet>("EnergyGrids");
+
+  auto validate_energy_grid = [](const std::vector<double>& grid,
+                                 const std::string& label) {
+    if (grid.empty())
+      throw std::runtime_error(label + " must be non-empty");
+    if (!std::is_sorted(grid.begin(), grid.end()) ||
+        std::adjacent_find(grid.begin(), grid.end()) != grid.end()) {
+      throw std::runtime_error(label + " must be in strictly ascending order");
+    }
+    if (!std::all_of(grid.begin(), grid.end(),
+                     [](double energy) { return std::isfinite(energy); })) {
+      throw std::runtime_error(label + " must contain only finite values");
+    }
+  };
+
+  auto energy_grid_for = [&](const std::string& flavor) {
+    if (!flavor.empty() && haveFlavorEnergyGrids && energyGrids.has_key(flavor)) {
+      auto grid = energyGrids.get<std::vector<double>>(flavor);
+      validate_energy_grid(grid, "EnergyGrids." + flavor);
+      return grid;
+    }
+    if (defaultEnergyGrid.empty()) {
+      const std::string suffix = flavor.empty() ? "" : " for flavor '" + flavor + "'";
+      throw std::runtime_error("Missing EnergyGrid" + suffix);
+    }
+    validate_energy_grid(defaultEnergyGrid, "EnergyGrid");
+    return defaultEnergyGrid;
+  };
 
   // Weight clamp (optional)
   if (manifest.has_key("WeightLimits")) {
@@ -200,10 +247,10 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   }
 
   // Energy window & snap tolerance (defaults implement your request)
-  fEnuMin     = manifest.get<double>("EnuMin",     0.4);
-  fEnuMax     = manifest.get<double>("EnuMax",     2.5);
+  const double configuredEnuMin = manifest.get<double>("EnuMin", 0.4);
+  const double configuredEnuMax = manifest.get<double>("EnuMax", 2.5);
   fEnuSnapTol = manifest.get<double>("EnuSnapTol", 5e-3); // 5 MeV
-  if (!(std::isfinite(fEnuMin) && std::isfinite(fEnuMax) && fEnuMax >= fEnuMin))
+  if (!(std::isfinite(configuredEnuMin) && std::isfinite(configuredEnuMax) && configuredEnuMax >= configuredEnuMin))
     throw std::runtime_error("EnuMin/EnuMax must be finite and EnuMax>=EnuMin");
   if (!(std::isfinite(fEnuSnapTol) && fEnuSnapTol >= 0.0))
     throw std::runtime_error("EnuSnapTol must be finite and >= 0");
@@ -236,9 +283,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
 
 
 
-  std::cout << "  EnergyGrid size: " << fEgrid.size() << "\n"
-            << "  WeightLimits   : [" << fWmin << ", " << fWmax << "]\n"
-            << "  Enu window     : [" << fEnuMin << ", " << fEnuMax << "] GeV\n"
+  std::cout << "  WeightLimits   : [" << fWmin << ", " << fWmax << "]\n"
             << "  Enu snap tol   : " << fEnuSnapTol << " GeV\n";
 
 
@@ -254,10 +299,9 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       manifest.get<std::string>("DataBaseDir", "");
   dataBaseDir = systtools::expand_env_vars(dataBaseDir);
 
-  const std::string nuisFlatBaseDir =
+  std::string nuisFlatBaseDir =
       manifest.get<std::string>("NuisFlatWeightMapBaseDir", "");
-
-  std::vector<std::string> np_files, nn_files;
+  nuisFlatBaseDir = systtools::expand_env_vars(nuisFlatBaseDir);
 
   auto set_legacy_model_info = [&](std::string& modelDir,
                                    std::string& filePrefix) {
@@ -314,98 +358,47 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     }
   };
 
-  // Populate the per-energy map file lists.
-  {
-    if (manifest.has_key("np_files") || manifest.has_key("nn_files")) {
-      if (!(manifest.has_key("np_files") && manifest.has_key("nn_files"))) {
-        throw std::runtime_error("Both np_files and nn_files are required when either is specified");
-      }
-      np_files = manifest.get<std::vector<std::string>>("np_files");
-      nn_files = manifest.get<std::vector<std::string>>("nn_files");
-    } else if (!nuisFlatBaseDir.empty()) {
-      if (model.empty()) {
-        throw std::runtime_error("NuisFlatWeightMapBaseDir requires Model to be 'valencia' or 'martini'");
-      }
+  const std::string hname_np = manifest.get<std::string>("HistNameNP");
+  const std::string hname_nn = manifest.get<std::string>("HistNameNN");
+  fFlavorResponses.clear();
 
-      const std::string flavor =
-          manifest.get<std::string>("Flavor", "numu");
-      const std::string flavorTag = flavor_tag(flavor);
-      const std::string tune = external_model_tune();
-
-      std::string legacyModelDir, legacyFilePrefix;
-      set_legacy_model_info(legacyModelDir, legacyFilePrefix);
-
-      std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
-      std::cout << "  Flavor: " << flavor << "\n";
-      std::cout << "  External weight map base: " << nuisFlatBaseDir << "\n";
-      if (flavor == "numu") {
-        std::cout << "  numu middle-grid folder: "
-                  << nuisFlatBaseDir << "/" << model << "/" << flavor << "\n";
-      }
-
-      auto external_path = [&](const std::string& topo, double E) {
-        return nuisFlatBaseDir + "/" + model + "/" + flavor +
-               "/weight_map_ar23_to_" + tune + "_" + flavorTag + "_" +
-               topo + "_" + energy_label(E) + "GeV.root";
-      };
-
-      auto numu_middle_grid_path = [&](const std::string& topo, double E) {
-        return nuisFlatBaseDir + "/" + model + "/" + flavor + "/" + legacyFilePrefix +
-               "_" + topo + "_" + energy_label(E) + "GeV.root";
-      };
-
-      for (double E : fEgrid) {
-        const bool useNumuMiddleGrid = (flavor == "numu" && is_numu_local_energy(E));
-        const std::string np_file = useNumuMiddleGrid ? numu_middle_grid_path("np", E)
-                                                      : external_path("np", E);
-        const std::string nn_file = useNumuMiddleGrid ? numu_middle_grid_path("nn", E)
-                                                      : external_path("nn", E);
-        require_existing_map(np_file, flavor, "np", E);
-        require_existing_map(nn_file, flavor, "nn", E);
-        np_files.push_back(np_file);
-        nn_files.push_back(nn_file);
-        std::cout << "  Generated np file: " << np_file << "\n";
-        std::cout << "  Generated nn file: " << nn_file << "\n";
-      }
-    } else if (!model.empty() && !dataBaseDir.empty()) {
-      std::string modelDir, filePrefix;
-      set_legacy_model_info(modelDir, filePrefix);
-
-      std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
-      std::cout << "  Model directory: " << modelDir << "\n";
-
-      for (double E : fEgrid) {
-        const std::string np_file = dataBaseDir + "/" + modelDir + "/" +
-            filePrefix + "_np_" + energy_label(E) + "GeV.root";
-        const std::string nn_file = dataBaseDir + "/" + modelDir + "/" +
-            filePrefix + "_nn_" + energy_label(E) + "GeV.root";
-        np_files.push_back(np_file);
-        nn_files.push_back(nn_file);
-        std::cout << "  Generated np file: " << np_file << "\n";
-        std::cout << "  Generated nn file: " << nn_file << "\n";
-      }
+  auto load_response_data = [&](int probePdg, const std::string& flavor,
+                                std::vector<double> energyGrid,
+                                const std::vector<std::string>& npFiles,
+                                const std::vector<std::string>& nnFiles) {
+    if (npFiles.size() != energyGrid.size() || nnFiles.size() != energyGrid.size()) {
+      throw std::runtime_error("np_files/nn_files sizes must match the EnergyGrid size" +
+                               (flavor.empty() ? std::string{} :
+                                " for flavor '" + flavor + "'"));
     }
-  }
-  const bool haveArrays = !np_files.empty() && !nn_files.empty();
-  if (!haveArrays)
-    throw std::runtime_error("Need either (np_files & nn_files), (NuisFlatWeightMapBaseDir & Model), or (Model & DataBaseDir)");
 
-  fCalcs.clear();
+    auto insertion = fFlavorResponses.emplace(probePdg, FlavorResponseData{});
+    if (!insertion.second)
+      throw std::runtime_error("More than one MEC response set configured for probe PDG " +
+                               std::to_string(probePdg));
 
-  {
-    // Per-energy map files use explicit TH2 names.
-    if (np_files.size() != fEgrid.size() || nn_files.size() != fEgrid.size())
-      throw std::runtime_error("np_files/nn_files sizes must match EnergyGrid size");
+    auto& responseData = insertion.first->second;
+    responseData.energyGrid = std::move(energyGrid);
+    responseData.enuMin = std::max(configuredEnuMin, responseData.energyGrid.front());
+    responseData.enuMax = std::min(configuredEnuMax, responseData.energyGrid.back());
+    if (responseData.enuMax < responseData.enuMin) {
+      throw std::runtime_error("Configured Enu window does not overlap the EnergyGrid" +
+                               (flavor.empty() ? std::string{} :
+                                " for flavor '" + flavor + "'"));
+    }
 
-    const std::string hname_np = manifest.get<std::string>("HistNameNP");
-    const std::string hname_nn = manifest.get<std::string>("HistNameNN");
+    std::cout << "  Response maps: "
+              << (flavor.empty() ? "legacy flavor-independent" : flavor)
+              << " (probe PDG " << probePdg << ")\n"
+              << "    EnergyGrid size: " << responseData.energyGrid.size() << "\n"
+              << "    Enu window: [" << responseData.enuMin << ", "
+              << responseData.enuMax << "] GeV\n";
 
     auto load_list = [&](const std::vector<std::string>& files,
                          Topo topo, const std::string& hname) {
-      auto& vec = fCalcs[topo];
-      vec.reserve(files.size());
-      for (size_t i = 0; i < files.size(); ++i) {
-        const std::string& fname = files[i];
+      auto& calculators = responseData.calcs[topo];
+      calculators.reserve(files.size());
+      for (const auto& fname : files) {
         TFile fin(fname.c_str(), "READ");
         if (!fin.IsOpen())
           throw std::runtime_error("Cannot open file: " + fname);
@@ -421,13 +414,109 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
         calc->SetUseNearestBin(useNearestBin);
         calc->SetEdgeClamp(edgeClamp);
         calc->SetOutOfRangeWeight(outOfRangeWeight);
-        vec.emplace_back(std::move(calc));
-        fin.Close();
+        calculators.emplace_back(std::move(calc));
       }
     };
 
-    load_list(np_files, Topo::np, hname_np);
-    load_list(nn_files, Topo::nn, hname_nn);
+    load_list(npFiles, Topo::np, hname_np);
+    load_list(nnFiles, Topo::nn, hname_nn);
+  };
+
+  if (manifest.has_key("np_files") || manifest.has_key("nn_files")) {
+    if (!(manifest.has_key("np_files") && manifest.has_key("nn_files")))
+      throw std::runtime_error("Both np_files and nn_files are required when either is specified");
+    if (requestedFlavors.size() != 1)
+      throw std::runtime_error("Flavors requires NuisFlatWeightMapBaseDir; explicit file arrays describe only one map set");
+
+    const auto& flavorEntry = requestedFlavors.front();
+    load_response_data(
+        flavorEntry.second, flavorEntry.first, energy_grid_for(flavorEntry.first),
+        manifest.get<std::vector<std::string>>("np_files"),
+        manifest.get<std::vector<std::string>>("nn_files"));
+  } else if (!nuisFlatBaseDir.empty()) {
+    if (model.empty())
+      throw std::runtime_error("NuisFlatWeightMapBaseDir requires Model to be 'valencia' or 'martini'");
+
+    const std::string tune = external_model_tune();
+    std::string legacyModelDir, legacyFilePrefix;
+    set_legacy_model_info(legacyModelDir, legacyFilePrefix);
+
+    std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
+    std::cout << "  External weight map base: " << nuisFlatBaseDir << "\n";
+
+    for (const auto& flavorEntry : requestedFlavors) {
+      // Legacy manifests without Flavor continue to use the numu maps under
+      // key zero, so the same maps remain applicable to every probe flavor.
+      const std::string flavor = flavorEntry.first.empty() ? "numu" : flavorEntry.first;
+      const std::string flavorTag = flavor_tag(flavor);
+      std::cout << "  Flavor: " << flavor << "\n";
+      if (flavor == "numu")
+        std::cout << "  numu middle-grid folder: "
+                  << nuisFlatBaseDir << "/" << model << "/" << flavor << "\n";
+
+      auto energyGrid = energy_grid_for(flavor);
+      std::vector<std::string> npFiles;
+      std::vector<std::string> nnFiles;
+      npFiles.reserve(energyGrid.size());
+      nnFiles.reserve(energyGrid.size());
+
+      auto external_path = [&](const std::string& topo, double E) {
+        return nuisFlatBaseDir + "/" + model + "/" + flavor +
+               "/weight_map_ar23_to_" + tune + "_" + flavorTag + "_" +
+               topo + "_" + energy_label(E) + "GeV.root";
+      };
+
+      auto numu_middle_grid_path = [&](const std::string& topo, double E) {
+        return nuisFlatBaseDir + "/" + model + "/" + flavor + "/" + legacyFilePrefix +
+               "_" + topo + "_" + energy_label(E) + "GeV.root";
+      };
+
+      for (double E : energyGrid) {
+        const bool useNumuMiddleGrid = (flavor == "numu" && is_numu_local_energy(E));
+        const std::string np_file = useNumuMiddleGrid ? numu_middle_grid_path("np", E)
+                                                      : external_path("np", E);
+        const std::string nn_file = useNumuMiddleGrid ? numu_middle_grid_path("nn", E)
+                                                      : external_path("nn", E);
+        require_existing_map(np_file, flavor, "np", E);
+        require_existing_map(nn_file, flavor, "nn", E);
+        npFiles.push_back(np_file);
+        nnFiles.push_back(nn_file);
+        std::cout << "  Generated np file: " << np_file << "\n";
+        std::cout << "  Generated nn file: " << nn_file << "\n";
+      }
+      load_response_data(flavorEntry.second, flavorEntry.first,
+                         std::move(energyGrid), npFiles, nnFiles);
+    }
+  } else if (!model.empty() && !dataBaseDir.empty()) {
+    if (requestedFlavors.size() != 1)
+      throw std::runtime_error("Flavors requires NuisFlatWeightMapBaseDir; legacy DataBaseDir maps are not flavor-specific");
+
+    std::string modelDir, filePrefix;
+    set_legacy_model_info(modelDir, filePrefix);
+    const auto& flavorEntry = requestedFlavors.front();
+    auto energyGrid = energy_grid_for(flavorEntry.first);
+    std::vector<std::string> npFiles;
+    std::vector<std::string> nnFiles;
+    npFiles.reserve(energyGrid.size());
+    nnFiles.reserve(energyGrid.size());
+
+    std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
+    std::cout << "  Model directory: " << modelDir << "\n";
+
+    for (double E : energyGrid) {
+      const std::string npFile = dataBaseDir + "/" + modelDir + "/" +
+          filePrefix + "_np_" + energy_label(E) + "GeV.root";
+      const std::string nnFile = dataBaseDir + "/" + modelDir + "/" +
+          filePrefix + "_nn_" + energy_label(E) + "GeV.root";
+      npFiles.push_back(npFile);
+      nnFiles.push_back(nnFile);
+      std::cout << "  Generated np file: " << npFile << "\n";
+      std::cout << "  Generated nn file: " << nnFile << "\n";
+    }
+    load_response_data(flavorEntry.second, flavorEntry.first,
+                       std::move(energyGrid), npFiles, nnFiles);
+  } else {
+    throw std::runtime_error("Need either (np_files & nn_files), (NuisFlatWeightMapBaseDir & Model), or (Model & DataBaseDir)");
   }
 
   std::cout << "[MECq0q3InterpWeighting] SetupResponseCalculator done\n";
@@ -439,11 +528,18 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
 systtools::event_unit_response_t
 MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
 {
-  if (fExpectedProbePdg != 0) {
-    const auto* probe = ev.Probe();
-    if (!probe || probe->Pdg() != fExpectedProbePdg)
-      return this->GetDefaultEventResponse();
-  }
+  const auto* probe = ev.Probe();
+  if (!probe)
+    return this->GetDefaultEventResponse();
+
+  auto flavorResponseIt = fFlavorResponses.find(probe->Pdg());
+  if (flavorResponseIt == fFlavorResponses.end())
+    flavorResponseIt = fFlavorResponses.find(0);
+  if (flavorResponseIt == fFlavorResponses.end())
+    return this->GetDefaultEventResponse();
+
+  const auto& flavorResponse = flavorResponseIt->second;
+  const auto& energyGrid = flavorResponse.energyGrid;
 
   // classify topology
   const Topo topo = ClassifyEvent(ev);
@@ -473,18 +569,18 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
     }
   }
 
-  // Energy guard: weight=1 outside [fEnuMin, fEnuMax] (after q3/q0 gates)
-  if (Enu < fEnuMin - 1e-6 || Enu > fEnuMax + 1e-6)
+  // Energy guard: weight=1 outside this flavor's available map grid.
+  if (Enu < flavorResponse.enuMin - 1e-6 || Enu > flavorResponse.enuMax + 1e-6)
     return this->GetDefaultEventResponse();
 
   // find bracketing energies (handles mono grid too)
-  auto it_hi = std::lower_bound(fEgrid.begin(), fEgrid.end(), Enu);
-  size_t ih = (it_hi == fEgrid.end()) ? fEgrid.size() - 1
-                                      : std::distance(fEgrid.begin(), it_hi);
+  auto it_hi = std::lower_bound(energyGrid.begin(), energyGrid.end(), Enu);
+  size_t ih = (it_hi == energyGrid.end()) ? energyGrid.size() - 1
+                                          : std::distance(energyGrid.begin(), it_hi);
   size_t il = (ih == 0) ? 0 : ih - 1;
 
-  const double Elo = fEgrid[il];
-  const double Ehi = fEgrid[ih];
+  const double Elo = energyGrid[il];
+  const double Ehi = energyGrid[ih];
 
   // Exact-map snapping: if Enu is within EnuSnapTol of a grid point, use it
   double t = 0.0; // interpolation fraction
@@ -500,7 +596,7 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
   }
 
   // central weights at the two energies (same index if snapped)
-  const auto& vec = fCalcs.at(topo);
+  const auto& vec = flavorResponse.calcs.at(topo);
   const double w_lo = vec[il]->GetCentralWeight(q0, q3);
   const double w_hi = vec[ih]->GetCentralWeight(q0, q3);
   const double w_blend = (1.0 - t) * w_lo + t * w_hi;

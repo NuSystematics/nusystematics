@@ -7,7 +7,7 @@ SuSAv2ToMartini_MECInterp_numubar: {
   # SINGLE-DIAL MODE
   # This configuration uses ONE dial that applies to all events.
   # For multiple q0-binned dials, see:
-  #   SuSAv2ToMartini_MEC_q0binned_numubar.ToolConfig.fcl
+  #   SuSAv2ToMartini_MEC_q0binned_all.ToolConfig.fcl
   # ============================================================
 
   # Define the systematic parameter (dial) for interpolation weighting
@@ -63,7 +63,7 @@ SuSAv2ToMartini_MECInterp_numubar: {
     # This is independent of Q0ApplyMin/Q0ApplyMax above
     # 
     # NOTE: For multiple q0 bins with separate dials, use Q0Bins instead.
-    #       See SuSAv2ToMartini_MEC_q0binned_numubar.ToolConfig.fcl for example.
+    #       See SuSAv2ToMartini_MEC_q0binned_all.ToolConfig.fcl for example.
     #       Q0SelectMin/Max is ignored when Q0Bins is set.
     Q0SelectMin: 0.0    # GeV (0.0 = disabled)
     Q0SelectMax: 0.0    # GeV (0.0 = disabled)
