@@ -6,7 +6,7 @@ SuSAv2ToValenica_MECInterp_nue: {
   # ============================================================
   # SINGLE-DIAL MODE
   # This configuration uses ONE dial that applies to all events.
-  # For multiple q0-binned dials, see the q0binned example config.
+  # For multiple q0-binned dials, see SuSAv2ToValenica_MEC_q0binned_all.ToolConfig.fcl.
   # ============================================================
 
   # Define the systematic parameter (dial) for interpolation weighting
