@@ -35,7 +35,7 @@ find_package(ROOT 6.10 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 CPMFindPackage(
     NAME systematicstools
-    GIT_TAG v02_00_05
+    GIT_TAG feature/YAML
     GITHUB_REPOSITORY NuSystematics/systematicstools
 )
 
