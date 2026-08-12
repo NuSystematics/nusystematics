@@ -38,6 +38,8 @@ private:
     double enuMax{2.5};             ///< GeV
     std::unordered_map<Topo,
         std::vector<std::unique_ptr<MECq0q3ResponseCalc>>> calcs;
+    std::unordered_map<Topo,
+        std::unique_ptr<MECq0q3ResponseCalc3D>> calcs3D;
   };
 
   static Topo  ClassifyEvent(genie::EventRecord const&);
