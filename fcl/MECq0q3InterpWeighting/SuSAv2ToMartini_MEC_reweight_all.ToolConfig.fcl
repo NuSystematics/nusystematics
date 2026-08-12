@@ -13,9 +13,9 @@ SuSAv2ToMartini_MECInterp_reweight_all: {
 
     # All flavors share MECResponse but retain their own response-map grids.
     Flavors: ["numu", "numubar", "nue", "nuebar"]
-    NuisFlatWeightMapBaseDir: "/exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/weight_test_folders_all_flavors"
+    NuisFlatWeightMapBaseDir: "/exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/data/ccmec_all_flavors_weight_maps_10M_5MeV_step_size_q0_q3"
 
-    # numu and nue maps cover 0.20--3.00 GeV.
+    # All flavors and both topologies cover 0.20--3.00 GeV.
     EnergyGrid: [
       0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65,
       0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15,
@@ -24,27 +24,6 @@ SuSAv2ToMartini_MECInterp_reweight_all: {
       2.20, 2.25, 2.30, 2.35, 2.40, 2.45, 2.50, 2.55, 2.60, 2.65,
       2.70, 2.75, 2.80, 2.85, 2.90, 2.95, 3.00
     ]
-
-    # Martini antineutrino maps start at 0.30 GeV. EnuMin is clamped to the
-    # first entry of the selected flavor grid at runtime.
-    EnergyGrids: {
-      numubar: [
-        0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75,
-        0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15, 1.20, 1.25,
-        1.30, 1.35, 1.40, 1.45, 1.50, 1.55, 1.60, 1.65, 1.70, 1.75,
-        1.80, 1.85, 1.90, 1.95, 2.00, 2.05, 2.10, 2.15, 2.20, 2.25,
-        2.30, 2.35, 2.40, 2.45, 2.50, 2.55, 2.60, 2.65, 2.70, 2.75,
-        2.80, 2.85, 2.90, 2.95, 3.00
-      ]
-      nuebar: [
-        0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75,
-        0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15, 1.20, 1.25,
-        1.30, 1.35, 1.40, 1.45, 1.50, 1.55, 1.60, 1.65, 1.70, 1.75,
-        1.80, 1.85, 1.90, 1.95, 2.00, 2.05, 2.10, 2.15, 2.20, 2.25,
-        2.30, 2.35, 2.40, 2.45, 2.50, 2.55, 2.60, 2.65, 2.70, 2.75,
-        2.80, 2.85, 2.90, 2.95, 3.00
-      ]
-    }
 
     WeightLimits: [0.1, 1000.0]
     Q0ApplyMin: 0.0
