@@ -324,6 +324,14 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     throw std::runtime_error("Unknown Model: '" + model + "'. Expected 'valencia' or 'martini'");
   };
 
+  auto external_model_dir = [&]() -> std::string {
+    if (model == "valencia")
+      return "Valencia";
+    if (model == "martini")
+      return "Martini";
+    throw std::runtime_error("Unknown Model: '" + model + "'. Expected 'valencia' or 'martini'");
+  };
+
   auto flavor_tag = [](const std::string& flavor) -> std::string {
     if (flavor == "numu")
       return "NUMU";
@@ -338,11 +346,6 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
 
   auto energy_label = [](double E) -> std::string {
     return std::string(Form("%0.2f", E));
-  };
-
-  auto is_numu_local_energy = [](double E) -> bool {
-    constexpr double tol = 1e-6;
-    return E >= (0.40 - tol) && E <= (2.50 + tol);
   };
 
   auto require_existing_map = [&](const std::string& fname,
@@ -438,8 +441,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       throw std::runtime_error("NuisFlatWeightMapBaseDir requires Model to be 'valencia' or 'martini'");
 
     const std::string tune = external_model_tune();
-    std::string legacyModelDir, legacyFilePrefix;
-    set_legacy_model_info(legacyModelDir, legacyFilePrefix);
+    const std::string modelDir = external_model_dir();
 
     std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
     std::cout << "  External weight map base: " << nuisFlatBaseDir << "\n";
@@ -450,9 +452,6 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       const std::string flavor = flavorEntry.first.empty() ? "numu" : flavorEntry.first;
       const std::string flavorTag = flavor_tag(flavor);
       std::cout << "  Flavor: " << flavor << "\n";
-      if (flavor == "numu")
-        std::cout << "  numu middle-grid folder: "
-                  << nuisFlatBaseDir << "/" << model << "/" << flavor << "\n";
 
       auto energyGrid = energy_grid_for(flavor);
       std::vector<std::string> npFiles;
@@ -461,22 +460,14 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       nnFiles.reserve(energyGrid.size());
 
       auto external_path = [&](const std::string& topo, double E) {
-        return nuisFlatBaseDir + "/" + model + "/" + flavor +
+        return nuisFlatBaseDir + "/" + modelDir + "/" + flavor + "/" + topo +
                "/weight_map_ar23_to_" + tune + "_" + flavorTag + "_" +
                topo + "_" + energy_label(E) + "GeV.root";
       };
 
-      auto numu_middle_grid_path = [&](const std::string& topo, double E) {
-        return nuisFlatBaseDir + "/" + model + "/" + flavor + "/" + legacyFilePrefix +
-               "_" + topo + "_" + energy_label(E) + "GeV.root";
-      };
-
       for (double E : energyGrid) {
-        const bool useNumuMiddleGrid = (flavor == "numu" && is_numu_local_energy(E));
-        const std::string np_file = useNumuMiddleGrid ? numu_middle_grid_path("np", E)
-                                                      : external_path("np", E);
-        const std::string nn_file = useNumuMiddleGrid ? numu_middle_grid_path("nn", E)
-                                                      : external_path("nn", E);
+        const std::string np_file = external_path("np", E);
+        const std::string nn_file = external_path("nn", E);
         require_existing_map(np_file, flavor, "np", E);
         require_existing_map(nn_file, flavor, "nn", E);
         npFiles.push_back(np_file);
