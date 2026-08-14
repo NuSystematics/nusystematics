@@ -30,7 +30,7 @@ public:
 private:
   fhicl::ParameterSet tool_options;
 
-  enum class Topo { np = 0, nn = 1, unknown = 2 };
+  enum class Topo { np = 0, likePair = 1, unknown = 2 };
 
   struct FlavorResponseData {
     std::vector<double> energyGrid; ///< GeV
