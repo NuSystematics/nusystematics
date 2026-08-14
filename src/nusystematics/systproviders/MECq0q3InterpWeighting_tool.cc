@@ -448,7 +448,9 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     };
 
     load_list(npFiles, Topo::np, hname_np);
-    load_list(nnFiles, Topo::nn, hname_nn);
+    // The existing "nn" map name denotes the like-nucleon channel: NN for
+    // neutrinos and the charge-conjugate PP channel for antineutrinos.
+    load_list(nnFiles, Topo::likePair, hname_nn);
   };
 
   if (useWeightMap3D) {
@@ -575,7 +577,10 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       };
 
       load_3d_histogram("np", Topo::np);
-      load_3d_histogram("nn", Topo::nn);
+      // The combined ROOT schema names the physical like-pair channel by
+      // flavor: NN for neutrinos and PP for antineutrinos.
+      const std::string likePairMap = flavorEntry.second < 0 ? "pp" : "nn";
+      load_3d_histogram(likePairMap, Topo::likePair);
       responseData.enuMin = std::max(configuredEnuMin, responseData.energyGrid.front());
       responseData.enuMax = std::min(configuredEnuMax, responseData.energyGrid.back());
       if (responseData.enuMax < responseData.enuMin) {
@@ -845,7 +850,8 @@ MECq0q3InterpWeighting::ClassifyEvent(genie::EventRecord const& ev)
     if (!p) continue;
     if (p->Status() != genie::kIStNucleonTarget) continue;
     const int pdg = p->Pdg();
-    if (pdg == genie::kPdgClusterNN) return Topo::nn; // 2n
+    if (pdg == genie::kPdgClusterNN || pdg == genie::kPdgClusterPP)
+      return Topo::likePair; // 2n for neutrinos, 2p for antineutrinos
     if (pdg == genie::kPdgClusterNP) return Topo::np; // 1n+1p
   }
   return Topo::unknown;
