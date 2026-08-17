@@ -30,7 +30,7 @@ public:
 private:
   fhicl::ParameterSet tool_options;
 
-  enum class Topo { np = 0, nn = 1, unknown = 2 };
+  enum class Topo { np = 0, likePair = 1, unknown = 2 };
 
   struct FlavorResponseData {
     std::vector<double> energyGrid; ///< GeV
@@ -38,6 +38,8 @@ private:
     double enuMax{2.5};             ///< GeV
     std::unordered_map<Topo,
         std::vector<std::unique_ptr<MECq0q3ResponseCalc>>> calcs;
+    std::unordered_map<Topo,
+        std::unique_ptr<MECq0q3ResponseCalc3D>> calcs3D;
   };
 
   static Topo  ClassifyEvent(genie::EventRecord const&);

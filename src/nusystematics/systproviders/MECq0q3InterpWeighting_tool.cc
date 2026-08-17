@@ -8,6 +8,7 @@
 #include <TKey.h>
 #include <TLorentzVector.h>
 #include <TH2.h>
+#include <TH3.h>
 #include <TString.h>
 
 #include <iostream>
@@ -257,7 +258,12 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   if (!(std::isfinite(fEnuSnapTol) && fEnuSnapTol >= 0.0))
     throw std::runtime_error("EnuSnapTol must be finite and >= 0");
 
-  const bool mapIsQ3xQ0 = manifest.get<bool>("MapIsQ3xQ0", false);
+  std::string weightMapFile3D =
+      manifest.get<std::string>("WeightMapFile3D", "");
+  weightMapFile3D = systtools::expand_env_vars(weightMapFile3D);
+  const bool useWeightMap3D = !weightMapFile3D.empty();
+
+  const bool mapIsQ3xQ0 = useWeightMap3D || manifest.get<bool>("MapIsQ3xQ0", false);
   const bool useNearestBin = manifest.get<bool>("UseNearestBin", true);  // turn ON new behavior
   const bool edgeClamp     = manifest.get<bool>("EdgeClamp",     true);  // clamp OOR to edge bin
   
@@ -293,9 +299,10 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
 
 
   // Histogram sourcing:
-  //  (A) Arrays np_files/nn_files with explicit histogram names: HistNameNP/HistNameNN
-  //  (B) Flavor-selected external files under NuisFlatWeightMapBaseDir
-  //  (C) Legacy auto-generated file paths based on Model and DataBaseDir
+  //  (A) Combined q3 x q0 x Enu histograms in WeightMapFile3D
+  //  (B) Arrays np_files/nn_files with explicit histogram names: HistNameNP/HistNameNN
+  //  (C) Flavor-selected external files under NuisFlatWeightMapBaseDir
+  //  (D) Legacy auto-generated file paths based on Model and DataBaseDir
 
   std::string dataBaseDir =
       manifest.get<std::string>("DataBaseDir", "");
@@ -304,6 +311,20 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
   std::string nuisFlatBaseDir =
       manifest.get<std::string>("NuisFlatWeightMapBaseDir", "");
   nuisFlatBaseDir = systtools::expand_env_vars(nuisFlatBaseDir);
+
+  if (useWeightMap3D) {
+    const std::vector<std::string> incompatibleKeys = {
+      "NuisFlatWeightMapBaseDir", "DataBaseDir", "np_files", "nn_files",
+      "EnergyGrid", "EnergyGrids", "HistNameNP", "HistNameNN"
+    };
+    for (const auto& key : incompatibleKeys) {
+      if (manifest.has_key(key)) {
+        throw std::runtime_error(
+            "WeightMapFile3D cannot be combined with legacy manifest key '" +
+            key + "'");
+      }
+    }
+  }
 
   auto set_legacy_model_info = [&](std::string& modelDir,
                                    std::string& filePrefix) {
@@ -326,6 +347,14 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     throw std::runtime_error("Unknown Model: '" + model + "'. Expected 'valencia' or 'martini'");
   };
 
+  auto external_model_dir = [&]() -> std::string {
+    if (model == "valencia")
+      return "Valencia";
+    if (model == "martini")
+      return "Martini";
+    throw std::runtime_error("Unknown Model: '" + model + "'. Expected 'valencia' or 'martini'");
+  };
+
   auto flavor_tag = [](const std::string& flavor) -> std::string {
     if (flavor == "numu")
       return "NUMU";
@@ -342,11 +371,6 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     return std::string(Form("%0.2f", E));
   };
 
-  auto is_numu_local_energy = [](double E) -> bool {
-    constexpr double tol = 1e-6;
-    return E >= (0.40 - tol) && E <= (2.50 + tol);
-  };
-
   auto require_existing_map = [&](const std::string& fname,
                                   const std::string& flavor,
                                   const std::string& topo,
@@ -360,14 +384,17 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     }
   };
 
-  const std::string hname_np = manifest.get<std::string>("HistNameNP");
-  const std::string hname_nn = manifest.get<std::string>("HistNameNN");
+  const std::string hname_np = manifest.get<std::string>("HistNameNP", "");
+  const std::string hname_nn = manifest.get<std::string>("HistNameNN", "");
   fFlavorResponses.clear();
 
   auto load_response_data = [&](int probePdg, const std::string& flavor,
                                 std::vector<double> energyGrid,
                                 const std::vector<std::string>& npFiles,
                                 const std::vector<std::string>& nnFiles) {
+    if (hname_np.empty() || hname_nn.empty())
+      throw std::runtime_error("HistNameNP and HistNameNN are required for TH2D weight-map sources");
+
     if (npFiles.size() != energyGrid.size() || nnFiles.size() != energyGrid.size()) {
       throw std::runtime_error("np_files/nn_files sizes must match the EnergyGrid size" +
                                (flavor.empty() ? std::string{} :
@@ -421,10 +448,147 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     };
 
     load_list(npFiles, Topo::np, hname_np);
-    load_list(nnFiles, Topo::nn, hname_nn);
+    // The existing "nn" map name denotes the like-nucleon channel: NN for
+    // neutrinos and the charge-conjugate PP channel for antineutrinos.
+    load_list(nnFiles, Topo::likePair, hname_nn);
   };
 
-  if (manifest.has_key("np_files") || manifest.has_key("nn_files")) {
+  if (useWeightMap3D) {
+    if (model != "valencia" && model != "martini")
+      throw std::runtime_error("WeightMapFile3D requires Model to be 'valencia' or 'martini'");
+
+    TFile fin(weightMapFile3D.c_str(), "READ");
+    if (!fin.IsOpen() || fin.IsZombie())
+      throw std::runtime_error("Cannot open 3D MEC weight-map file: " + weightMapFile3D);
+
+    std::vector<double> referenceXEdges;
+    std::vector<double> referenceYEdges;
+    std::vector<double> referenceZEdges;
+
+    auto nearly_equal = [](double lhs, double rhs) {
+      return std::fabs(lhs - rhs) <= 1e-10;
+    };
+
+    auto axis_edges = [](const TAxis& axis) {
+      std::vector<double> edges;
+      edges.reserve(axis.GetNbins() + 1);
+      for (int ibin = 1; ibin <= axis.GetNbins() + 1; ++ibin)
+        edges.push_back(axis.GetBinLowEdge(ibin));
+      return edges;
+    };
+
+    auto require_matching_edges = [&](std::vector<double>& reference,
+                                      const TAxis& axis,
+                                      const std::string& histName,
+                                      const std::string& axisName) {
+      auto edges = axis_edges(axis);
+      if (reference.empty()) {
+        reference = std::move(edges);
+        return;
+      }
+      if (reference.size() != edges.size())
+        throw std::runtime_error("Histogram '" + histName +
+                                 "' has mismatched " + axisName + " binning");
+      for (size_t i = 0; i < edges.size(); ++i) {
+        if (!nearly_equal(reference[i], edges[i]))
+          throw std::runtime_error("Histogram '" + histName +
+                                   "' has mismatched " + axisName + " binning");
+      }
+    };
+
+    auto validate_3d_histogram = [&](const TH3D& hist,
+                                     const std::string& histName) {
+      if (hist.GetNbinsX() != 500 || hist.GetNbinsY() != 500 ||
+          hist.GetNbinsZ() != 57) {
+        throw std::runtime_error("Histogram '" + histName +
+                                 "' must have dimensions 500 x 500 x 57");
+      }
+      if (std::string(hist.GetXaxis()->GetTitle()) != "q3 [GeV]" ||
+          std::string(hist.GetYaxis()->GetTitle()) != "q0 [GeV]" ||
+          std::string(hist.GetZaxis()->GetTitle()) != "Enu [GeV]") {
+        throw std::runtime_error("Histogram '" + histName +
+                                 "' must have q3 x q0 x Enu axes in GeV");
+      }
+      if (!nearly_equal(hist.GetXaxis()->GetXmin(), 0.0) ||
+          !nearly_equal(hist.GetXaxis()->GetXmax(), 2.5) ||
+          !nearly_equal(hist.GetYaxis()->GetXmin(), 0.0) ||
+          !nearly_equal(hist.GetYaxis()->GetXmax(), 2.5)) {
+        throw std::runtime_error("Histogram '" + histName +
+                                 "' must span 0--2.5 GeV in q3 and q0");
+      }
+      for (int iz = 1; iz <= hist.GetNbinsZ(); ++iz) {
+        const double expected = 0.20 + 0.05 * static_cast<double>(iz - 1);
+        if (!nearly_equal(hist.GetZaxis()->GetBinCenter(iz), expected)) {
+          throw std::runtime_error("Histogram '" + histName +
+                                   "' must have Enu centers from 0.20 to 3.00 GeV in 0.05 GeV steps");
+        }
+      }
+      require_matching_edges(referenceXEdges, *hist.GetXaxis(), histName, "q3");
+      require_matching_edges(referenceYEdges, *hist.GetYaxis(), histName, "q0");
+      require_matching_edges(referenceZEdges, *hist.GetZaxis(), histName, "Enu");
+    };
+
+    std::cout << "  Combined 3D weight-map file: " << weightMapFile3D << "\n";
+    for (const auto& flavorEntry : requestedFlavors) {
+      const std::string flavor = flavorEntry.first.empty() ? "numu" : flavorEntry.first;
+      auto insertion = fFlavorResponses.emplace(flavorEntry.second, FlavorResponseData{});
+      if (!insertion.second)
+        throw std::runtime_error("More than one MEC response set configured for probe PDG " +
+                                 std::to_string(flavorEntry.second));
+      auto& responseData = insertion.first->second;
+
+      auto load_3d_histogram = [&](const std::string& topology, Topo topo) {
+        const std::string histName = model + "_" + flavor + "_" + topology;
+        TObject* object = fin.Get(histName.c_str());
+        TH3D* rawHist = dynamic_cast<TH3D*>(object);
+        if (!rawHist) {
+          const std::string actualType = object ? object->ClassName() : "missing";
+          throw std::runtime_error("Expected TH3D histogram '" + histName +
+                                   "' in " + weightMapFile3D + "; found " + actualType);
+        }
+
+        rawHist->SetDirectory(nullptr);
+        std::unique_ptr<TH3D> hist(rawHist);
+        validate_3d_histogram(*hist, histName);
+
+        std::vector<double> energyGrid;
+        energyGrid.reserve(hist->GetNbinsZ());
+        for (int iz = 1; iz <= hist->GetNbinsZ(); ++iz)
+          energyGrid.push_back(hist->GetZaxis()->GetBinCenter(iz));
+        if (responseData.energyGrid.empty()) {
+          responseData.energyGrid = std::move(energyGrid);
+        } else if (responseData.energyGrid != energyGrid) {
+          throw std::runtime_error("Histogram '" + histName +
+                                   "' has a topology-dependent Enu grid");
+        }
+
+        auto calc = std::make_unique<MECq0q3ResponseCalc3D>(hist.get(), fWmin, fWmax);
+        calc->SetUseNearestBin(useNearestBin);
+        calc->SetEdgeClamp(edgeClamp);
+        calc->SetOutOfRangeWeight(outOfRangeWeight);
+        responseData.calcs3D.emplace(topo, std::move(calc));
+        std::cout << "  Loaded " << histName << "  X:["
+                  << hist->GetXaxis()->GetXmin() << ","
+                  << hist->GetXaxis()->GetXmax() << "]  Y:["
+                  << hist->GetYaxis()->GetXmin() << ","
+                  << hist->GetYaxis()->GetXmax() << "]  Enu:["
+                  << responseData.energyGrid.front() << ","
+                  << responseData.energyGrid.back() << "] GeV\n";
+      };
+
+      load_3d_histogram("np", Topo::np);
+      // The combined ROOT schema names the physical like-pair channel by
+      // flavor: NN for neutrinos and PP for antineutrinos.
+      const std::string likePairMap = flavorEntry.second < 0 ? "pp" : "nn";
+      load_3d_histogram(likePairMap, Topo::likePair);
+      responseData.enuMin = std::max(configuredEnuMin, responseData.energyGrid.front());
+      responseData.enuMax = std::min(configuredEnuMax, responseData.energyGrid.back());
+      if (responseData.enuMax < responseData.enuMin) {
+        throw std::runtime_error("Configured Enu window does not overlap the 3D map grid for flavor '" +
+                                 flavor + "'");
+      }
+    }
+  } else if (manifest.has_key("np_files") || manifest.has_key("nn_files")) {
     if (!(manifest.has_key("np_files") && manifest.has_key("nn_files")))
       throw std::runtime_error("Both np_files and nn_files are required when either is specified");
     if (requestedFlavors.size() != 1)
@@ -440,8 +604,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       throw std::runtime_error("NuisFlatWeightMapBaseDir requires Model to be 'valencia' or 'martini'");
 
     const std::string tune = external_model_tune();
-    std::string legacyModelDir, legacyFilePrefix;
-    set_legacy_model_info(legacyModelDir, legacyFilePrefix);
+    const std::string modelDir = external_model_dir();
 
     std::cout << "[MECq0q3InterpWeighting] Auto-selecting model: " << model << "\n";
     std::cout << "  External weight map base: " << nuisFlatBaseDir << "\n";
@@ -452,9 +615,6 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       const std::string flavor = flavorEntry.first.empty() ? "numu" : flavorEntry.first;
       const std::string flavorTag = flavor_tag(flavor);
       std::cout << "  Flavor: " << flavor << "\n";
-      if (flavor == "numu")
-        std::cout << "  numu middle-grid folder: "
-                  << nuisFlatBaseDir << "/" << model << "/" << flavor << "\n";
 
       auto energyGrid = energy_grid_for(flavor);
       std::vector<std::string> npFiles;
@@ -463,22 +623,14 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       nnFiles.reserve(energyGrid.size());
 
       auto external_path = [&](const std::string& topo, double E) {
-        return nuisFlatBaseDir + "/" + model + "/" + flavor +
+        return nuisFlatBaseDir + "/" + modelDir + "/" + flavor + "/" + topo +
                "/weight_map_ar23_to_" + tune + "_" + flavorTag + "_" +
                topo + "_" + energy_label(E) + "GeV.root";
       };
 
-      auto numu_middle_grid_path = [&](const std::string& topo, double E) {
-        return nuisFlatBaseDir + "/" + model + "/" + flavor + "/" + legacyFilePrefix +
-               "_" + topo + "_" + energy_label(E) + "GeV.root";
-      };
-
       for (double E : energyGrid) {
-        const bool useNumuMiddleGrid = (flavor == "numu" && is_numu_local_energy(E));
-        const std::string np_file = useNumuMiddleGrid ? numu_middle_grid_path("np", E)
-                                                      : external_path("np", E);
-        const std::string nn_file = useNumuMiddleGrid ? numu_middle_grid_path("nn", E)
-                                                      : external_path("nn", E);
+        const std::string np_file = external_path("np", E);
+        const std::string nn_file = external_path("nn", E);
         require_existing_map(np_file, flavor, "np", E);
         require_existing_map(nn_file, flavor, "nn", E);
         npFiles.push_back(np_file);
@@ -518,7 +670,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
     load_response_data(flavorEntry.second, flavorEntry.first,
                        std::move(energyGrid), npFiles, nnFiles);
   } else {
-    throw std::runtime_error("Need either (np_files & nn_files), (NuisFlatWeightMapBaseDir & Model), or (Model & DataBaseDir)");
+    throw std::runtime_error("Need WeightMapFile3D, (np_files & nn_files), (NuisFlatWeightMapBaseDir & Model), or (Model & DataBaseDir)");
   }
 
   std::cout << "[MECq0q3InterpWeighting] SetupResponseCalculator done\n";
@@ -575,33 +727,35 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
   if (Enu < flavorResponse.enuMin - 1e-6 || Enu > flavorResponse.enuMax + 1e-6)
     return this->GetDefaultEventResponse();
 
-  // find bracketing energies (handles mono grid too)
-  auto it_hi = std::lower_bound(energyGrid.begin(), energyGrid.end(), Enu);
-  size_t ih = (it_hi == energyGrid.end()) ? energyGrid.size() - 1
-                                          : std::distance(energyGrid.begin(), it_hi);
-  size_t il = (ih == 0) ? 0 : ih - 1;
-
-  const double Elo = energyGrid[il];
-  const double Ehi = energyGrid[ih];
-
-  // Exact-map snapping: if Enu is within EnuSnapTol of a grid point, use it
-  double t = 0.0; // interpolation fraction
-  if (std::fabs(Enu - Elo) <= fEnuSnapTol) {
-    ih = il;          // exact low node
-    t  = 0.0;
-  } else if (std::fabs(Enu - Ehi) <= fEnuSnapTol) {
-    il = ih;          // exact high node
-    t  = 0.0;
+  double w_blend = 1.0;
+  const auto calc3DIt = flavorResponse.calcs3D.find(topo);
+  if (calc3DIt != flavorResponse.calcs3D.end()) {
+    w_blend = calc3DIt->second->GetCentralWeight(q0, q3, Enu, fEnuSnapTol);
   } else {
-    t = (ih == il || Ehi <= Elo) ? 0.0
-        : std::clamp((Enu - Elo) / (Ehi - Elo), 0.0, 1.0);
-  }
+    // Legacy TH2D mode: find and blend the two bracketing energy maps.
+    auto it_hi = std::lower_bound(energyGrid.begin(), energyGrid.end(), Enu);
+    size_t ih = (it_hi == energyGrid.end()) ? energyGrid.size() - 1
+                                            : std::distance(energyGrid.begin(), it_hi);
+    size_t il = (ih == 0) ? 0 : ih - 1;
 
-  // central weights at the two energies (same index if snapped)
-  const auto& vec = flavorResponse.calcs.at(topo);
-  const double w_lo = vec[il]->GetCentralWeight(q0, q3);
-  const double w_hi = vec[ih]->GetCentralWeight(q0, q3);
-  const double w_blend = (1.0 - t) * w_lo + t * w_hi;
+    const double Elo = energyGrid[il];
+    const double Ehi = energyGrid[ih];
+    double t = 0.0;
+    if (std::fabs(Enu - Elo) <= fEnuSnapTol) {
+      ih = il;
+    } else if (std::fabs(Enu - Ehi) <= fEnuSnapTol) {
+      il = ih;
+    } else {
+      t = (ih == il || Ehi <= Elo)
+          ? 0.0
+          : std::clamp((Enu - Elo) / (Ehi - Elo), 0.0, 1.0);
+    }
+
+    const auto& vec = flavorResponse.calcs.at(topo);
+    const double w_lo = vec[il]->GetCentralWeight(q0, q3);
+    const double w_hi = vec[ih]->GetCentralWeight(q0, q3);
+    w_blend = (1.0 - t) * w_lo + t * w_hi;
+  }
 
   const double w_eff_cv = std::clamp(w_blend, fWmin, fWmax);
   const double one_sigma = (w_eff_cv - 1.0); // for variations
@@ -696,7 +850,8 @@ MECq0q3InterpWeighting::ClassifyEvent(genie::EventRecord const& ev)
     if (!p) continue;
     if (p->Status() != genie::kIStNucleonTarget) continue;
     const int pdg = p->Pdg();
-    if (pdg == genie::kPdgClusterNN) return Topo::nn; // 2n
+    if (pdg == genie::kPdgClusterNN || pdg == genie::kPdgClusterPP)
+      return Topo::likePair; // 2n for neutrinos, 2p for antineutrinos
     if (pdg == genie::kPdgClusterNP) return Topo::np; // 1n+1p
   }
   return Topo::unknown;
