@@ -9,6 +9,7 @@ SET(UTLY_HDRFILES
   make_instance.hh
   response_helper.hh
   KinVarUtils.hh
+  BDTReweighter_json.hh
 )
 
 

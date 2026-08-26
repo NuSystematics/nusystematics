@@ -18,6 +18,7 @@ SET(SYSTP_IMPLFILES
   PionAbsWeighter_tool.cc
   QEInterference_tool.cc
   MECq0q3InterpWeighting_tool.cc
+  ValenciaExc2p2hReweighter_tool.cc
   )
 
 if(GENIEReWeight_ENABLED)
@@ -49,6 +50,7 @@ SET(SYSTP_HDRFILES
   QEInterference_tool.hh
   CCQEXSecCorr_tool.hh
   MECq0q3InterpWeighting_tool.hh
+  ValenciaExc2p2hReweighter_tool.hh
 )
 
 if(GENIEReWeight_ENABLED)
