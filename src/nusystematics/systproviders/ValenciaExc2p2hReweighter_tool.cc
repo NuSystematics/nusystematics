@@ -15,8 +15,9 @@ using namespace fhicl;
 
 ValenciaExc2p2hReweighter::ValenciaExc2p2hReweighter(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-    pidx_DialA(systtools::kParamUnhandled<size_t>),
-    pidx_DialB(systtools::kParamUnhandled<size_t>){
+      pidx_DialA(systtools::kParamUnhandled<size_t>),
+      pidx_DialB(systtools::kParamUnhandled<size_t>){
+
 }
 
 SystMetaData ValenciaExc2p2hReweighter::BuildSystMetaData(ParameterSet const &cfg, paramId_t firstId) {
@@ -70,7 +71,10 @@ bool ValenciaExc2p2hReweighter::SetupResponseCalculator(fhicl::ParameterSet cons
     // Ziggy: read json bdt reweighter
     std::string JSON_REWEIGHTER_PATH = tool_options.get<std::string>("JSON_REWEIGHTER_PATH", "");
     std::cout << "[ValenciaExc2p2hReweighter::SetupResponseCalculator] JSON_REWEIGHTER_PATH:"<< JSON_REWEIGHTER_PATH<< std::endl;
-    BDTReweight::JSONReweighter bdt_reweighter(JSON_REWEIGHTER_PATH);
+    if (JSON_REWEIGHTER_PATH.empty()) {
+        throw std::runtime_error("ValenciaExc2p2hReweighter: JSON_REWEIGHTER_PATH is empty");
+    }
+    bdt_reweighter = std::make_unique<BDTReweight::JSONReweighter>(JSON_REWEIGHTER_PATH);    
 
     // Parameters in tool_options
     std::string OPT_STRING = tool_options.get<std::string>("OPT_STRING", "");
@@ -106,7 +110,7 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
         resp.push_back( {md[pidx_DialA].systParamId, {}} );
         for (double var : md[pidx_DialA].paramVariations) {
             // resp.back().responses.push_back( GetReweight_DialA(Q2, var) );
-            resp.back().responses.push_back( bdt_reweighter.PredictWeight(features) );
+            resp.back().responses.push_back( bdt_reweighter->PredictWeight(features) );
         } 
     }
     
@@ -114,7 +118,7 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
         resp.push_back( {md[pidx_DialB].systParamId, {}} );
         for (double var : md[pidx_DialB].paramVariations) {
             // resp.back().responses.push_back( GetReweight_DialB(Q2, var) );
-            resp.back().responses.push_back( bdt_reweighter.PredictWeight(features) );
+            resp.back().responses.push_back( bdt_reweighter->PredictWeight(features) );
         }
     }
     
@@ -146,7 +150,7 @@ std::vector<double> ValenciaExc2p2hReweighter::BDTFeaturesWrapper(genie::EventRe
 
     double muon_py_new = - std::sqrt(muon_px*muon_px + muon_py*muon_py);
     std::vector<double> vector_y = {muon_px / muon_py_new, muon_py / muon_py_new};
-    std::vector<double> vector_x = {-vector_y[1], vector_y[0]} //np.array([-vector_y[:,1], vector_y[:,0]]).T # vector x is rotating y clockwise by 90 deg
+    std::vector<double> vector_x = {-vector_y[1], vector_y[0]}; //vector x is rotating y clockwise by 90 deg
     double nucleon1_px_new = nucleon1_px * vector_x[0] + nucleon1_py * vector_x[1];
     double nucleon1_py_new = nucleon1_px * vector_y[0] + nucleon1_py * vector_y[1];
     double nucleon2_px_new = nucleon2_px * vector_x[0] + nucleon2_py * vector_x[1];
