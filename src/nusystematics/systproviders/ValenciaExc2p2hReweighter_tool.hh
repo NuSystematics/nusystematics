@@ -37,11 +37,7 @@ private:
 
     fhicl::ParameterSet tool_options;
     size_t pidx_DialA, pidx_DialB;
-    BDTReweight::JSONReweighter bdt_reweighter;
-    std::vector<double> BDTFeaturesWrapper(
-        const double nucleon1_px, const double nucleon1_py, const double nucleon1_pz,
-        const double nucleon2_px, const double nucleon2_py, const double nucleon2_pz,
-        const double muon_px, const double muon_py, const double muon_pz
-    );
+    std::unique_ptr<BDTReweight::JSONReweighter> bdt_reweighter;
+    std::vector<double> BDTFeaturesWrapper(genie::EventRecord const &ev);
 
 };
