@@ -89,6 +89,10 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # Note: Use CMAKE_INSTALL_LIBDIR since Eigen3 sets it, or hardcode "lib"
 list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
+# Also RPATH the compiler's own implicit runtime libs (e.g. libstdc++)
+# so a newer libstdc++ isn't shadowed by an older system one.
+list(APPEND CMAKE_INSTALL_RPATH ${CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES})
+
 add_subdirectory(src/nusystematics)
 
 add_subdirectory(data)
