@@ -71,7 +71,7 @@ set_target_properties(nusystematics_systproviders PROPERTIES
   PUBLIC_HEADER "${SYSTP_HDRFILES}"
   EXPORT_NAME systproviders )
 
-target_link_libraries(nusystematics_systproviders PUBLIC nusyst::responsecalculators systtools::all Eigen3::Eigen)
+target_link_libraries(nusystematics_systproviders PUBLIC nusyst::responsecalculators systtools::all Eigen3::Eigen Boost::json)
 
 install(TARGETS nusystematics_systproviders
     EXPORT nusyst-targets
