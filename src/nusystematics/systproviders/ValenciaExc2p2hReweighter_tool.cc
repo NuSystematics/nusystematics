@@ -51,6 +51,8 @@ SystMetaData ValenciaExc2p2hReweighter::BuildSystMetaData(ParameterSet const &cf
     tool_options.put("OPT_BOOL", OPT_BOOL);
     fhicl::ParameterSet OPT_PSET = cfg.get<fhicl::ParameterSet>("OPT_PSET");
     tool_options.put("OPT_PSET", OPT_PSET);
+    std::string JSON_REWEIGHTER_PATH = tool_options.get<std::string>("JSON_REWEIGHTER_PATH", "");
+    tool_options.put("JSON_REWEIGHTER_PATH", JSON_REWEIGHTER_PATH);
     
     return smd;
 }
@@ -71,10 +73,10 @@ bool ValenciaExc2p2hReweighter::SetupResponseCalculator(fhicl::ParameterSet cons
     // Ziggy: read json bdt reweighter
     std::string JSON_REWEIGHTER_PATH = tool_options.get<std::string>("JSON_REWEIGHTER_PATH", "");
     std::cout << "[ValenciaExc2p2hReweighter::SetupResponseCalculator] JSON_REWEIGHTER_PATH:"<< JSON_REWEIGHTER_PATH<< std::endl;
-    if (JSON_REWEIGHTER_PATH.empty()) {
-        throw std::runtime_error("ValenciaExc2p2hReweighter: JSON_REWEIGHTER_PATH is empty");
-    }
-    bdt_reweighter = std::make_unique<BDTReweight::JSONReweighter>(JSON_REWEIGHTER_PATH);    
+    // if (JSON_REWEIGHTER_PATH.empty()) {
+    //     throw std::runtime_error("ValenciaExc2p2hReweighter: JSON_REWEIGHTER_PATH is empty");
+    // }
+    // bdt_reweighter = std::make_unique<BDTReweight::JSONReweighter>(JSON_REWEIGHTER_PATH);    
 
     // Parameters in tool_options
     std::string OPT_STRING = tool_options.get<std::string>("OPT_STRING", "");
@@ -86,6 +88,7 @@ bool ValenciaExc2p2hReweighter::SetupResponseCalculator(fhicl::ParameterSet cons
         printf("[ValenciaExc2p2hReweighter::SetupResponseCalculator] ROOTFileName: %s\n", OPT_ROOTFileName.c_str());
         printf("[ValenciaExc2p2hReweighter::SetupResponseCalculator] HistName: %s\n", OPT_HistName.c_str());
     }
+    bdt_reweighter = std::make_unique<BDTReweight::JSONReweighter>(OPT_STRING);//FIXME: use JSON_REWEIGHTER_PATH
     
     return true;
 }
@@ -105,6 +108,7 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
     
     systtools::event_unit_response_t resp;
     systtools::SystMetaData const &md = GetSystMetaData();
+    std::cout << "[ValenciaExc2p2hReweighter::GetEventResponse] weight = "<< bdt_reweighter->PredictWeight(features) << std::endl;
     
     if (pidx_DialA != systtools::kParamUnhandled<size_t>) {
         resp.push_back( {md[pidx_DialA].systParamId, {}} );
@@ -146,7 +150,7 @@ std::vector<double> ValenciaExc2p2hReweighter::BDTFeaturesWrapper(genie::EventRe
     double muon_px = muon->Px();
     double muon_py = muon->Py();
     double muon_pz = muon->Pz();
-    std::cout << "[ValenciaExc2p2hReweighter::BDTFeaturesWrapper] muon, N1, N2 pdg:"<< muon->Pdg() << N1->Pdg() << N2->Pdg() << std::endl;
+    std::cout << "[ValenciaExc2p2hReweighter::BDTFeaturesWrapper] muon, N1, N2 pdg: "<< muon->Pdg() <<" "<< N1->Pdg()<<" " << N2->Pdg() << std::endl;
 
     double muon_py_new = - std::sqrt(muon_px*muon_px + muon_py*muon_py);
     std::vector<double> vector_y = {muon_px / muon_py_new, muon_py / muon_py_new};
@@ -161,6 +165,8 @@ std::vector<double> ValenciaExc2p2hReweighter::BDTFeaturesWrapper(genie::EventRe
         nucleon2_px_new, nucleon2_py_new, nucleon2_pz, 
         muon_py_new, muon_pz
     };
+    // std::cout << "[ValenciaExc2p2hReweighter::BDTFeaturesWrapper] features: "<< features << std::endl;
+    
 
     return features;
 };
