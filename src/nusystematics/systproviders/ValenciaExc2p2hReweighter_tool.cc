@@ -50,9 +50,9 @@ SystMetaData ValenciaExc2p2hReweighter::BuildSystMetaData(ParameterSet const &cf
     tool_options.put("OPT_BOOL", OPT_BOOL);
     fhicl::ParameterSet OPT_PSET = cfg.get<fhicl::ParameterSet>("OPT_PSET");
     tool_options.put("OPT_PSET", OPT_PSET);
-    std::string JSON_PP_REWEIGHTER_PATH = tool_options.get<std::string>("JSON_PP_REWEIGHTER_PATH", "");
+    std::string JSON_PP_REWEIGHTER_PATH = cfg.get<std::string>("JSON_PP_REWEIGHTER_PATH", "");
     tool_options.put("JSON_PP_REWEIGHTER_PATH", JSON_PP_REWEIGHTER_PATH);
-    std::string JSON_PN_REWEIGHTER_PATH = tool_options.get<std::string>("JSON_PN_REWEIGHTER_PATH", "");
+    std::string JSON_PN_REWEIGHTER_PATH = cfg.get<std::string>("JSON_PN_REWEIGHTER_PATH", "");
     tool_options.put("JSON_PN_REWEIGHTER_PATH", JSON_PN_REWEIGHTER_PATH);
     
     return smd;
@@ -70,12 +70,20 @@ bool ValenciaExc2p2hReweighter::SetupResponseCalculator(fhicl::ParameterSet cons
     
     // Ziggy: read json bdt reweighter
     std::string JSON_PP_REWEIGHTER_PATH = tool_options.get<std::string>("JSON_PP_REWEIGHTER_PATH", "");
+    std::string JSON_PN_REWEIGHTER_PATH = tool_options.get<std::string>("JSON_PN_REWEIGHTER_PATH", "");
     std::cout << "[ValenciaExc2p2hReweighter::SetupResponseCalculator] JSON_PP_REWEIGHTER_PATH:"<< JSON_PP_REWEIGHTER_PATH<< std::endl;
-    // if (JSON_REWEIGHTER_PATH.empty()) {
-    //     throw std::runtime_error("ValenciaExc2p2hReweighter: JSON_REWEIGHTER_PATH is empty");
-    // }
-    // bdt_reweighter = std::make_unique<BDTReweight::JSONReweighter>(JSON_REWEIGHTER_PATH);    
+    std::cout << "[ValenciaExc2p2hReweighter::SetupResponseCalculator] JSON_PN_REWEIGHTER_PATH:"<< JSON_PN_REWEIGHTER_PATH<< std::endl;
+    
+    if (JSON_PP_REWEIGHTER_PATH.empty()) {
+        throw std::runtime_error("ValenciaExc2p2hReweighter: JSON_PP_REWEIGHTER_PATH is empty");
+    }
+    bdt_pp_reweighter = std::make_unique<BDTReweight::JSONReweighter>(JSON_PP_REWEIGHTER_PATH);    
+    if (JSON_PN_REWEIGHTER_PATH.empty()) {
+        throw std::runtime_error("ValenciaExc2p2hReweighter: JSON_PN_REWEIGHTER_PATH is empty");
+    }
+    bdt_pn_reweighter = std::make_unique<BDTReweight::JSONReweighter>(JSON_PN_REWEIGHTER_PATH);    
 
+    
     // Parameters in tool_options
     std::string OPT_STRING = tool_options.get<std::string>("OPT_STRING", "");
     bool OPT_BOOL = tool_options.get<bool>("OPT_BOOL", false);
@@ -86,8 +94,6 @@ bool ValenciaExc2p2hReweighter::SetupResponseCalculator(fhicl::ParameterSet cons
         printf("[ValenciaExc2p2hReweighter::SetupResponseCalculator] ROOTFileName: %s\n", OPT_ROOTFileName.c_str());
         printf("[ValenciaExc2p2hReweighter::SetupResponseCalculator] HistName: %s\n", OPT_HistName.c_str());
     }
-    bdt_pp_reweighter = std::make_unique<BDTReweight::JSONReweighter>(OPT_STRING);//FIXME: use JSON_PP_REWEIGHTER_PATH
-    bdt_pn_reweighter = std::make_unique<BDTReweight::JSONReweighter>(OPT_ROOTFileName);//FIXME: use JSON_PN_REWEIGHTER_PATH
     
     return true;
 }
@@ -127,8 +133,9 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
 std::vector<double> ValenciaExc2p2hReweighter::BDTFeaturesWrapper(genie::EventRecord const &ev) {
 
     genie::GHepParticle *muon = ev.Particle(4);
-    // CCMEC vertex muon: indices 4
-    // CCMEC vertex out-going Nucleons: indices 6, 7
+    // CCMEC vertex lepton: index 4
+    // CCMEC vertex intermediate particle: index 5
+    // CCMEC vertex out-going Nucleons, pre-FSI: indices 6, 7
     genie::GHepParticle *mother = ev.Particle(5);
     genie::GHepParticle *N1, *N2;
     if (mother->Pdg()==2000000201){ //n+p state
@@ -140,8 +147,6 @@ std::vector<double> ValenciaExc2p2hReweighter::BDTFeaturesWrapper(genie::EventRe
             N2 = ev.Particle(6);    
         }
     }else if (mother->Pdg()==2000000202){ //p+p state
-        double kinE6 = ev.Particle(6)->KinE();
-        double kinE7 = ev.Particle(7)->KinE();
         if (ev.Particle(6)->KinE() > ev.Particle(7)->KinE()){
             N1 = ev.Particle(6);
             N2 = ev.Particle(7);
