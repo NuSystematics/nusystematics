@@ -15,10 +15,8 @@ using namespace fhicl;
 
 ValenciaExc2p2hReweighter::ValenciaExc2p2hReweighter(ParameterSet const &params)
     : IGENIESystProvider_tool(params),
-      pidx_DialA(systtools::kParamUnhandled<size_t>),
-      pidx_DialB(systtools::kParamUnhandled<size_t>){
-
-}
+      pidx_DialValencia(systtools::kParamUnhandled<size_t>) 
+    {}
 
 SystMetaData ValenciaExc2p2hReweighter::BuildSystMetaData(ParameterSet const &cfg, paramId_t firstId) {
 
@@ -26,7 +24,8 @@ SystMetaData ValenciaExc2p2hReweighter::BuildSystMetaData(ParameterSet const &cf
     SystMetaData smd;
 
     // Name of the dials that are supported by this module
-    std::vector<std::string> AvailPNames = {"DialA", "DialB"};
+    // std::vector<std::string> AvailPNames = {"DialA", "DialB"};
+    std::vector<std::string> AvailPNames = {"DialValencia"};
 
     // Loop over available names and check if they are specified in ToolConfig
     for(std::string const &pname: AvailPNames){
@@ -63,14 +62,11 @@ bool ValenciaExc2p2hReweighter::SetupResponseCalculator(fhicl::ParameterSet cons
 
     std::cout << "[ValenciaExc2p2hReweighter::SetupResponseCalculator] Called" << std::endl;
     systtools::SystMetaData const &md = GetSystMetaData();
-    
-    if(HasParam(md, "DialA")){
-        pidx_DialA = GetParamIndex(md, "DialA");
+
+    if(HasParam(md, "DialValencia")){
+        pidx_DialValencia = GetParamIndex(md, "DialValencia");
     }
     
-    if(HasParam(md, "DialB")){
-        pidx_DialB = GetParamIndex(md, "DialB");
-    }
     
     // Ziggy: read json bdt reweighter
     std::string JSON_PP_REWEIGHTER_PATH = tool_options.get<std::string>("JSON_PP_REWEIGHTER_PATH", "");
@@ -108,30 +104,20 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
 
     std::vector<double> features = BDTFeaturesWrapper(ev);
     
-    double weight = 1.0;
-    if (ev.Particle(5)->Pdg()==2000000201){ //n+p state
-        weight = bdt_pn_reweighter->PredictWeight(features);
-    } else if (ev.Particle(5)->Pdg()==2000000202){ //p+p state        
-        weight = bdt_pp_reweighter->PredictWeight(features);
-    }
-    
+    double weight = 1.0;    
     systtools::event_unit_response_t resp;
     systtools::SystMetaData const &md = GetSystMetaData();
-    
-    if (pidx_DialA != systtools::kParamUnhandled<size_t>) {
-        resp.push_back( {md[pidx_DialA].systParamId, {}} );
-        for (double var : md[pidx_DialA].paramVariations) {
-            // resp.back().responses.push_back( GetReweight_DialA(Q2, var) );
-            resp.back().responses.push_back( weight );
+
+    if (pidx_DialValencia != systtools::kParamUnhandled<size_t>) {
+        resp.push_back( {md[pidx_DialValencia].systParamId, {}} );
+        for (double var : md[pidx_DialValencia].paramVariations) {
+            if (ev.Particle(5)->Pdg()==2000000201){ //n+p state
+                weight = bdt_pn_reweighter->PredictWeight(features);
+            } else if (ev.Particle(5)->Pdg()==2000000202){ //p+p state        
+                weight = bdt_pp_reweighter->PredictWeight(features);
+            }
+            resp.back().responses.push_back( weight ); //FIXME: implement variation var
         } 
-    }
-    
-    if (pidx_DialB != systtools::kParamUnhandled<size_t>) {
-        resp.push_back( {md[pidx_DialB].systParamId, {}} );
-        for (double var : md[pidx_DialB].paramVariations) {
-            // resp.back().responses.push_back( GetReweight_DialB(Q2, var) );
-            resp.back().responses.push_back( weight );
-        }
     }
     
     return resp;
@@ -143,7 +129,6 @@ std::vector<double> ValenciaExc2p2hReweighter::BDTFeaturesWrapper(genie::EventRe
     genie::GHepParticle *muon = ev.Particle(4);
     // CCMEC vertex muon: indices 4
     // CCMEC vertex out-going Nucleons: indices 6, 7
-    
     genie::GHepParticle *mother = ev.Particle(5);
     genie::GHepParticle *N1, *N2;
     if (mother->Pdg()==2000000201){ //n+p state
@@ -165,22 +150,21 @@ std::vector<double> ValenciaExc2p2hReweighter::BDTFeaturesWrapper(genie::EventRe
             N2 = ev.Particle(6);
         }
     }else{
-        std::cout << "[ValenciaExc2p2hReweighter::BDTFeaturesWrapper] unknown intermediate state: "<< mother->Pdg() << std::endl;
+        std::cout << "[ValenciaExc2p2hReweighter::BDTFeaturesWrapper] unknown intermediate mother particle: "<< mother->Pdg() << std::endl;
     }
     
-    double nucleon1_px = N1->Px();
-    double nucleon1_py = N1->Py();
-    double nucleon1_pz = N1->Pz();
-    double nucleon2_px = N2->Px();
-    double nucleon2_py = N2->Py();
-    double nucleon2_pz = N2->Pz();
-    double muon_px = muon->Px();
-    double muon_py = muon->Py();
-    double muon_pz = muon->Pz();
-    // std::cout << "[ValenciaExc2p2hReweighter::BDTFeaturesWrapper] muon, N1, N2 pdg: "<< muon->Pdg() <<" "<< N1->Pdg()<<" " << N2->Pdg() << std::endl;
-
-    double muon_py_new = - std::sqrt(muon_px*muon_px + muon_py*muon_py);
-    std::vector<double> vector_y = {muon_px / muon_py_new, muon_py / muon_py_new};
+    const double nucleon1_px = N1->Px();
+    const double nucleon1_py = N1->Py();
+    const double nucleon1_pz = N1->Pz();
+    const double nucleon2_px = N2->Px();
+    const double nucleon2_py = N2->Py();
+    const double nucleon2_pz = N2->Pz();
+    const double muon_px = muon->Px();
+    const double muon_py = muon->Py();
+    const double muon_pz = muon->Pz();
+    
+    double muon_py_new = - std::sqrt(muon_px*muon_px + muon_py*muon_py); // new muon py is negative of muon transverse momentum magnitude
+    std::vector<double> vector_y = {muon_px / muon_py_new, muon_py / muon_py_new}; // unit vector y of reaction plane frame coordinates
     std::vector<double> vector_x = {-vector_y[1], vector_y[0]}; //vector x is rotating y clockwise by 90 deg
     double nucleon1_px_new = nucleon1_px * vector_x[0] + nucleon1_py * vector_x[1];
     double nucleon1_py_new = nucleon1_px * vector_y[0] + nucleon1_py * vector_y[1];
@@ -192,9 +176,7 @@ std::vector<double> ValenciaExc2p2hReweighter::BDTFeaturesWrapper(genie::EventRe
         nucleon2_px_new, nucleon2_py_new, nucleon2_pz, 
         muon_py_new, muon_pz
     };
-    // std::cout << "[ValenciaExc2p2hReweighter::BDTFeaturesWrapper] features: "<< features << std::endl;
     
-
     return features;
 };
 
