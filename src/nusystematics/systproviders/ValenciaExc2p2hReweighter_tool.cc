@@ -122,7 +122,11 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
             } else if (ev.Particle(5)->Pdg()==2000000202){ //p+p state        
                 weight = bdt_pp_reweighter->PredictWeight(features);
             }
-            resp.back().responses.push_back( weight ); //FIXME: implement variation var
+            // Implement variation: assume 0 <= var <= 1; 0 <= weight < infinity
+            // var = 0 is CV, the default SuSAv2 -> varied_weight = 1.0
+            // var = 1 is fully reweighted to Valencia exclusive -> varied_weight = weight
+            // varied_weight = 1 + var * (weight - 1)
+            resp.back().responses.push_back(1 + var * (weight - 1));
         } 
     }
     
