@@ -44,12 +44,6 @@ SystMetaData ValenciaExc2p2hReweighter::BuildSystMetaData(ParameterSet const &cf
     // Use get<T> function to retrieve the value from ToolConfig,
     // and then run "put" on "tool_options" (defined in the header of this class as a  member variable)
     // T can be string, bool, int, unsigned, float, double, std::string or even a new fhicl::ParameterSet
-    std::string OPT_STRING = cfg.get<std::string>("OPT_STRING", ""); // second argument is the default when OPT_STRING does not exist
-    tool_options.put("OPT_STRING", OPT_STRING);
-    bool OPT_BOOL = cfg.get<bool>("OPT_BOOL", false);
-    tool_options.put("OPT_BOOL", OPT_BOOL);
-    fhicl::ParameterSet OPT_PSET = cfg.get<fhicl::ParameterSet>("OPT_PSET");
-    tool_options.put("OPT_PSET", OPT_PSET);
     std::string JSON_PP_REWEIGHTER_PATH = cfg.get<std::string>("JSON_PP_REWEIGHTER_PATH", "");
     tool_options.put("JSON_PP_REWEIGHTER_PATH", JSON_PP_REWEIGHTER_PATH);
     std::string JSON_PN_REWEIGHTER_PATH = cfg.get<std::string>("JSON_PN_REWEIGHTER_PATH", "");
@@ -82,18 +76,6 @@ bool ValenciaExc2p2hReweighter::SetupResponseCalculator(fhicl::ParameterSet cons
         throw std::runtime_error("ValenciaExc2p2hReweighter: JSON_PN_REWEIGHTER_PATH is empty");
     }
     bdt_pn_reweighter = std::make_unique<BDTReweight::JSONReweighter>(JSON_PN_REWEIGHTER_PATH);    
-
-    
-    // Parameters in tool_options
-    std::string OPT_STRING = tool_options.get<std::string>("OPT_STRING", "");
-    bool OPT_BOOL = tool_options.get<bool>("OPT_BOOL", false);
-    fhicl::ParameterSet OPT_PSET = tool_options.get<fhicl::ParameterSet>("OPT_PSET");
-    std::string OPT_ROOTFileName = OPT_PSET.get<std::string>("ROOTFileName", "");
-    std::string OPT_HistName = OPT_PSET.get<std::string>("HistName", "");
-    if(OPT_ROOTFileName!="" && OPT_HistName!=""){
-        printf("[ValenciaExc2p2hReweighter::SetupResponseCalculator] ROOTFileName: %s\n", OPT_ROOTFileName.c_str());
-        printf("[ValenciaExc2p2hReweighter::SetupResponseCalculator] HistName: %s\n", OPT_HistName.c_str());
-    }
     
     return true;
 }
@@ -110,18 +92,18 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
 
     std::vector<double> features = BDTFeaturesWrapper(ev);
     
-    double weight = 1.0;    
     systtools::event_unit_response_t resp;
     systtools::SystMetaData const &md = GetSystMetaData();
-
+    
+    double weight = 1.0;    
+    if (ev.Particle(5)->Pdg()==2000000201){ //n+p state
+        weight = bdt_pn_reweighter->PredictWeight(features);
+    } else if (ev.Particle(5)->Pdg()==2000000202){ //p+p state        
+        weight = bdt_pp_reweighter->PredictWeight(features);
+    }
     if (pidx_DialValencia != systtools::kParamUnhandled<size_t>) {
         resp.push_back( {md[pidx_DialValencia].systParamId, {}} );
         for (double var : md[pidx_DialValencia].paramVariations) {
-            if (ev.Particle(5)->Pdg()==2000000201){ //n+p state
-                weight = bdt_pn_reweighter->PredictWeight(features);
-            } else if (ev.Particle(5)->Pdg()==2000000202){ //p+p state        
-                weight = bdt_pp_reweighter->PredictWeight(features);
-            }
             // Implement variation: assume 0 <= var <= 1; 0 <= weight < infinity
             // var = 0 is CV, the default SuSAv2 -> varied_weight = 1.0
             // var = 1 is fully reweighted to Valencia exclusive -> varied_weight = weight
