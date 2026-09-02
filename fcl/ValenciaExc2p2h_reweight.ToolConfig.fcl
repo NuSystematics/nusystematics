@@ -1,0 +1,22 @@
+ValenciaExc2p2hReweighter_ToolConfig:{
+
+  tool_type: "ValenciaExc2p2hReweighter"
+  instance_name: "test"
+
+  # Allowed variation range: 0 to 1 
+  # At 0: same as SuSAv2 2p2h (CV)
+  # At 1: fully reweighted to Valencia exclusive 2p2h
+  DialValencia_variation_descriptor: "[0.0, 0.25, 0.5, 0.75, 1.0]"
+  DialValencia_central_value: 0
+  
+  # path to bdt reweighter json object pp and pn out-going state events
+  JSON_PP_REWEIGHTER_PATH: "/exp/icarus/data/users/zihaolin/MC_outputs/bdtreweighters_json/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pn_bdtreweighter.json"
+  JSON_PN_REWEIGHTER_PATH: "/exp/icarus/data/users/zihaolin/MC_outputs/bdtreweighters_json/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pn_bdtreweighter.json"
+  # Note: the BDT reweighers are trained and saved to json using python module BDTReweight
+
+}
+
+syst_providers: [
+  ValenciaExc2p2hReweighter_ToolConfig
+]
+
