@@ -40,5 +40,6 @@ private:
     std::unique_ptr<BDTReweight::JSONReweighter> bdt_pp_reweighter;
     std::unique_ptr<BDTReweight::JSONReweighter> bdt_pn_reweighter;
     std::vector<double> BDTFeaturesWrapper(genie::EventRecord const &ev);
+    double scale_factor_pp, scale_factor_pn;
 
 };
