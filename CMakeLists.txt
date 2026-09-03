@@ -32,7 +32,7 @@ endif()
 option(nusyst_DOWNLOAD_DATA "Download nusyst_data" ON)
 
 find_package(ROOT 6.10 REQUIRED)
-
+find_package(Boost REQUIRED COMPONENTS json)
 CPMFindPackage(
     NAME systematicstools
     GIT_TAG v02_00_05

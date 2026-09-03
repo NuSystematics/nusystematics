@@ -9,3 +9,4 @@ build/
 install/
 validation/
 CLAUDE.md
+.ipynb_checkpoints/
