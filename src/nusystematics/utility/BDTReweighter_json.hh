@@ -41,6 +41,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "systematicstools/utility/string_parsers.hh"
 
 namespace BDTReweight {
 
@@ -256,7 +257,7 @@ AsArray(
 [[nodiscard]] inline boost::json::value ParseFile(
     const std::filesystem::path& filepath
 ) {
-    std::ifstream input(filepath);
+    std::ifstream input( systtools::expand_env_vars(filepath) );
 
     if (!input) {
         throw ModelError(
