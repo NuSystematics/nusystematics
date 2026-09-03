@@ -14,8 +14,9 @@ using namespace nusyst;
 using namespace fhicl;
 
 ValenciaExc2p2hReweighter::ValenciaExc2p2hReweighter(ParameterSet const &params)
-    : IGENIESystProvider_tool(params),
-      pidx_DialValencia(systtools::kParamUnhandled<size_t>) 
+    :IGENIESystProvider_tool(params),
+    pidx_DialValencia(systtools::kParamUnhandled<size_t>),
+    scale_factor_pp(1.0), scale_factor_pn(1.0)
     {}
 
 SystMetaData ValenciaExc2p2hReweighter::BuildSystMetaData(ParameterSet const &cfg, paramId_t firstId) {
@@ -40,14 +41,18 @@ SystMetaData ValenciaExc2p2hReweighter::BuildSystMetaData(ParameterSet const &cf
         std::cout << "[ValenciaExc2p2hReweighter::BuildSystMetaData] No dial is set" << std::endl;
     }
 
-    // You can extra parameters for the module;
-    // Use get<T> function to retrieve the value from ToolConfig,
-    // and then run "put" on "tool_options" (defined in the header of this class as a  member variable)
-    // T can be string, bool, int, unsigned, float, double, std::string or even a new fhicl::ParameterSet
+    // Set path to BDT json reweighters for pp, pn out-going states.
     std::string JSON_PP_REWEIGHTER_PATH = cfg.get<std::string>("JSON_PP_REWEIGHTER_PATH", "");
     tool_options.put("JSON_PP_REWEIGHTER_PATH", JSON_PP_REWEIGHTER_PATH);
     std::string JSON_PN_REWEIGHTER_PATH = cfg.get<std::string>("JSON_PN_REWEIGHTER_PATH", "");
     tool_options.put("JSON_PN_REWEIGHTER_PATH", JSON_PN_REWEIGHTER_PATH);
+    // Set normalization scale factors for pp, pn out-going states.
+    // BDT reweight is a shape-only reweight; need to control total weights manually.
+    // The default values are determined using 3M CCMEC events weights such that sum(weights) = number of pp, pn events.
+    scale_factor_pp = cfg.get<double>("SCALE_FACTOR_PP", 2.4642232350453983);
+    tool_options.put("SCALE_FACTOR_PP", scale_factor_pp);
+    scale_factor_pn = cfg.get<double>("SCALE_FACTOR_PN", 1.6862982652296663);
+    tool_options.put("SCALE_FACTOR_PN", scale_factor_pn);
     
     return smd;
 }
@@ -76,6 +81,11 @@ bool ValenciaExc2p2hReweighter::SetupResponseCalculator(fhicl::ParameterSet cons
         throw std::runtime_error("ValenciaExc2p2hReweighter: JSON_PN_REWEIGHTER_PATH is empty");
     }
     bdt_pn_reweighter = std::make_unique<BDTReweight::JSONReweighter>(JSON_PN_REWEIGHTER_PATH);    
+
+    scale_factor_pp = tool_options.get<double>("SCALE_FACTOR_PP", 2.4642232350453983);
+    std::cout << "[ValenciaExc2p2hReweighter::SetupResponseCalculator] use SCALE_FACTOR_PP = "<< scale_factor_pp << std::endl;
+    scale_factor_pn = tool_options.get<double>("SCALE_FACTOR_PN", 1.6862982652296663);
+    std::cout << "[ValenciaExc2p2hReweighter::SetupResponseCalculator] use SCALE_FACTOR_PN = "<< scale_factor_pn << std::endl;
     
     return true;
 }
@@ -96,10 +106,10 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
     systtools::SystMetaData const &md = GetSystMetaData();
     
     double weight = 1.0;    
-    if (ev.Particle(5)->Pdg()==2000000201){ //n+p state
-        weight = bdt_pn_reweighter->PredictWeight(features);
-    } else if (ev.Particle(5)->Pdg()==2000000202){ //p+p state        
-        weight = bdt_pp_reweighter->PredictWeight(features);
+    if (ev.Particle(5)->Pdg()==2000000202){ //pp state
+        weight = (bdt_pp_reweighter->PredictWeight(features)) * scale_factor_pp;
+    } else if (ev.Particle(5)->Pdg()==2000000201){ //pn state
+        weight = (bdt_pn_reweighter->PredictWeight(features)) * scale_factor_pn;
     }
     if (pidx_DialValencia != systtools::kParamUnhandled<size_t>) {
         resp.push_back( {md[pidx_DialValencia].systParamId, {}} );
