@@ -72,6 +72,8 @@ std::vector<std::string> skip_providers;
 const std::set<std::string> kDevelopmentTemplates = {
   "SkeleWeighter.ToolConfig.fcl",
 };
+
+bool DoDebug = false;
 } // namespace cliopts
 
 void SayUsage(char const *argv[]) {
@@ -82,7 +84,7 @@ void SayUsage(char const *argv[]) {
     "    --mode <m>             genierw | providers | all (default: all)\n"
     "    -o <output.fcl>        Output file (default: stdout)\n"
     "    --fcl-dir <dir>        Tool-config fcl directory\n"
-    "                           (default: $NUSYST/fcl)\n"
+    "                           (default: $nusystematics_ROOT/fcl)\n"
     "    --variation-descriptor \"[-3,-2,-1,0,1,2,3]\"\n"
     "                           Variation descriptor used for every GENIE RW\n"
     "                           dial (default shown).\n"
@@ -101,6 +103,7 @@ void SayUsage(char const *argv[]) {
     "                           additionally skip in providers mode\n"
     "                           (default skip list already covers the\n"
     "                           templates above).\n"
+    "    --debug                Run debug mode.\n"
     "    -?|--help              Show this message\n"
     << std::endl;
 }
@@ -119,7 +122,9 @@ void HandleOpts(int argc, char const *argv[]) {
     else if (s == "--skip") {
       std::string tok; std::istringstream ss(argv[++opt]);
       while (std::getline(ss, tok, ',')) if (!tok.empty()) cliopts::skip_providers.push_back(tok);
-    } else {
+    }
+    else if (s == "--debug") cliopts::DoDebug = true;
+    else {
       std::cout << "[ERROR]: Unknown option: " << s << std::endl;
       SayUsage(argv); exit(1);
     }
@@ -635,7 +640,7 @@ int main(int argc, char const *argv[]) {
 
   // Resolve fcl-dir default
   if (cliopts::fcl_dir.empty()) {
-    char const *nusyst_env = std::getenv("NUSYST");
+    char const *nusyst_env = std::getenv("nusystematics_ROOT");
     if (nusyst_env) cliopts::fcl_dir = std::string(nusyst_env) + "/fcl";
   }
 

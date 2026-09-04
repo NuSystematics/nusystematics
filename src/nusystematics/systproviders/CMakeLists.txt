@@ -1,13 +1,5 @@
 ####### systproviders library
 SET(SYSTP_IMPLFILES
-  BeRPAWeight_tool.cc
-  EbLepMomShift_tool.cc
-  FSILikeEAvailSmearing_tool.cc
-  MINERvAE2p2h_tool.cc
-  MINERvAq0q3Weighting_tool.cc
-  MKSinglePiTemplate_tool.cc
-  MiscInteractionSysts_tool.cc
-  NOvAStyleNonResPionNorm_tool.cc
   DIRT2_Emiss_tool.cc
   CCQERPAReweight_tool.cc
   CCQETemplateReweight_tool.cc
@@ -16,7 +8,21 @@ SET(SYSTP_IMPLFILES
   WSReweight_tool.cc
   QEInterference_tool.cc
   MECq0q3InterpWeighting_tool.cc
+  ValenciaExc2p2hReweighter_tool.cc
+)
+
+if(nusyst_DUNETDRv1_ENABLED)
+  LIST(APPEND SYSTP_IMPLFILES
+  BeRPAWeight_tool.cc
+  EbLepMomShift_tool.cc
+  FSILikeEAvailSmearing_tool.cc
+  MINERvAE2p2h_tool.cc
+  MINERvAq0q3Weighting_tool.cc
+  MKSinglePiTemplate_tool.cc
+  MiscInteractionSysts_tool.cc
+  NOvAStyleNonResPionNorm_tool.cc
   )
+endif()
 
 if(GENIEReWeight_ENABLED)
   LIST(APPEND SYSTP_IMPLFILES
@@ -29,14 +35,6 @@ if(GENIEReWeight_ENABLED)
 endif()
 
 SET(SYSTP_HDRFILES
-  BeRPAWeight_tool.hh
-  EbLepMomShift_tool.hh
-  FSILikeEAvailSmearing_tool.hh
-  MINERvAE2p2h_tool.hh
-  MINERvAq0q3Weighting_tool.hh
-  MKSinglePiTemplate_tool.hh
-  MiscInteractionSysts_tool.hh
-  NOvAStyleNonResPionNorm_tool.hh
   DIRT2_Emiss_tool.hh
   CCQERPAReweight_tool.hh
   CCQETemplateReweight_tool.hh
@@ -45,7 +43,21 @@ SET(SYSTP_HDRFILES
   WSReweight_tool.hh
   QEInterference_tool.hh
   MECq0q3InterpWeighting_tool.hh
+  ValenciaExc2p2hReweighter_tool.hh
 )
+
+if(nusyst_DUNETDRv1_ENABLED)
+  LIST(APPEND SYSTP_HDRFILES
+  BeRPAWeight_tool.hh
+  EbLepMomShift_tool.hh
+  FSILikeEAvailSmearing_tool.hh
+  MINERvAE2p2h_tool.hh
+  MINERvAq0q3Weighting_tool.hh
+  MKSinglePiTemplate_tool.hh
+  MiscInteractionSysts_tool.hh
+  NOvAStyleNonResPionNorm_tool.hh
+  )
+endif()
 
 if(GENIEReWeight_ENABLED)
   LIST(APPEND SYSTP_HDRFILES
@@ -65,7 +77,7 @@ set_target_properties(nusystematics_systproviders PROPERTIES
   PUBLIC_HEADER "${SYSTP_HDRFILES}"
   EXPORT_NAME systproviders )
 
-target_link_libraries(nusystematics_systproviders PUBLIC nusyst::responsecalculators systtools::all Eigen3::Eigen)
+target_link_libraries(nusystematics_systproviders PUBLIC nusyst::responsecalculators systtools::all Eigen3::Eigen Boost::json)
 
 install(TARGETS nusystematics_systproviders
     EXPORT nusyst-targets

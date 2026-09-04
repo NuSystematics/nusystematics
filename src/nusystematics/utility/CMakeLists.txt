@@ -12,6 +12,7 @@ SET(UTLY_HDRFILES
   response_helper.hh
   silence_genie.hh
   KinVarUtils.hh
+  BDTReweighter_json.hh
 )
 
 

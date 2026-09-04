@@ -343,9 +343,9 @@ int main(int argc, char const *argv[]) {
     di.validityRange = hdr.paramValidityRange;
     di.paramVariations = hdr.paramVariations;
 
-    if (hdr.isCorrection || hdr.paramVariations.empty()) {
-      std::cout << "[INFO]: Skipping " << di.fullname
-                << " (correction or no variations)." << std::endl;
+    if (hdr.paramVariations.empty()) {
+      std::cout << "[INFO]: Skipping, " << di.fullname
+                << " has no variations." << std::endl;
       continue;
     }
 
