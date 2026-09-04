@@ -7,7 +7,7 @@ zexpansion_weighter_toolconfig: {
     b3_variation_descriptor: "(-3,3,1)"
     b4_variation_descriptor: "(-3,3,1)"
 
-    verbosity_level: 5
+    verbosity_level: 1
   }
 
 syst_providers: [zexpansion_weighter_toolconfig]

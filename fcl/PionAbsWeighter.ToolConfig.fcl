@@ -10,7 +10,7 @@
   
 
   PionAbs_input_manifest: {
-      input_file: "/exp/sbnd/app/users/mking/nusystematics/histograms/reweights_TH2D_1000180400.root"
+      input_file: "${NUSYST_DATA_DIR}/PionAbsWeighter/reweights_TH2D_1000180400.root"
       inputs: [
           {
 	    name: "PiPlus_G4_Diff"
