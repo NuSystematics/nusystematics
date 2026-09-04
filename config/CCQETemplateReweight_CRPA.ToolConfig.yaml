@@ -1,0 +1,17 @@
+CCQETemplate_Tool_Config:
+  CCQETemplateReweight_input_manifest:
+    ENuBoundary: 1
+    RWMode: q3q0
+    baseline_tune: AR23_20i_01_000
+    input_file: ${NUSYST_DATA_DIR}/CCQEReweight/CCQEReweight_templates_all_tunes.root
+    target_tune: G21_13a_00_000
+  instance_name: SBNNuSyst_CCQETemplateReweight_multisigma
+  q0_bin_edges: [0.0, 0.05, 0.10, 0.20, 0.7, 10.0]
+  q0bin0_variation_descriptor: "[0, 1]"
+  q0bin1_variation_descriptor: "[0, 1]"
+  q0bin2_variation_descriptor: "[0, 1]"
+  q0bin3_variation_descriptor: "[0, 1]"
+  q0bin4_variation_descriptor: "[0, 1]"
+  tool_type: CCQETemplateReweight
+  verbosity_level: 5
+syst_providers: [CCQETemplate_Tool_Config]
