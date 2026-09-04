@@ -3,6 +3,7 @@ SET(SYSTP_IMPLFILES
   DIRT2_Emiss_tool.cc
   CCQERPAReweight_tool.cc
   CCQETemplateReweight_tool.cc
+  CCQEXSecCorr_tool.cc
   FSIReweight_tool.cc
   FSIReweightMult_tool.cc
   WSReweight_tool.cc
@@ -39,6 +40,7 @@ SET(SYSTP_HDRFILES
   DIRT2_Emiss_tool.hh
   CCQERPAReweight_tool.hh
   CCQETemplateReweight_tool.hh
+  CCQEXSecCorr_tool.hh
   FSIReweight_tool.hh
   FSIReweightMult_tool.hh
   WSReweight_tool.hh
