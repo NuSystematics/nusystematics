@@ -21,6 +21,7 @@
 #include "nusystematics/systproviders/CCQERPAReweight_tool.hh"
 #include "nusystematics/systproviders/CCQETemplateReweight_tool.hh"
 #include "nusystematics/systproviders/QEInterference_tool.hh"
+#include "nusystematics/systproviders/CCQEXSecCorr_tool.hh"
 #include "nusystematics/systproviders/FSIReweight_tool.hh"
 #include "nusystematics/systproviders/FSIReweightMult_tool.hh"
 #include "nusystematics/systproviders/WSReweight_tool.hh"
@@ -79,6 +80,8 @@ make_instance(fhicl::ParameterSet const &paramset) {
     return std::make_unique<WSReweight>(paramset);
   } else if (tool_type == "QEInterference") {
     return std::make_unique<QEInterference>(paramset);
+  } else if (tool_type == "CCQEXSecCorr") {
+    return std::make_unique<CCQEXSecCorr>(paramset);
   } else if (tool_type == "MECq0q3InterpWeighting") {
     return std::make_unique<MECq0q3InterpWeighting>(paramset);
   } else if (tool_type == "ValenciaExc2p2hReweighter") {
