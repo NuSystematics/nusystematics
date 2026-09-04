@@ -3,6 +3,7 @@
 #include "nusystematics/utility/exceptions.hh"
 
 #include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/string_parsers.hh"
 
 #include "Framework/GHEP/GHepParticle.h"
 #include "Framework/GHEP/GHepUtils.h"
@@ -20,6 +21,8 @@
 using namespace systtools;
 using namespace nusyst;
 using namespace fhicl;
+
+NEW_SYSTTOOLS_EXCEPT(invalid_QECorr_DataBaseDir_FILEPATH);
 
 // ---------------------------------------------------------------------------
 // Flavor string used in the ROOT file naming convention
@@ -80,6 +83,8 @@ bool CCQEXSecCorr::SetupResponseCalculator(
           "reweight_data_v3_04_02a_to_v3_06_02_sbn2_CCQE_%FLAVOR%_%ENERGY%_flat.root");
   std::string histName =
       manifest.get<std::string>("histogram_name", "h_weights_map");
+
+  dataBaseDir = systtools::expand_env_vars(dataBaseDir);
 
   // Energy grid
   fEgrid = manifest.get<std::vector<double>>("EnergyGrid");
