@@ -29,7 +29,6 @@ if(nusyst_DUNETDRv1_ENABLED)
   nuenuebar_xsec_ratio.hh
   )
 endif()
->>>>>>> 25f433f (Pion Absorption Kinematics reweights)
 
 
 add_library(nusystematics_responsecalculators INTERFACE)
