@@ -1,7 +1,7 @@
-#include "SuSAv2ToValenica_MEC_reweight.ToolConfig.fcl"
-#include "SuSAv2ToMartini_MEC_reweight.ToolConfig.fcl"
+#include "SuSAv2ToValenica_MEC_q0binned_all.ToolConfig.fcl"
+#include "SuSAv2ToMartini_MEC_q0binned_all.ToolConfig.fcl"
 
 syst_providers : [
-SuSAv2ToValenica_MECInterp,
-SuSAv2ToMartini_MECInterp
+  SuSAv2ToValenica_MECInterp_q0binned_all,
+  SuSAv2ToMartini_MECInterp_q0binned_all
 ]

@@ -1,0 +1,23 @@
+SuSAv2ToValenica_MECInterp_reweight_all:
+  MECResponse_central_value: 0
+  MECResponse_input_manifest:
+    EdgeClamp: true
+    EnuMax: 3.0
+    EnuMin: 0.20
+    EnuSnapTol: 0.005
+    Flavors: [numu, numubar, nue, nuebar]
+    Model: valencia
+    OutOfRangeWeight: 0.0
+    Q0ApplyMax: 1.2
+    Q0ApplyMin: 0.0
+    Q0SelectMax: 0.0
+    Q0SelectMin: 0.0
+    Q3ApplyMax: 1.2
+    Q3ApplyMin: 0.0
+    UseNearestBin: false
+    WeightLimits: [0.1, 1000.0]
+    WeightMapFile3D: /exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/data/ccmec_weight_maps_3d_q0_q3_Enu_all_flavors_valencia_martini.root
+  MECResponse_variation_descriptor: "[1]"
+  instance_name: SuSAv2ToValenica_reweight_all
+  tool_type: MECq0q3InterpWeighting
+syst_providers: [SuSAv2ToValenica_MECInterp_reweight_all]

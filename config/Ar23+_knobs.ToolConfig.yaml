@@ -1,0 +1,233 @@
+CCQETemplateCRPA_Tool_Config:
+  CCQETemplateReweight_input_manifest:
+    ENuBoundary: 1.0
+    RWMode: q3q0
+    input_file: $SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root
+    inputs: [{input_hist: LowE/h_ENuq3q0_G21_HF-CRPA, name: LowE_WithTemplate}, {input_hist: LowE/h_ENuq3q0_G21_HF, name: LowE_WithoutTemplate}]
+  instance_name: SBN_v3_HFToCRPA
+  q0_bin_edges: [0.0, 0.05, 0.10, 0.20, 0.7, 10.0]
+  q0bin0_central_value: 0
+  q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin1_central_value: 0
+  q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin2_central_value: 0
+  q0bin2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin3_central_value: 0
+  q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin4_central_value: 0
+  q0bin4_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  tool_type: CCQETemplateReweight
+CCQETemplateHF_Tool_Config:
+  CCQETemplateReweight_input_manifest:
+    ENuBoundary: 1.0
+    RWMode: q3q0
+    input_file: $SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root
+    inputs: [{input_hist: LowE/h_ENuq3q0_G21_HF, name: LowE_WithTemplate}, {input_hist: LowE/h_ENuq3q0_AR23, name: LowE_WithoutTemplate}]
+  instance_name: SBN_v3_LFGToHF
+  q0_bin_edges: [0.0, 0.05, 0.10, 0.20, 0.7, 10.0]
+  q0bin0_central_value: 0
+  q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin1_central_value: 0
+  q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin2_central_value: 0
+  q0bin2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin3_central_value: 0
+  q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin4_central_value: 0
+  q0bin4_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  tool_type: CCQETemplateReweight
+CCQETemplateSF_Tool_Config:
+  CCQETemplateReweight_input_manifest:
+    ENuBoundary: 10.0
+    RWMode: q3q0
+    input_file: $SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root
+    inputs: [{input_hist: h_ENuq3q0_AR25_SF, name: LowE_WithTemplate}, {input_hist: h_ENuq3q0_AR23, name: LowE_WithoutTemplate}]
+  instance_name: SBN_v3_LFGToSF
+  q0_bin_edges: [0.0, 0.05, 0.10, 0.20, 0.7, 10.0]
+  q0bin0_central_value: 0
+  q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin1_central_value: 0
+  q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin2_central_value: 0
+  q0bin2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin3_central_value: 0
+  q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  q0bin4_central_value: 0
+  q0bin4_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  tool_type: CCQETemplateReweight
+CCQEXSecCorr_Tool_Config:
+  CCQEXSecCorr_central_value: 1
+  CCQEXSecCorr_input_manifest:
+    DataBaseDir: $SBNDATA_DIR/systematics/AR23Plus/QE-Fix
+    EdgeClamp: true
+    EnergyGrid: [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65,
+      0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15,
+      1.20, 1.25, 1.30, 1.35, 1.40, 1.45, 1.50, 1.55, 1.60, 1.65,
+      1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2.00, 2.05, 2.10, 2.15,
+      2.20, 2.25, 2.30, 2.35, 2.40, 2.45, 2.50, 2.55, 2.60, 2.65,
+      2.70, 2.75, 2.80, 2.85, 2.90, 2.95, 3.00]
+    EnuMax: 3.00
+    EnuMin: 0.20
+    EnuSnapTol: 0.005
+    UseNearestBin: true
+    WeightLimits: [0.0, 30.0]
+    file_pattern: reweight_data_v3_04_02a_to_v3_06_02_sbn2_CCQE_%FLAVOR%_%ENERGY%GeV_flat.root
+    histogram_name: h_weights_map
+  fill_valid_tree: false
+  instance_name: SBN_v3
+  tool_type: CCQEXSecCorr
+GENIEFSIReWeight_Multisigma_Tool_Config:
+  FrG4HiE_N_central_value: 0
+  FrG4HiE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrG4LoE_N_central_value: 0
+  FrG4LoE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrG4M1E_N_central_value: 0
+  FrG4M1E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrG4M2E_N_central_value: 0
+  FrG4M2E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrG4_N_central_value: 0
+  FrG4_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrINCLHiE_N_central_value: 0
+  FrINCLHiE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrINCLLoE_N_central_value: 0
+  FrINCLLoE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrINCLM1E_N_central_value: 0
+  FrINCLM1E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrINCLM2E_N_central_value: 0
+  FrINCLM2E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrINCL_N_central_value: 0
+  FrINCL_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrKin_PiProBias_N_central_value: 0
+  FrKin_PiProBias_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  FrKin_PiProFix_N_central_value: 0
+  FrKin_PiProFix_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MFPHiE_N_central_value: 0
+  MFPHiE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MFPLoE_N_central_value: 0
+  MFPLoE_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MFPM1E_N_central_value: 0
+  MFPM1E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MFPM2E_N_central_value: 0
+  MFPM2E_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  UseFullHERG: true
+  ignore_parameter_dependence: true
+  instance_name: SBN_v3
+  tool_type: GENIEReWeight
+PionAbsProvider_toolconfig:
+  PionAbs_input_manifest:
+    input_file: ""
+    inputs: []
+  QuasiDeuteronFraction_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  instance_name: SBN_v3
+  tool_type: PionAbsWeighter
+  verbosity_level: 5
+QEInterference_Tool_Config:
+  QEInterference_input_manifest:
+    input_file: $SBNDATA_DIR/systematics/AR23Plus/ACHILLES_weights.root
+    inputs: [{input_enu_bins: numu_cc_enu_bins, input_hist: numu_cc_weights, input_q0_bins: numu_cc_q0_bins, input_q3_bins: numu_cc_q3_bins, name: numu_cc}, {input_enu_bins: nue_cc_enu_bins, input_hist: nue_cc_weights, input_q0_bins: nue_cc_q0_bins, input_q3_bins: nue_cc_q3_bins, name: nue_cc}, {input_enu_bins: numu_nc_enu_bins, input_hist: numu_nc_weights, input_q0_bins: numu_nc_q0_bins, input_q3_bins: numu_nc_q3_bins, name: numu_nc}, {input_enu_bins: nue_nc_enu_bins, input_hist: nue_nc_weights, input_q0_bins: nue_nc_q0_bins, input_q3_bins: nue_nc_q3_bins, name: nue_nc}]
+  QEIntf_dial_0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  QEIntf_dial_1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  QEIntf_dial_2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  QEIntf_dial_3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  QEIntf_dial_4_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  QEIntf_dial_5_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  instance_name: SBN_v3
+  q0_bin_edges: [0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 3.0]
+  tool_type: QEInterference
+  verbosity_level: 5
+SuSAv2ToMartini_MECInterp_q0binned_Tool_Config:
+  MECResponse_input_manifest:
+    DataBaseDir: $SBNDATA_DIR/systematics/AR23Plus/MEC
+    EdgeClamp: true
+    EnergyGrid: [0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+      1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55,
+      1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0, 2.05, 2.1, 2.15,
+      2.2, 2.25, 2.3, 2.35, 2.4, 2.45, 2.5]
+    EnuMax: 2.5
+    EnuMin: 0.4
+    EnuSnapTol: 0.005
+    HistNameNN: h_weights_map;1
+    HistNameNP: h_weights_map;1
+    MapIsQ3xQ0: true
+    Model: martini
+    OutOfRangeWeight: 0.0
+    Q0ApplyMax: 0.995
+    Q0ApplyMin: 0.0
+    Q0Bins: [0.0, 0.2, 0.4, 0.6, 10.0]
+    Q3ApplyMax: 2.0
+    Q3ApplyMin: 0.0
+    UseNearestBin: false
+    WeightLimits: [0.1, 1000.0]
+  MECResponse_q0bin0_central_value: 0
+  MECResponse_q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MECResponse_q0bin1_central_value: 0
+  MECResponse_q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MECResponse_q0bin2_central_value: 0
+  MECResponse_q0bin2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MECResponse_q0bin3_central_value: 0
+  MECResponse_q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  instance_name: SBN_v3_SuSAToMar
+  tool_type: MECq0q3InterpWeighting
+SuSAv2ToValencia_MECInterp_q0binned_Tool_Config:
+  MECResponse_input_manifest:
+    DataBaseDir: $SBNDATA_DIR/systematics/AR23Plus/MEC
+    EdgeClamp: true
+    EnergyGrid: [0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+      1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55,
+      1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0, 2.05, 2.1, 2.15,
+      2.2, 2.25, 2.3, 2.35, 2.4, 2.45, 2.5]
+    EnuMax: 2.5
+    EnuMin: 0.4
+    EnuSnapTol: 0.005
+    HistNameNN: h_weights_map;1
+    HistNameNP: h_weights_map;1
+    MapIsQ3xQ0: true
+    Model: valencia
+    OutOfRangeWeight: 0.0
+    Q0ApplyMax: 1.2
+    Q0ApplyMin: 0.0
+    Q0Bins: [0.0, 0.2, 0.4, 0.6, 10.0]
+    Q3ApplyMax: 1.2
+    Q3ApplyMin: 0.0
+    UseNearestBin: false
+    WeightLimits: [0.1, 1000.0]
+  MECResponse_q0bin0_central_value: 0
+  MECResponse_q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MECResponse_q0bin1_central_value: 0
+  MECResponse_q0bin1_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MECResponse_q0bin2_central_value: 0
+  MECResponse_q0bin2_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  MECResponse_q0bin3_central_value: 0
+  MECResponse_q0bin3_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
+  instance_name: SBN_v3_SuSAToVal
+  tool_type: MECq0q3InterpWeighting
+zexpansion_weighter_Deuterium_Tool_Config:
+  RWtoPub: PRD_93_113015
+  b1_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+  b2_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+  b3_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+  b4_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+  instance_name: SBN_v3_Deut
+  tool_type: ZExpPCAWeighter
+  verbosity_level: 5
+zexpansion_weighter_MINERvA_Tool_Config:
+  RWtoPub: Nature_614_102522
+  b1_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+  b2_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+  b3_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+  b4_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
+  instance_name: SBN_v3_MvA
+  tool_type: ZExpPCAWeighter
+  verbosity_level: 5
+
+syst_providers: [
+    CCQETemplateSF_Tool_Config,
+    CCQETemplateHF_Tool_Config,
+    CCQETemplateCRPA_Tool_Config,
+    QEInterference_Tool_Config,
+    GENIEFSIReWeight_Multisigma_Tool_Config,
+    SuSAv2ToValencia_MECInterp_q0binned_Tool_Config,
+    SuSAv2ToMartini_MECInterp_q0binned_Tool_Config,
+    CCQEXSecCorr_Tool_Config,
+    PionAbsProvider_toolconfig
+]

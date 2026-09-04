@@ -145,6 +145,16 @@ struct TweakSummaryTree {
   int nproton, npip, npim, npi0, nneutron;
   std::vector<int> fsi_pdgs;
   std::vector<int> fsi_codes;
+
+  // lepton and pre-fsi particles kinematics for Valencia exclusive 2p2h bdt reweight - Ziggy
+  double lep_px;
+  double lep_py;
+  double lep_pz;
+  std::vector<double> fsi_pxs;
+  std::vector<double> fsi_pys;
+  std::vector<double> fsi_pzs;
+
+
   // TKI
   std::vector<double> fsprotons_KE;
   // Highest-|p| proton momentum magnitude -- different from
@@ -219,6 +229,12 @@ struct TweakSummaryTree {
     t->Branch("Enu_true", &Enu_true, "Enu_true/D");
     t->Branch("nu_pdg", &nu_pdg, "nu_pdg/I");
     t->Branch("plep", &plep, "plep/D");
+
+    // lepton kinematics for Valencia exclusive bdt reweight - Ziggy
+    t->Branch("lep_px", &lep_px, "lep_px/D");
+    t->Branch("lep_py", &lep_py, "lep_py/D");
+    t->Branch("lep_pz", &lep_pz, "lep_pz/D");
+    
     t->Branch("nucleon_pdg", &nucleon_pdg, "nucleon_pdg/I");
     t->Branch("target_pdg", &target_pdg, "target_pdg/I");
       
@@ -241,6 +257,13 @@ struct TweakSummaryTree {
     t->Branch("nneutron",   &nneutron,   "nneutron/I");
     t->Branch("fsi_pdgs", "vector<int>", &fsi_pdgs);
     t->Branch("fsi_codes", "vector<int>", &fsi_codes);
+
+    // pre-fsi particle kinematics for Valencia exclusive bdt reweight - Ziggy
+    t->Branch("fsi_pxs", "vector<double>", &fsi_pxs);
+    t->Branch("fsi_pys", "vector<double>", &fsi_pys);
+    t->Branch("fsi_pzs", "vector<double>", &fsi_pzs);
+
+
     t->Branch("fsprotons_KE", "vector<double>", &fsprotons_KE);
     t->Branch("leading_proton_p", &leading_proton_p, "leading_proton_p/D");
     t->Branch("Bjorken_x",        &Bjorken_x,        "Bjorken_x/D");
@@ -814,6 +837,12 @@ int RunSerial() {
     tst.nu_pdg = ISLep->Pdg();
 
     tst.plep = FSLepP4.Vect().Mag();
+
+    // lepton px py pz:
+    tst.lep_px = FSLepP4.Px();
+    tst.lep_py = FSLepP4.Py();
+    tst.lep_pz = FSLepP4.Pz();
+    
     if (nucleon == NULL) {tst.nucleon_pdg = -999;}
     else{tst.nucleon_pdg = nucleon->Pdg();}
 
@@ -902,6 +931,10 @@ int RunSerial() {
     tst.npim = 0;
     tst.npi0 = 0;
     tst.nneutron = 0;
+    std::vector<double> fsi_pxs;
+    std::vector<double> fsi_pys;
+    std::vector<double> fsi_pzs;
+    
 
     // Particle loop
     std::vector<GHepParticle *> protons;
@@ -917,6 +950,9 @@ int RunSerial() {
 
       // Skip particles not rescattered by the actual hadron transport code
       int  pdgc       = p->Pdg();
+      double  px      = p->Px();
+      double  py      = p->Py();
+      double  pz      = p->Pz();
       bool is_pion    = pdg::IsPion   (pdgc);
       bool is_nucleon = pdg::IsNucleon(pdgc);
       bool is_proton = pdg::IsProton(pdgc);
@@ -932,6 +968,10 @@ int RunSerial() {
           int fsi_code = p->RescatterCode();
           fsi_pdgs.push_back(pdgc);
           fsi_codes.push_back(fsi_code);
+          // pre-fsi particle px py pz:
+          fsi_pxs.push_back(px);
+          fsi_pys.push_back(py);
+          fsi_pzs.push_back(pz);
         }
         // Record the pre-FSI hadron 4-vector regardless of FSI-code support.
         // These are the primary interaction products before INTRANUKE
@@ -1012,6 +1052,12 @@ int RunSerial() {
     } // END particle loop
     tst.fsi_pdgs = fsi_pdgs;
     tst.fsi_codes = fsi_codes;
+    // pre fsi particles px py pz
+    tst.fsi_pxs = fsi_pxs;
+    tst.fsi_pys = fsi_pys;
+    tst.fsi_pzs = fsi_pzs;
+
+      
 
     // Final state protons
     // - Sort protons in descending order of KE

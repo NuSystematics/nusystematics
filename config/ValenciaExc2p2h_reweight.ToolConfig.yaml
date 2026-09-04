@@ -1,0 +1,10 @@
+ValenciaExc2p2hReweighter_ToolConfig:
+  DialValencia_central_value: 0
+  DialValencia_variation_descriptor: "[0.0, 0.25, 0.5, 0.75, 1.0]"
+  JSON_PN_REWEIGHTER_PATH: /exp/icarus/data/users/zihaolin/MC_outputs/bdtreweighters_json/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pn_bdtreweighter.json
+  JSON_PP_REWEIGHTER_PATH: /exp/icarus/data/users/zihaolin/MC_outputs/bdtreweighters_json/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pp_bdtreweighter.json
+  SCALE_FACTOR_PN: 1.6863
+  SCALE_FACTOR_PP: 2.4642
+  instance_name: test
+  tool_type: ValenciaExc2p2hReweighter
+syst_providers: [ValenciaExc2p2hReweighter_ToolConfig]

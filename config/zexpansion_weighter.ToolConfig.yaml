@@ -6,4 +6,4 @@ zexpansion_weighter_toolconfig:
   b4_variation_descriptor: (-3,3,1)
   instance_name: myreweighter
   tool_type: ZExpPCAWeighter
-  verbosity_level: 5
+  verbosity_level: 1

@@ -21,10 +21,13 @@
 #include "nusystematics/systproviders/CCQERPAReweight_tool.hh"
 #include "nusystematics/systproviders/CCQETemplateReweight_tool.hh"
 #include "nusystematics/systproviders/QEInterference_tool.hh"
+#include "nusystematics/systproviders/CCQEXSecCorr_tool.hh"
 #include "nusystematics/systproviders/FSIReweight_tool.hh"
 #include "nusystematics/systproviders/FSIReweightMult_tool.hh"
 #include "nusystematics/systproviders/WSReweight_tool.hh"
+#include "nusystematics/systproviders/PionAbsWeighter_tool.hh"
 #include "nusystematics/systproviders/MECq0q3InterpWeighting_tool.hh"
+#include "nusystematics/systproviders/ValenciaExc2p2hReweighter_tool.hh"
 
 #include "yaml-cpp/yaml.h"
 
@@ -76,10 +79,16 @@ make_instance(YAML::Node const &paramset) {
     return std::make_unique<FSIReweightMult>(paramset);
   } else if (tool_type == "WSReweight") {
     return std::make_unique<WSReweight>(paramset);
+  } else if (tool_type == "PionAbsWeighter"){
+    return std::make_unique<PionAbsWeighter>(paramset);
   } else if (tool_type == "QEInterference") {
     return std::make_unique<QEInterference>(paramset);
+  } else if (tool_type == "CCQEXSecCorr") {
+    return std::make_unique<CCQEXSecCorr>(paramset);
   } else if (tool_type == "MECq0q3InterpWeighting") {
     return std::make_unique<MECq0q3InterpWeighting>(paramset);
+  } else if (tool_type == "ValenciaExc2p2hReweighter") {
+    return std::make_unique<ValenciaExc2p2hReweighter>(paramset);
   } else {
     throw unknown_nusyst_systprovider()
         << "[ERROR]: Unknown tool type: " << std::quoted(tool_type);
@@ -109,7 +118,9 @@ inline std::vector<std::string> RegisteredToolTypes() {
     "CCQETemplateReweight",
     "FSIReweight",
     "WSReweight",
+    "PionAbsWeighter",
     "QEInterference",
+    "CCQEXSecCorr",
     "MECq0q3InterpWeighting",
   };
 }

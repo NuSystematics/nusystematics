@@ -1,0 +1,45 @@
+SuSAv2ToValenica_MECInterp_q0binned_all: {
+
+  tool_type: "MECq0q3InterpWeighting"
+  instance_name: "SuSAv2ToValenica_q0binned_all"
+
+  # One shared set of q0 dials. The provider selects the numu, numubar, nue,
+  # or nuebar response maps from the incoming probe PDG for each event.
+  MECResponse_q0bin0_central_value: 0
+  MECResponse_q0bin0_variation_descriptor: "[1]"
+
+  MECResponse_q0bin1_central_value: 0
+  MECResponse_q0bin1_variation_descriptor: "[1]"
+
+  MECResponse_q0bin2_central_value: 0
+  MECResponse_q0bin2_variation_descriptor: "[1]"
+
+  MECResponse_q0bin3_central_value: 0
+  MECResponse_q0bin3_variation_descriptor: "[1]"
+
+  MECResponse_input_manifest: {
+    Model: "valencia"
+
+    # Flavors share the four dial IDs above but retain separate response histograms.
+    Flavors: ["numu", "numubar", "nue", "nuebar"]
+    WeightMapFile3D: "/exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/data/ccmec_weight_maps_3d_q0_q3_Enu_all_flavors_valencia_martini.root"
+
+    Q0Bins: [0.0, 0.2, 0.4, 0.6, 10.0]
+
+    WeightLimits: [0.1, 1000.0]
+    Q0ApplyMin: 0.0
+    Q0ApplyMax: 1.2
+    Q3ApplyMin: 0.0
+    Q3ApplyMax: 1.2
+
+    EnuMin: 0.20
+    EnuMax: 3.0
+    EnuSnapTol: 0.005
+
+    UseNearestBin: false
+    EdgeClamp: true
+    OutOfRangeWeight: 0.0
+  }
+}
+
+syst_providers: [SuSAv2ToValenica_MECInterp_q0binned_all]

@@ -1,0 +1,38 @@
+SuSAv2ToMartini_MECInterp_reweight_all: {
+
+  tool_type: "MECq0q3InterpWeighting"
+  instance_name: "SuSAv2ToMartini_reweight_all"
+
+  # One shared nuisance parameter for all flavors. The provider selects the
+  # numu, numubar, nue, or nuebar response maps from the incoming probe PDG.
+  MECResponse_central_value: 0
+  MECResponse_variation_descriptor: "[1]"
+
+  MECResponse_input_manifest: {
+    Model: "martini"
+
+    # All flavors share MECResponse but retain their own response histograms.
+    Flavors: ["numu", "numubar", "nue", "nuebar"]
+    WeightMapFile3D: "/exp/icarus/app/users/hassinin/karim_nusystematics/nusystematics/data/ccmec_weight_maps_3d_q0_q3_Enu_all_flavors_valencia_martini.root"
+
+    WeightLimits: [0.1, 1000.0]
+    Q0ApplyMin: 0.0
+    Q0ApplyMax: 0.995
+    Q3ApplyMin: 0.0
+    Q3ApplyMax: 2.0
+
+    # A zero range disables additional q0 selection in single-dial mode.
+    Q0SelectMin: 0.0
+    Q0SelectMax: 0.0
+
+    EnuMin: 0.20
+    EnuMax: 3.0
+    EnuSnapTol: 0.005
+
+    UseNearestBin: false
+    EdgeClamp: true
+    OutOfRangeWeight: 0.0
+  }
+}
+
+syst_providers: [SuSAv2ToMartini_MECInterp_reweight_all]
