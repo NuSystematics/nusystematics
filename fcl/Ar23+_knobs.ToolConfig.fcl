@@ -3,7 +3,7 @@
 CCQETemplateSF_Tool_Config: {
 
     tool_type: "CCQETemplateReweight"
-    instance_name: "LFGToSF_SBN_v3"
+    instance_name: "SBN_v3_LFGToSF"
     q0_bin_edges: "[0.0, 0.05, 0.10, 0.20, 0.7, 10.0]"
 
     # weight in four q0 bins
@@ -36,7 +36,7 @@ CCQETemplateSF_Tool_Config: {
 }
 
 CCQETemplateHF_Tool_Config: @local::CCQETemplateSF_Tool_Config
-CCQETemplateHF_Tool_Config.instance_name: "LFGToHF_SBN_v3"
+CCQETemplateHF_Tool_Config.instance_name: "SBN_v3_LFGToHF"
 CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
 CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
           {
@@ -50,7 +50,7 @@ CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
 ]
 
 CCQETemplateCRPA_Tool_Config: @local::CCQETemplateSF_Tool_Config
-CCQETemplateCRPA_Tool_Config.instance_name: "LFGToCRPA_SBN_v3"
+CCQETemplateCRPA_Tool_Config.instance_name: "SBN_v3_HFToCRPA"
 CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
 CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
   {
@@ -116,39 +116,13 @@ CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
 GENIEFSIReWeight_Multisigma_Tool_Config: {
     tool_type: "GENIEReWeight"
 
-    instance_name: "EDepFSI_SBN_v3"
+    instance_name: "SBN_v3"
 
     # Keep one GENIEReWeight instance per discrete dial tweak in memory
     # Requires no reconfigures within the event loop
     UseFullHERG: true
 
     ignore_parameter_dependence: true
-
-    # Old MEC
-    NormCCMEC_central_value: 0
-    NormCCMEC_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    NormNCMEC_central_value: 0
-    NormNCMEC_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    DecayAngMEC_central_value: 0
-    DecayAngMEC_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-
-    # Old QE
-    VecFFCCQEshape_central_value: 0
-    VecFFCCQEshape_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    CoulombCCQE_central_value: 0
-    CoulombCCQE_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    
-    # Old (pi) FSI
-    MFP_pi_central_value: 0
-    MFP_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    FrCEx_pi_central_value: 0
-    FrCEx_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    FrInel_pi_central_value: 0
-    FrInel_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    FrAbs_pi_central_value: 0
-    FrAbs_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
-    FrPiProd_pi_central_value: 0
-    FrPiProd_pi_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
 
     FrG4_N_central_value: 0
     FrG4_N_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
@@ -193,7 +167,7 @@ GENIEFSIReWeight_Multisigma_Tool_Config: {
 
 zexpansion_weighter_MINERvA_Tool_Config: {
     tool_type: "ZExpPCAWeighter"
-    instance_name: "MINERvA_SBN_v3"
+    instance_name: "SBN_v3_MvA"
 
     b1_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
     b2_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
@@ -206,7 +180,7 @@ zexpansion_weighter_MINERvA_Tool_Config: {
 
 zexpansion_weighter_Deuterium_Tool_Config: {
     tool_type: "ZExpPCAWeighter"
-    instance_name: "Deuterium_SBN_v3"
+    instance_name: "SBN_v3_Deut"
 
     b1_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
     b2_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
@@ -220,7 +194,7 @@ zexpansion_weighter_Deuterium_Tool_Config: {
 SuSAv2ToValencia_MECInterp_q0binned_Tool_Config: {
 
   tool_type: "MECq0q3InterpWeighting"
-  instance_name: "SuSAv2ToValencia_SBN_v3"
+  instance_name: "SBN_v3_SuSAToVal"
 
   # ============================================================
   # Q0-BINNED MODE: Multiple independent dials per q0 bin
@@ -309,7 +283,7 @@ SuSAv2ToValencia_MECInterp_q0binned_Tool_Config: {
 SuSAv2ToMartini_MECInterp_q0binned_Tool_Config: {
 
   tool_type: "MECq0q3InterpWeighting"
-  instance_name: "SuSAv2ToMartini_SBN_v3"
+  instance_name: "SBN_v3_SuSAToMar"
 
   # ============================================================
   # Q0-BINNED MODE: Multiple independent dials per q0 bin
@@ -433,7 +407,7 @@ PionAbsProvider_toolconfig: {
     tool_type: "PionAbsWeighter"
     instance_name: "SBN_v3"
 
-    QuasiDeuteronFraction_variation_descriptor: "(-3,3,1)"
+    QuasiDeuteronFraction_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
 
     verbosity_level: 5
 
@@ -453,8 +427,8 @@ syst_providers: [
     CCQETemplateCRPA_Tool_Config,
     QEInterference_Tool_Config,
     GENIEFSIReWeight_Multisigma_Tool_Config,
-    zexpansion_weighter_Deuterium_Tool_Config,
-    zexpansion_weighter_MINERvA_Tool_Config,
+    #zexpansion_weighter_Deuterium_Tool_Config,
+    #zexpansion_weighter_MINERvA_Tool_Config,
     SuSAv2ToValencia_MECInterp_q0binned_Tool_Config,
     SuSAv2ToMartini_MECInterp_q0binned_Tool_Config,
     CCQEXSecCorr_Tool_Config,
