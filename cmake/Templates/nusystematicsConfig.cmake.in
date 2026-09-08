@@ -18,6 +18,10 @@ find_package(GENIE3 REQUIRED)
 
 find_package(Eigen3 3.4.0 REQUIRED)
 
+find_package(ROOT 6.10 REQUIRED)
+
+find_package(Boost REQUIRED COMPONENTS json)
+
 set(nusystematics_FOUND TRUE)
 
 if(NOT TARGET GENIE3::All)
