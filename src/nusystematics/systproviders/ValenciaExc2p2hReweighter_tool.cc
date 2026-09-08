@@ -99,6 +99,12 @@ event_unit_response_t ValenciaExc2p2hReweighter::GetEventResponse(genie::EventRe
         return this->GetDefaultEventResponse();
     }
 
+    // TODO For now, only support numu
+    bool IsNuMu = ev.Probe()->Pdg()==14;
+    if(!IsNuMu){
+        return this->GetDefaultEventResponse();
+    }
+
     std::vector<double> features = BDTFeaturesWrapper(ev);
     
     systtools::event_unit_response_t resp;
