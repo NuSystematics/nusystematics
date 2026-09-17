@@ -62,15 +62,12 @@ nusyst plots     -c /tmp/all.fcl -i /tmp/all_dump.root \
                  -o /tmp/all_plot
 ```
 
-> **Heads up — both CCQE Z-expansion dial sets are present in `--mode all`.**
-> The raw `ZExpA1..4CCQE` + `ZNormCCQE` come from `GENIEReWeight_CCQE` and are
-> *uncorrelated* — each shifts one coefficient by its own per-coefficient
-> fractional error. The PCA dials `b1..b4` come from `ZExpPCAWeighter` and
-> rotate into the eigenbasis of the published PRD 93, 113015 covariance
-> matrix, so they're truly independent unit-variance coordinates. Both are
-> exposed for validation/inspection purposes — **do not enable both groups
-> simultaneously in a fit or systematic envelope**: they parameterise the
-> same physics in two different bases and would double-count.
+> **Heads up: both CCQE Z-expansion dial sets are present in `--mode all`.**
+> Raw `ZExpA1..4CCQE` + `ZNormCCQE` (via `GENIEReWeight_CCQE`) and
+> PCA-rotated `b1..b4` (via `ZExpPCAWeighter`) are both emitted for
+> validation. Do not enable both simultaneously in a fit or envelope --
+> they parameterise the same physics in two bases and double-count. See
+> [`doc/ZEXPANSION.md`](ZEXPANSION.md) for details.
 
 `PlotSystVariationsNuSyst` also accepts a raw GHEP + tool fhicl directly,
 skipping step 3 — input format is auto-detected.
@@ -113,27 +110,17 @@ The default `genierw` mode prunes several GENIE Reweight dials before writing.
 Run the tool once and look at the `Skipped GENIE RW dials:` section for the
 current list and per-dial reason:
 
-- **The wrong CCQE axial-FF dial family for the loaded tune** — GENIE's CCQE
+- **The wrong CCQE axial-FF dial family for the loaded tune.** GENIE's CCQE
   axial form factor has two parameterisations: a 1-parameter dipole form
   knobbed by `MaCCQE` / `E0CCQE`, and a multi-parameter Z-expansion form
-  knobbed by `ZNormCCQE` + `ZExpA1..4CCQE`. A `GReWeightNuXSecCCQE` engine
-  auto-selects its mode at construction by reading
-  `FormFactorsAlg/AxialFormFactorModel` from the loaded tune's CCQE algorithm
-  config — dipole tunes get `kModeNormAndMaShape` / `kModeMa`, Z-expansion
-  tunes (e.g. AR23) get `kModeZExp`. The engine then accepts only the
-  matching dial family — the wrong-mode dial gets a
-  `WARN ReW: Systematic X is not handled for algorithm Y` and is silently
-  ignored. `GenerateAllDialsConfigNuSyst` probes the engine the same way at
-  startup, prints the detected mode in a `[INFO] CCQE axial form factor
-  detected: ...` line, and drops the inactive family from the output config
-  with reason `"dipole CCQE FF — loaded tune uses Z-expansion axial FF"`
-  (or its mirror). If `GENIE_XSEC_TUNE` isn't set the probe returns
-  `unknown` and both families are emitted.
-  See also the **`ZExpPCAWeighter` (PCA-rotated b₁..b₄)** discussion below —
-  on a Z-expansion tune that provider is the covariance-correct way to vary
-  the same FF, and a `--mode all` config will declare both the raw
-  `ZExpA*CCQE` and the PCA `b*` dials so the user can compare; don't enable
-  both groups simultaneously in a fit.
+  knobbed by `ZNormCCQE` + `ZExpA1..4CCQE`. The engine auto-selects its
+  mode from the loaded tune and accepts only the matching family;
+  `GenerateAllDialsConfigNuSyst` probes it at startup, prints
+  `[INFO] CCQE axial form factor detected: ...`, and drops the inactive
+  family from the output config. If `GENIE_XSEC_TUNE` isn't set the probe
+  returns `unknown` and both families are emitted. See
+  [`doc/ZEXPANSION.md`](ZEXPANSION.md) for the full mechanism and the
+  companion PCA-rotated `b₁..b₄` dials.
 - **Shape-only twins** (`MaCCQEshape`, `Ma*RESshape`, `Mv*RESshape`,
   `AhtBYshape`, `BhtBYshape`, `CV1uBYshape`, `CV2uBYshape`, `E0CCQEshape`,
   `VecFFCCQEshape`) — redundant with the shape+norm versions and unsafe on
@@ -365,56 +352,8 @@ downstream consumer that assumes one provider instance.
 
 ## CCQE axial-FF dials: raw vs. PCA-rotated
 
-GENIE's CCQE axial form factor can be set up either as a 1-parameter dipole or
-a multi-parameter Z-expansion. The Z-expansion fit (Meyer, Betancourt, Gran,
-Hill — *PRD 93, 113015*) gives four coefficients `a₁..a₄` with a published
-4×4 covariance matrix. There are two ways to vary them, and **a `--mode all`
-config will emit both** so they can be compared:
-
-### Raw `ZExpA1..4CCQE` + `ZNormCCQE` (provider: `GENIEReWeight_CCQE`)
-
-Each dial shifts one coefficient independently:
-
-```
-a_i_new = a_i_default * (1 + twk_i * fracerr_zexp[i])
-```
-
-There is **no correlation matrix in this layer**. The per-coefficient
-fractional errors come from GENIE's `CommonParam.xml`. Tossing all four at
-±1σ ignores the (strong) anti-correlations among the `aₙ` and grossly
-overcounts the constrained directions. Useful for one-at-a-time variation
-studies; **wrong** for a covariance-aware envelope.
-
-### PCA-rotated `b₁..b₄` (provider: `ZExpPCAWeighter`, fcl `zexpansion_weighter.ToolConfig.fcl`)
-
-Diagonalises the published 4×4 covariance once with
-`Eigen::SelfAdjointEigenSolver`:
-
-```
-Σ = V Λ Vᵀ                 // V = eigenvectors, Λ = diag(eigenvalues)
-P = V · diag(√Λ)            // decorrelation transform (per-column √λₖ·vₖ)
-```
-
-The user-facing dials become `b₁..b₄` — **uncorrelated, unit-variance**
-coordinates in the principal-component basis. At weight time:
-
-```
-a_shift     = P · b                                  // ChangeBasisBParams
-a_for_genie = ((a_cv + a_shift)/a_genie_default - 1) / fracerr_zexp_genie
-                                                     // ScaleAparamsforGenie
-// → pushed into the underlying ZExpA1..4CCQE GReWeight dials.
-```
-
-So `b` is the basis you'd want to draw correlated toys from; the raw
-`ZExpA*CCQE` are the basis the actual GENIE reweighter uses internally.
-
-**For systematic envelopes / fits, use `b₁..b₄` only.** Both sets are
-present in `--mode all` purely so you can compare per-event responses for
-validation and to confirm the rotation is doing what it should. Enabling
-both in a fit double-counts the same CCQE axial-FF physics in two bases.
-
-The hardcoded covariance lives in `ZExpPCAWeighter_tool.cc`, in the
-`namespace PRD_93_113015` block. The four `aₖ` central values
-`(2.30, -0.60, -3.80, 2.30)` and per-coefficient errors
-`(0.13, 1.0, 2.5, 2.7)` are from that paper's deuterium fit; the
-`Covariance_Matrix` is the published `aᵢ`-basis covariance.
+See [`doc/ZEXPANSION.md`](ZEXPANSION.md). It covers the two dial families
+(raw `ZExpA1..4CCQE` + `ZNormCCQE` via `GENIEReWeight_CCQE`, and
+PCA-rotated `b₁..b₄` via `ZExpPCAWeighter`), the automatic tune-based
+selection between dipole and Z-expansion, the end-to-end validation
+recipe, and which basis to use in a fit.
