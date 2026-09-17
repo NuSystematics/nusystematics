@@ -25,6 +25,10 @@ end-to-end recipe, per-tool reference, and the `applies_to_channels` /
 channel-bucket architecture used to skip dial × channel combinations the
 dial doesn't apply to.
 
+For the z-expansion CCQE axial form-factor dials specifically (raw
+`ZExpA1..4CCQE` via `GENIEReWeight_CCQE` and PCA-rotated `b₁..b₄` via
+`ZExpPCAWeighter`), see [`doc/ZEXPANSION.md`](doc/ZEXPANSION.md).
+
 ## To Build
 
 `nusystematics` will by default build `systematicstools` for you, but requires 
