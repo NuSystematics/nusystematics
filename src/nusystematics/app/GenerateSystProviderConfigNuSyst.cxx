@@ -233,11 +233,12 @@ int main(int argc, char const *argv[]) {
     providerNames.push_back(prov->GetFullyQualifiedName());
   }
   out_yaml["syst_providers"] = providerNames;
-  out_yaml["syst_providers"].SetStyle(YAML::EmitterStyle::Flow);
 
   YAML::Node wrapped_out_yaml;
   wrapped_out_yaml["generated_systematic_provider_configuration"] = out_yaml;
   SetAllSequencesToFlow(wrapped_out_yaml);
+  wrapped_out_yaml["generated_systematic_provider_configuration"]["syst_providers"]
+      .SetStyle(YAML::EmitterStyle::Block);
 
   std::ostream *os(nullptr);
 
