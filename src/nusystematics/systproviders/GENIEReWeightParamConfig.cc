@@ -453,7 +453,7 @@ SystMetaData ConfigureFSIParameterHeaders(YAML::Node const &cfg,
   firstParamId += FSI_N_md.size();
   ExtendSystMetaData(FSImd, std::move(FSI_N_md));
 
-#if BUILD_AR25_FSI_DIALS
+#ifdef BUILD_AR25_FSI_DIALS
   SystMetaData FSI_N_EDep_md = ConfigureSetOfIndependentParameters(
       cfg, firstParamId,
        {kINukeTwkDial_G4_N, kINukeTwkDial_INCL_N,

@@ -63,4 +63,10 @@ private:
   // configurable verbosity as an example of some arbitrary systprovider
   // configuration
   int verbosity_level;
+
+  bool    fZExpOverrideT0; ///< whether to override T0 value in z expansion
+  double  fZExpT0; ///< T0 override value
+  bool    fZExpOverrideTcut; ///< whether to override Tcut value in z expansion
+  double  fZExpTcut; ///< Tcut override value
+
 };
