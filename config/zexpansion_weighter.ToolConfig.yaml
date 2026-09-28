@@ -1,10 +1,24 @@
-syst_providers: [zexpansion_weighter_toolconfig]
-zexpansion_weighter_toolconfig:
-  RWtoPub: PRD_93_113015
-  b1_variation_descriptor: (-3,3,1)
-  b2_variation_descriptor: (-3,3,1)
-  b3_variation_descriptor: (-3,3,1)
-  b4_variation_descriptor: (-3,3,1)
-  instance_name: myreweighter
+zexpansion_weighter_MINERvA_CVCorr_Tool_Config:
+  RWtoPub: Nature_614_102522
+  b1_variation_descriptor: "[0]"
+  instance_name: SBN_v3_MvA_CVCorr
   tool_type: ZExpPCAWeighter
-  verbosity_level: 1
+  verbosity_level: 0
+zexpansion_weighter_MINERvA_Tool_Config:
+  RWtoPub: Nature_614_102522
+  b1_central_value: 0
+  b1_variation_descriptor: "[-1, 0, +1]"
+  b2_central_value: 0
+  b2_variation_descriptor: "[-1, 0, +1]"
+  b3_central_value: 0
+  b3_variation_descriptor: "[-1, 0, +1]"
+  b4_central_value: 0
+  b4_variation_descriptor: "[-1, 0, +1]"
+  instance_name: SBN_v3_MvA
+  tool_type: ZExpPCAWeighter
+  verbosity_level: 0
+
+syst_providers: [
+zexpansion_weighter_MINERvA_Tool_Config,
+zexpansion_weighter_MINERvA_CVCorr_Tool_Config
+]
