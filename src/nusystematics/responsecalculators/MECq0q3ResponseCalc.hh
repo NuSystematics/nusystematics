@@ -45,7 +45,7 @@ private:
 /// then linearly blend the two plane weights in Enu.
 class MECq0q3ResponseCalc3D {
 public:
-  MECq0q3ResponseCalc3D(TH3D* h, double w_min = 0.0,
+  MECq0q3ResponseCalc3D(TH3F* h, double w_min = 0.0,
                         double w_max = 5.0);
 
   double GetCentralWeight(double q0, double q3, double enu,
@@ -58,7 +58,7 @@ public:
 private:
   double GetPlaneWeight(double q0, double q3, int iz) const;
 
-  std::unique_ptr<TH3D> fHist;
+  std::unique_ptr<TH3F> fHist;
   std::vector<double> fEnergyGrid;
   double fWmin, fWmax;
   bool fUseNearestBin{false};
@@ -129,8 +129,8 @@ inline double MECq0q3ResponseCalc::GetVariation(int ivar,
 
 // ---------------------------------------------------------------------------
 inline MECq0q3ResponseCalc3D::MECq0q3ResponseCalc3D(
-    TH3D* h, double wmin, double wmax)
-  : fHist(h ? static_cast<TH3D*>(h->Clone()) : nullptr),
+    TH3F* h, double wmin, double wmax)
+  : fHist(h ? static_cast<TH3F*>(h->Clone()) : nullptr),
     fWmin(wmin), fWmax(wmax)
 {
   if (!fHist)
