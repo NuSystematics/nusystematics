@@ -356,8 +356,8 @@ CCQEXSecCorr_Tool_Config: {
     tool_type: "CCQEXSecCorr"
     instance_name: "SBN_v3"
 
-    # Correction dial: central_value only, no variation_descriptor
-    CCQEXSecCorr_central_value: 1
+    # Correction dial implemented as a 1-sigma weight, after discussion with Jaesung
+    CCQEXSecCorr_variation_descriptor: "[1]"
 
     CCQEXSecCorr_input_manifest: {
 
