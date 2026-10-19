@@ -30,6 +30,8 @@ CCQETemplateSF_Tool_Config: {
             input_hist: "h_ENuq3q0_AR23"
           }
       ]
+      baseline_tune: "AR23_20i_01_000"
+      target_tune: "AR25_20i_01_000"
     }
 }
 
@@ -37,15 +39,17 @@ CCQETemplateHF_Tool_Config: @local::CCQETemplateSF_Tool_Config
 CCQETemplateHF_Tool_Config.instance_name: "SBN_v3_LFGToHF"
 CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.ENuBoundary: 1.0
 CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
-          {
-            name: "LowE_WithTemplate"
-            input_hist: "LowE/h_ENuq3q0_G21_HF"
-          },
-          {
-            name: "LowE_WithoutTemplate"
-            input_hist: "LowE/h_ENuq3q0_AR23"
-          }
+  {
+    name: "LowE_WithTemplate"
+    input_hist: "LowE/h_ENuq3q0_G21_HF"
+  },
+  {
+    name: "LowE_WithoutTemplate"
+    input_hist: "LowE/h_ENuq3q0_AR23"
+  }
 ]
+CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.baseline_tune: "AR23_20i_01_000"
+CCQETemplateHF_Tool_Config.CCQETemplateReweight_input_manifest.target_tune: "G21_12a_00_000"
 
 CCQETemplateCRPA_Tool_Config: @local::CCQETemplateSF_Tool_Config
 CCQETemplateCRPA_Tool_Config.instance_name: "SBN_v3_HFToCRPA"
@@ -60,6 +64,8 @@ CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
     input_hist: "LowE/h_ENuq3q0_G21_HF"
   }
 ]
+CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.baseline_tune: "G12_12a_00_000"
+CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.target_tune: "G21_13a_00_000"
 
  QEInterference_Tool_Config: {
     tool_type: "QEInterference"
