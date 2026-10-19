@@ -64,7 +64,7 @@ CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.inputs: [
     input_hist: "LowE/h_ENuq3q0_G21_HF"
   }
 ]
-CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.baseline_tune: "G12_12a_00_000"
+CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.baseline_tune: "G21_12a_00_000"
 CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.target_tune: "G21_13a_00_000"
 
  QEInterference_Tool_Config: {
@@ -80,7 +80,7 @@ CCQETemplateCRPA_Tool_Config.CCQETemplateReweight_input_manifest.target_tune: "G
 
     q0_bin_edges: "[0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 3.0]"
 
-    verbosity_level: 5
+    verbosity_level: 0
 
     QEInterference_input_manifest: {
       input_file: "$SBNDATA_DIR/systematics/AR23Plus/ACHILLES_weights.root"
@@ -178,7 +178,7 @@ zexpansion_weighter_MINERvA_Tool_Config: {
     b3_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
     b4_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
 
-    verbosity_level: 5
+    verbosity_level: 0
     RWtoPub: "Nature_614_102522"
 }
 
@@ -191,7 +191,7 @@ zexpansion_weighter_Deuterium_Tool_Config: {
     b3_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
     b4_variation_descriptor: "[+1,-1,+2,-2,+3,-3, 0]"
 
-    verbosity_level: 5
+    verbosity_level: 0
     RWtoPub: "PRD_93_113015"
 }
 
@@ -362,7 +362,7 @@ CCQEXSecCorr_Tool_Config: {
     tool_type: "CCQEXSecCorr"
     instance_name: "SBN_v3"
 
-    # Correction dial implemented as a 1-sigma weight, after discussion with Jaesung
+    # 1 sigma variation.
     CCQEXSecCorr_variation_descriptor: "[1]"
 
     CCQEXSecCorr_input_manifest: {
@@ -399,7 +399,7 @@ PionAbsProvider_toolconfig: {
 
     QuasiDeuteronFraction_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
 
-    verbosity_level: 5
+    verbosity_level: 0
 
   PionAbs_input_manifest: {
       # Not needed, as we don't include multiplicity reweights
