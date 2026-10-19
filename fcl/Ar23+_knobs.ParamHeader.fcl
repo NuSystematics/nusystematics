@@ -82,6 +82,7 @@ generated_systematic_provider_configuration: {
          CCQETemplateReweight_input_manifest: {
             ENuBoundary: 1
             RWMode: "q3q0"
+            baseline_tune: "G21_12a_00_000"
             input_file: "$SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root"
             inputs: [
                {
@@ -93,6 +94,7 @@ generated_systematic_provider_configuration: {
                   name: "LowE_WithoutTemplate"
                }
             ]
+            target_tune: "G21_13a_00_000"
          }
          fill_valid_tree: false
          q0_bin_edges: [
@@ -190,6 +192,7 @@ generated_systematic_provider_configuration: {
          CCQETemplateReweight_input_manifest: {
             ENuBoundary: 1
             RWMode: "q3q0"
+            baseline_tune: "AR23_20i_01_000"
             input_file: "$SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root"
             inputs: [
                {
@@ -201,6 +204,7 @@ generated_systematic_provider_configuration: {
                   name: "LowE_WithoutTemplate"
                }
             ]
+            target_tune: "G21_12a_00_000"
          }
          fill_valid_tree: false
          q0_bin_edges: [
@@ -298,6 +302,7 @@ generated_systematic_provider_configuration: {
          CCQETemplateReweight_input_manifest: {
             ENuBoundary: 10
             RWMode: "q3q0"
+            baseline_tune: "AR23_20i_01_000"
             input_file: "$SBNDATA_DIR/systematics/AR23Plus/CCQETemplateReweight.root"
             inputs: [
                {
@@ -309,6 +314,7 @@ generated_systematic_provider_configuration: {
                   name: "LowE_WithoutTemplate"
                }
             ]
+            target_tune: "AR25_20i_01_000"
          }
          fill_valid_tree: false
          q0_bin_edges: [
@@ -325,9 +331,11 @@ generated_systematic_provider_configuration: {
    }
    CCQEXSecCorr_SBN_v3: {
       CCQEXSecCorr: {
-         centralParamValue: 1
          isCorrection: true
          isSplineable: true
+         paramVariations: [
+            1
+         ]
          prettyName: "CCQEXSecCorr"
          systParamId: 53
       }
@@ -737,59 +745,16 @@ generated_systematic_provider_configuration: {
       ]
       tool_options: {
          MECResponse_input_manifest: {
-            DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/MEC"
             EdgeClamp: true
-            EnergyGrid: [
-               4e-1,
-               4.5e-1,
-               5e-1,
-               5.5e-1,
-               6e-1,
-               6.5e-1,
-               7e-1,
-               7.5e-1,
-               8e-1,
-               8.5e-1,
-               9e-1,
-               9.5e-1,
-               1,
-               1.05,
-               1.1,
-               1.15,
-               1.2,
-               1.25,
-               1.3,
-               1.35,
-               1.4,
-               1.45,
-               1.5,
-               1.55,
-               1.6,
-               1.65,
-               1.7,
-               1.75,
-               1.8,
-               1.85,
-               1.9,
-               1.95,
-               2,
-               2.05,
-               2.1,
-               2.15,
-               2.2,
-               2.25,
-               2.3,
-               2.35,
-               2.4,
-               2.45,
-               2.5
-            ]
-            EnuMax: 2.5
-            EnuMin: 4e-1
+            EnuMax: 3
+            EnuMin: 2e-1
             EnuSnapTol: 5e-3
-            HistNameNN: "h_weights_map;1"
-            HistNameNP: "h_weights_map;1"
-            MapIsQ3xQ0: true
+            Flavors: [
+               "numu",
+               "numubar",
+               "nue",
+               "nuebar"
+            ]
             Model: "martini"
             OutOfRangeWeight: 0
             Q0ApplyMax: 9.95e-1
@@ -808,6 +773,7 @@ generated_systematic_provider_configuration: {
                1e-1,
                1000
             ]
+            WeightMapFile3D: "$SBNDATA_DIR/systematics/AR23Plus/CCMEC_weights.root"
          }
       }
       tool_type: "MECq0q3InterpWeighting"
@@ -878,59 +844,16 @@ generated_systematic_provider_configuration: {
       ]
       tool_options: {
          MECResponse_input_manifest: {
-            DataBaseDir: "$SBNDATA_DIR/systematics/AR23Plus/MEC"
             EdgeClamp: true
-            EnergyGrid: [
-               4e-1,
-               4.5e-1,
-               5e-1,
-               5.5e-1,
-               6e-1,
-               6.5e-1,
-               7e-1,
-               7.5e-1,
-               8e-1,
-               8.5e-1,
-               9e-1,
-               9.5e-1,
-               1,
-               1.05,
-               1.1,
-               1.15,
-               1.2,
-               1.25,
-               1.3,
-               1.35,
-               1.4,
-               1.45,
-               1.5,
-               1.55,
-               1.6,
-               1.65,
-               1.7,
-               1.75,
-               1.8,
-               1.85,
-               1.9,
-               1.95,
-               2,
-               2.05,
-               2.1,
-               2.15,
-               2.2,
-               2.25,
-               2.3,
-               2.35,
-               2.4,
-               2.45,
-               2.5
-            ]
-            EnuMax: 2.5
-            EnuMin: 4e-1
+            EnuMax: 3
+            EnuMin: 2e-1
             EnuSnapTol: 5e-3
-            HistNameNN: "h_weights_map;1"
-            HistNameNP: "h_weights_map;1"
-            MapIsQ3xQ0: true
+            Flavors: [
+               "numu",
+               "numubar",
+               "nue",
+               "nuebar"
+            ]
             Model: "valencia"
             OutOfRangeWeight: 0
             Q0ApplyMax: 1.2
@@ -949,6 +872,7 @@ generated_systematic_provider_configuration: {
                1e-1,
                1000
             ]
+            WeightMapFile3D: "$SBNDATA_DIR/systematics/AR23Plus/CCMEC_weights.root"
          }
       }
       tool_type: "MECq0q3InterpWeighting"
@@ -976,7 +900,7 @@ generated_systematic_provider_configuration: {
             input_file: ""
             inputs: []
          }
-         verbosity_level: 5
+         verbosity_level: 0
       }
       tool_type: "PionAbsWeighter"
    }
@@ -1111,7 +1035,7 @@ generated_systematic_provider_configuration: {
             2,
             3
          ]
-         verbosity_level: 5
+         verbosity_level: 0
       }
       tool_type: "QEInterference"
    }
@@ -1182,7 +1106,7 @@ generated_systematic_provider_configuration: {
       tool_options: {
          RWtoPub: "PRD_93_113015"
          T0: -2.80000000000000026645e-1
-         verbosity_level: 5
+         verbosity_level: 0
       }
       tool_type: "ZExpPCAWeighter"
    }
@@ -1253,7 +1177,7 @@ generated_systematic_provider_configuration: {
       tool_options: {
          RWtoPub: "Nature_614_102522"
          T0: -7.5e-1
-         verbosity_level: 5
+         verbosity_level: 0
       }
       tool_type: "ZExpPCAWeighter"
    }

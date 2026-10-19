@@ -496,7 +496,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       }
     };
 
-    auto validate_3d_histogram = [&](const TH3D& hist,
+    auto validate_3d_histogram = [&](const TH3F& hist,
                                      const std::string& histName) {
       if (hist.GetNbinsX() != 500 || hist.GetNbinsY() != 500 ||
           hist.GetNbinsZ() != 57) {
@@ -540,15 +540,15 @@ MECq0q3InterpWeighting::SetupResponseCalculator(fhicl::ParameterSet const &tool_
       auto load_3d_histogram = [&](const std::string& topology, Topo topo) {
         const std::string histName = model + "_" + flavor + "_" + topology;
         TObject* object = fin.Get(histName.c_str());
-        TH3D* rawHist = dynamic_cast<TH3D*>(object);
+        TH3F* rawHist = dynamic_cast<TH3F*>(object);
         if (!rawHist) {
           const std::string actualType = object ? object->ClassName() : "missing";
-          throw std::runtime_error("Expected TH3D histogram '" + histName +
+          throw std::runtime_error("Expected TH3F histogram '" + histName +
                                    "' in " + weightMapFile3D + "; found " + actualType);
         }
 
         rawHist->SetDirectory(nullptr);
-        std::unique_ptr<TH3D> hist(rawHist);
+        std::unique_ptr<TH3F> hist(rawHist);
         validate_3d_histogram(*hist, histName);
 
         std::vector<double> energyGrid;
