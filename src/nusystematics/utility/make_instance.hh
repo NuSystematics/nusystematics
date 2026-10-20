@@ -28,6 +28,7 @@
 #include "nusystematics/systproviders/PionAbsWeighter_tool.hh"
 #include "nusystematics/systproviders/MECq0q3InterpWeighting_tool.hh"
 #include "nusystematics/systproviders/ValenciaExc2p2hReweighter_tool.hh"
+#include "nusystematics/systproviders/BDTReweighter_tool.hh"
 
 #include "fhiclcpp/ParameterSet.h"
 
@@ -89,6 +90,8 @@ make_instance(fhicl::ParameterSet const &paramset) {
     return std::make_unique<MECq0q3InterpWeighting>(paramset);
   } else if (tool_type == "ValenciaExc2p2hReweighter") {
     return std::make_unique<ValenciaExc2p2hReweighter>(paramset);
+  } else if (tool_type == "BDTReweighter") {
+    return std::make_unique<BDTReweighter>(paramset);
   } else {
     throw unknown_nusyst_systprovider()
         << "[ERROR]: Unknown tool type: " << std::quoted(tool_type);
@@ -122,6 +125,7 @@ inline std::vector<std::string> RegisteredToolTypes() {
     "QEInterference",
     "CCQEXSecCorr",
     "MECq0q3InterpWeighting",
+    "BDTReweighter",
   };
 }
 
