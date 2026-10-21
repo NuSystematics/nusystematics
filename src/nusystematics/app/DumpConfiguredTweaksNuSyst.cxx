@@ -55,6 +55,7 @@ NEW_SYSTTOOLS_EXCEPT(unexpected_number_of_responses);
 namespace cliopts {
 std::string yamlname = "";
 std::string genie_input = "";
+std::string genie_tree_name = "gtree";
 std::string genie_branch_name = "gmcrec";
 std::string outputfile = "";
 std::string envvar = "YAML_FILE_PATH";
@@ -480,6 +481,7 @@ void SayUsage(char const *argv[]) {
                "\t                   by default.\n"
                "\t-i <ghep.root>   : GENIE TChain descriptor to read events\n"
                "\t                   from. (n.b. quote wildcards).\n"
+               "\t-g <GENIE tree name>   : Name of the GENIE TTree (default:gtree)\n"
                "\t-b <NtpMCEventRecord branch name>   : Name of the NtpMCEventRecord branch (default:gmcrec)\n"
                "\t-N <NMax>        : Maximum number of events to process.\n"
                "\t-s <NSkip>       : Number of events to skip.\n"
@@ -512,6 +514,8 @@ void HandleOpts(int argc, char const *argv[]) {
       cliopts::yaml_key = argv[++opt];
     } else if (std::string(argv[opt]) == "-i") {
       cliopts::genie_input = argv[++opt];
+    } else if (std::string(argv[opt]) == "-g") {
+      cliopts::genie_tree_name = argv[++opt];
     } else if (std::string(argv[opt]) == "-b") {
       cliopts::genie_branch_name = argv[++opt];
     } else if (std::string(argv[opt]) == "-N") {
@@ -735,10 +739,10 @@ int RunSerial() {
               << " will be evaluated on every event." << std::endl;
   }
 
-  TChain *gevs = new TChain("gtree");
+  TChain *gevs = new TChain(cliopts::genie_tree_name.c_str());
   if (!gevs->Add(cliopts::genie_input.c_str())) {
     std::cout << "[ERROR]: Failed to find any TTrees named "
-              << std::quoted("gtree") << ", from TChain::Add descriptor: "
+              << std::quoted(cliopts::genie_tree_name) << ", from TChain::Add descriptor: "
               << std::quoted(cliopts::genie_input) << "." << std::endl;
     return 3;
   }
@@ -1171,7 +1175,7 @@ int DispatchWorkers() {
   // TChain is destroyed (closing any opened files) before fork().
   size_t NEvs = 0;
   {
-    TChain peek("gtree");
+    TChain peek(cliopts::genie_tree_name.c_str());
     if (!peek.Add(cliopts::genie_input.c_str())) {
       std::cerr << "[ERROR]: Could not open " << cliopts::genie_input << std::endl;
       return 1;
