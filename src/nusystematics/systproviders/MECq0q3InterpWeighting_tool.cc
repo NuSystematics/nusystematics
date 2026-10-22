@@ -169,16 +169,6 @@ MECq0q3InterpWeighting::SetupResponseCalculator(YAML::Node const &tool_opts)
     return defaultEnergyGrid;
   };
 
-  // Weight clamp (optional)
-  if (manifest["WeightLimits"]) {
-    auto wl = manifest["WeightLimits"].as<std::vector<double>>();
-    if (wl.size() >= 2) {
-      fWmin = std::min(wl.front(), wl.back());
-      fWmax = std::max(wl.front(), wl.back());
-    }
-  }
-  if (!(std::isfinite(fWmin) && std::isfinite(fWmax) && fWmin >= 0.0 && fWmax >= fWmin))
-    throw std::runtime_error("Invalid WeightLimits");
 
 
   // NEW: q0 apply window (optional, defaults to [0, +inf))
@@ -291,8 +281,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(YAML::Node const &tool_opts)
 
 
 
-  std::cout << "  WeightLimits   : [" << fWmin << ", " << fWmax << "]\n"
-            << "  Enu snap tol   : " << fEnuSnapTol << " GeV\n";
+  std::cout << "  Enu snap tol   : " << fEnuSnapTol << " GeV\n";
 
 
 
@@ -439,7 +428,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(YAML::Node const &tool_opts)
                   << "  X:[" << h->GetXaxis()->GetXmin() << "," << h->GetXaxis()->GetXmax() << "]"
                   << "  Y:[" << h->GetYaxis()->GetXmin() << "," << h->GetYaxis()->GetXmax() << "]\n";
 
-        auto calc = std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax, mapIsQ3xQ0);
+        auto calc = std::make_unique<MECq0q3ResponseCalc>(h, mapIsQ3xQ0);
         calc->SetUseNearestBin(useNearestBin);
         calc->SetEdgeClamp(edgeClamp);
         calc->SetOutOfRangeWeight(outOfRangeWeight);
@@ -562,7 +551,7 @@ MECq0q3InterpWeighting::SetupResponseCalculator(YAML::Node const &tool_opts)
                                    "' has a topology-dependent Enu grid");
         }
 
-        auto calc = std::make_unique<MECq0q3ResponseCalc3D>(hist.get(), fWmin, fWmax);
+        auto calc = std::make_unique<MECq0q3ResponseCalc3D>(hist.get());
         calc->SetUseNearestBin(useNearestBin);
         calc->SetEdgeClamp(edgeClamp);
         calc->SetOutOfRangeWeight(outOfRangeWeight);
@@ -757,7 +746,7 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
     w_blend = (1.0 - t) * w_lo + t * w_hi;
   }
 
-  const double w_eff_cv = std::clamp(w_blend, fWmin, fWmax);
+  const double w_eff_cv = w_blend;
   const double one_sigma = (w_eff_cv - 1.0); // for variations
 
   // Build response vector
@@ -782,7 +771,7 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
       if (isActiveDial) {
         // Apply reweighting for this dial
         for (double d : hdr.paramVariations) {
-          const double rw = std::clamp(1.0 + d * one_sigma, fWmin, fWmax);
+          const double rw = 1.0 + d * one_sigma;
           pr.responses.push_back(rw);
         }
         if (pr.responses.empty()) pr.responses.push_back(w_eff_cv);
@@ -805,7 +794,7 @@ MECq0q3InterpWeighting::GetEventResponse(genie::EventRecord const& ev)
       pr.pid = hdr.systParamId;
       pr.responses.reserve(hdr.paramVariations.size());
       for (double d : hdr.paramVariations) {
-        const double rw = std::clamp(1.0 + d * one_sigma, fWmin, fWmax);
+        const double rw = 1.0 + d * one_sigma;
         pr.responses.push_back(rw);
       }
       if (pr.responses.empty()) pr.responses.push_back(w_eff_cv);

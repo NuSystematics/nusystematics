@@ -69,7 +69,7 @@ SystMetaData BeRPAWeight::BuildSystMetaData(YAML::Node const &yamlnd,
 
   if (!ignore_parameter_dependence) {
     smd.push_back(responseParam);
-    FinalizeAndValidateDependentParameters(smd, smd.back().prettyName,
+    FinalizeAndValidateDependentParameters(smd, yamlnd, smd.back().prettyName,
                                            dependentParamNames);
   }
 

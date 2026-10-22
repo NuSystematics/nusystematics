@@ -68,7 +68,6 @@ public:
 
 private:
   YAML::Node tool_options;
-  std::pair<double, double> MEC_LimitWeights;
 
   void InitValidTree();
 

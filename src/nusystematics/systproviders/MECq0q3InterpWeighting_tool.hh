@@ -51,9 +51,6 @@ private:
   // flavor-independent map set used when neither Flavor nor Flavors is given.
   std::unordered_map<int, FlavorResponseData> fFlavorResponses;
 
-  // Clamp range
-  double fWmin{0.0};
-  double fWmax{5.0};
 
 
   // NEW: q0 apply window (gate). Weighting applies only if

@@ -19,7 +19,7 @@ public:
 
 
   /// Constructor takes ownership of the histogram (cloned internally).
-  MECq0q3ResponseCalc(TH2D* h, double w_min = 0.0, double w_max = 5.0,bool mapIsQ3xQ0 = false);
+  MECq0q3ResponseCalc(TH2D* h, bool mapIsQ3xQ0 = false);
 
   /// Central weight with **bilinear interpolation** inside the map.
   double GetCentralWeight(double q0, double q3) const;
@@ -33,7 +33,6 @@ public:
 
 private:
   std::unique_ptr<TH2D> fHist;   ///< owned, thread‑safe clone of the histogram
-  double fWmin, fWmax;      ///< clamp limits
   bool   fMapIsQ3xQ0{false};           ///< true if map is in (q3, q0) coordinates
   bool   fUseNearestBin{false};   ///< default off → legacy bilinear
   bool   fEdgeClamp{false};       ///< default off → legacy out-of-range=1
@@ -41,12 +40,11 @@ private:
 };
 
 /// Evaluates a q3 x q0 x Enu map while preserving the legacy interpolation
-/// order: interpolate q3/q0 within each Enu plane, clamp each plane weight,
-/// then linearly blend the two plane weights in Enu.
+/// order: interpolate q3/q0 within each Enu plane, then linearly blend the
+/// two plane weights in Enu.
 class MECq0q3ResponseCalc3D {
 public:
-  MECq0q3ResponseCalc3D(TH3D* h, double w_min = 0.0,
-                        double w_max = 5.0);
+  explicit MECq0q3ResponseCalc3D(TH3D* h);
 
   double GetCentralWeight(double q0, double q3, double enu,
                           double enuSnapTol) const;
@@ -60,7 +58,6 @@ private:
 
   std::unique_ptr<TH3D> fHist;
   std::vector<double> fEnergyGrid;
-  double fWmin, fWmax;
   bool fUseNearestBin{false};
   bool fEdgeClamp{false};
   double fOutOfRangeWeight{1.0};
@@ -68,21 +65,13 @@ private:
 
 // ---------------------------------------------------------------------------
 inline MECq0q3ResponseCalc::MECq0q3ResponseCalc(TH2D* h,
-                                                         double wmin,
-                                                         double wmax,
                                                          bool mapIsQ3xQ0)
-  : fHist(h ? static_cast<TH2D*>(h->Clone()) : nullptr),
-    fWmin(wmin), fWmax(wmax)
+  : fHist(h ? static_cast<TH2D*>(h->Clone()) : nullptr)
 {
   if (!fHist)
     throw std::runtime_error("Null histogram passed to ResponseCalc");
   fHist->SetDirectory(nullptr);          // detach from any ROOT file
   // Note: kCanRebin is not available in this ROOT version, binning is fixed by design
-}
-
-// ---------------------------------------------------------------------------
-inline double clamp(double x, double a, double b) {
-  return std::max(a, std::min(b, x));
 }
 
 // ---------------------------------------------------------------------------
@@ -115,7 +104,7 @@ inline double MECq0q3ResponseCalc::GetCentralWeight(double q0, double q3) const
     if (!in_x || !in_y) return fOutOfRangeWeight;
     w = fHist->Interpolate(q3, q0);
   }
-  return clamp(w, fWmin, fWmax);
+  return w;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,14 +113,13 @@ inline double MECq0q3ResponseCalc::GetVariation(int ivar,
 {
   if (ivar == 0) return GetCentralWeight(q0, q3);
   const double w_cv = GetCentralWeight(q0, q3);
-  return clamp(2.0 - w_cv, fWmin, fWmax);  // symmetric envelope
+  return 2.0 - w_cv;  // symmetric envelope
 }
 
 // ---------------------------------------------------------------------------
 inline MECq0q3ResponseCalc3D::MECq0q3ResponseCalc3D(
-    TH3D* h, double wmin, double wmax)
-  : fHist(h ? static_cast<TH3D*>(h->Clone()) : nullptr),
-    fWmin(wmin), fWmax(wmax)
+    TH3D* h)
+  : fHist(h ? static_cast<TH3D*>(h->Clone()) : nullptr)
 {
   if (!fHist)
     throw std::runtime_error("Null histogram passed to 3D ResponseCalc");
@@ -175,7 +163,7 @@ inline double MECq0q3ResponseCalc3D::GetPlaneWeight(
                                  -std::numeric_limits<double>::infinity());
     w = fHist->Interpolate(q3, q0, enuCenter);
   }
-  return clamp(w, fWmin, fWmax);
+  return w;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,7 +190,7 @@ inline double MECq0q3ResponseCalc3D::GetCentralWeight(
 
   const double wLo = GetPlaneWeight(q0, q3, static_cast<int>(il) + 1);
   const double wHi = GetPlaneWeight(q0, q3, static_cast<int>(ih) + 1);
-  return clamp((1.0 - t) * wLo + t * wHi, fWmin, fWmax);
+  return (1.0 - t) * wLo + t * wHi;
 }
 
 } // namespace nusyst

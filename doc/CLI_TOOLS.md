@@ -306,6 +306,49 @@ multiple substrings if comma-separated). `-p` and `--mode` compose.
 
 ---
 
+## Weight limits (`WeightMin` / `WeightMax`)
+
+Each parameter's `SystParamHeader` (systematicstools) carries weight limits
+`[weightMin, weightMax]`. Set them in the tool
+configuration: tool-level keys apply to every parameter of the tool, and
+`<DIAL>_WeightMin` / `<DIAL>_WeightMax` override them for one dial:
+
+```yaml
+CCQEXSecCorr_Tool_Config:
+  WeightMin: 0.0
+  WeightMax: 30.0
+  # CCQEXSecCorr_WeightMax: 10.0   # per-dial override
+  tool_type: CCQEXSecCorr
+  ...
+```
+
+Both default to `-inf` / `+inf` (no clamping). They are parsed by
+`ParseYAMLToolConfigurationParameter` and written to the parameter headers
+as `weightMin` / `weightMax` (only when set). Lateral-shift (non-weight)
+dials are not clamped.
+
+Dependent dials (`isResponselessParam`, e.g. GENIE `ZExpA*CCQE` or
+MINERvAE2p2h `E2p2h_A/B` without `ignore_parameter_dependence`) combine into
+a single weight held by their response dial (e.g. `ZExpAVariationResponse`).
+Only the tool-level `WeightMin` / `WeightMax` apply there, to the response
+dial; `<DIAL>_WeightMin` / `<DIAL>_WeightMax` on the dependent dials are
+ignored. With `ignore_parameter_dependence: true` each dial carries its own
+response and the per-dial keys apply as usual.
+
+The clamp is applied by `response_helper` (and `DumpConfiguredTweaksNuSyst`)
+right after each provider call, via
+`systtools::ISystProviderTool::ClampWeightResponses`. For
+`GetEventVariationAndCVResponse` both `paramCVWeight` and the variation
+weights `paramCVWeight * tweak_response` are brought within the limits
+(entries with a zero CV weight are left unchanged). Calling a provider's methods
+directly returns raw, unclamped weights.
+
+These replace the former per-tool options (`LimitWeights`,
+`Mnv2p2hGaussEnhancement_LimitWeights`, and `WeightLimits` inside the
+MECq0q3InterpWeighting / CCQEXSecCorr manifests), which are now ignored.
+
+---
+
 ## Channel buckets and `applies_to_channels`
 
 When `GenerateAllDialsConfigNuSyst` is invoked *without* `--single-instance`,

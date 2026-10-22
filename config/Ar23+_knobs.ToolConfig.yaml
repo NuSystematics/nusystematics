@@ -56,6 +56,8 @@ CCQETemplateSF_Tool_Config:
   q0bin4_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
   tool_type: CCQETemplateReweight
 CCQEXSecCorr_Tool_Config:
+  WeightMin: 0.0
+  WeightMax: 30.0
   CCQEXSecCorr_central_value: 1
   CCQEXSecCorr_input_manifest:
     DataBaseDir: $SBNDATA_DIR/systematics/AR23Plus/QE-Fix
@@ -70,7 +72,6 @@ CCQEXSecCorr_Tool_Config:
     EnuMin: 0.20
     EnuSnapTol: 0.005
     UseNearestBin: true
-    WeightLimits: [0.0, 30.0]
     file_pattern: reweight_data_v3_04_02a_to_v3_06_02_sbn2_CCQE_%FLAVOR%_%ENERGY%GeV_flat.root
     histogram_name: h_weights_map
   fill_valid_tree: false
@@ -136,6 +137,8 @@ QEInterference_Tool_Config:
   tool_type: QEInterference
   verbosity_level: 5
 SuSAv2ToMartini_MECInterp_q0binned_Tool_Config:
+  WeightMin: 0.1
+  WeightMax: 1000.0
   MECResponse_input_manifest:
     DataBaseDir: $SBNDATA_DIR/systematics/AR23Plus/MEC
     EdgeClamp: true
@@ -157,7 +160,6 @@ SuSAv2ToMartini_MECInterp_q0binned_Tool_Config:
     Q3ApplyMax: 2.0
     Q3ApplyMin: 0.0
     UseNearestBin: false
-    WeightLimits: [0.1, 1000.0]
   MECResponse_q0bin0_central_value: 0
   MECResponse_q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
   MECResponse_q0bin1_central_value: 0
@@ -169,6 +171,8 @@ SuSAv2ToMartini_MECInterp_q0binned_Tool_Config:
   instance_name: SBN_v3_SuSAToMar
   tool_type: MECq0q3InterpWeighting
 SuSAv2ToValencia_MECInterp_q0binned_Tool_Config:
+  WeightMin: 0.1
+  WeightMax: 1000.0
   MECResponse_input_manifest:
     DataBaseDir: $SBNDATA_DIR/systematics/AR23Plus/MEC
     EdgeClamp: true
@@ -190,7 +194,6 @@ SuSAv2ToValencia_MECInterp_q0binned_Tool_Config:
     Q3ApplyMax: 1.2
     Q3ApplyMin: 0.0
     UseNearestBin: false
-    WeightLimits: [0.1, 1000.0]
   MECResponse_q0bin0_central_value: 0
   MECResponse_q0bin0_variation_descriptor: "[+1,-1,+2,-2,+3,-3]"
   MECResponse_q0bin1_central_value: 0

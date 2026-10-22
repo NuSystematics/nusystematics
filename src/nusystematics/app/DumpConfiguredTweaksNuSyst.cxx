@@ -1141,6 +1141,7 @@ int RunSerial() {
         event_unit_response_w_cv_t prov_resp =
             applies ? sp->GetEventVariationAndCVResponse(GenieGHep)
                     : TrivialResponseFor(*sp);
+        sp->ClampWeightResponses(prov_resp);
         for (auto &er : prov_resp) resp.push_back(std::move(er));
       }
       tst.Add(resp);
