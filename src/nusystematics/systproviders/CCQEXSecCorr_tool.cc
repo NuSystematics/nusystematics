@@ -90,14 +90,6 @@ bool CCQEXSecCorr::SetupResponseCalculator(
   if (fEgrid.empty())
     throw std::runtime_error("[CCQEXSecCorr] EnergyGrid must be non-empty");
 
-  // Weight clamp
-  if (manifest["WeightLimits"]) {
-    auto wl = manifest["WeightLimits"].as<std::vector<double>>();
-    if (wl.size() >= 2) {
-      fWmin = std::min(wl.front(), wl.back());
-      fWmax = std::max(wl.front(), wl.back());
-    }
-  }
 
   // Energy window & snap tolerance
   fEnuMin     = manifest["EnuMin"] ? manifest["EnuMin"].as<double>() : 0.20;
@@ -110,7 +102,6 @@ bool CCQEXSecCorr::SetupResponseCalculator(
 
   std::cout << "  DataBaseDir    : " << dataBaseDir << "\n"
             << "  EnergyGrid size: " << fEgrid.size() << "\n"
-            << "  WeightLimits   : [" << fWmin << ", " << fWmax << "]\n"
             << "  Enu window     : [" << fEnuMin << ", " << fEnuMax << "] GeV\n"
             << "  Enu snap tol   : " << fEnuSnapTol << " GeV\n"
             << "  UseNearestBin  : " << (useNearestBin ? "true" : "false") << "\n"
@@ -159,7 +150,7 @@ bool CCQEXSecCorr::SetupResponseCalculator(
                 << h->GetYaxis()->GetXmax() << "]\n";
 
       auto calc =
-          std::make_unique<MECq0q3ResponseCalc>(h, fWmin, fWmax);
+          std::make_unique<MECq0q3ResponseCalc>(h);
       calc->SetUseNearestBin(useNearestBin);
       calc->SetEdgeClamp(edgeClamp);
       calc->SetOutOfRangeWeight(1.0); // weight=1 outside histogram domain
@@ -251,9 +242,6 @@ CCQEXSecCorr::GetEventResponse(genie::EventRecord const &ev) {
   const double w_lo = calcs[il]->GetCentralWeight(ev_q0, ev_q3);
   const double w_hi = calcs[ih]->GetCentralWeight(ev_q0, ev_q3);
   double w_blend = (1.0 - t) * w_lo + t * w_hi;
-
-  // Clamp
-  w_blend = std::clamp(w_blend, fWmin, fWmax);
 
   // --- Build response ---
   SystParamHeader const &hdr = GetSystMetaData()[ResponseParameterIdx];

@@ -43,10 +43,6 @@ private:
   std::unordered_map<int,
       std::vector<std::unique_ptr<nusyst::MECq0q3ResponseCalc>>> fCalcs;
 
-  // Weight clamp limits
-  double fWmin{0.0};
-  double fWmax{30.0};
-
   // Energy guard window and snapping
   double fEnuMin{0.20};
   double fEnuMax{3.00};

@@ -1,4 +1,6 @@
 CCQEXSecCorr_Tool_Config:
+  WeightMin: 0.0
+  WeightMax: 30.0
   CCQEXSecCorr_central_value: 1
   CCQEXSecCorr_input_manifest:
     DataBaseDir: $NUSYST_DATA_DIR/QEFix
@@ -14,7 +16,6 @@ CCQEXSecCorr_Tool_Config:
     EnuMin: 0.20
     EnuSnapTol: 0.005
     UseNearestBin: true
-    WeightLimits: [0.0, 30.0]
   fill_valid_tree: false
   instance_name: SBN_v3
   tool_type: CCQEXSecCorr

@@ -1,4 +1,6 @@
 SuSAv2ToMartini_MECInterp_q0binned_all:
+  WeightMin: 0.1
+  WeightMax: 1000.0
   MECResponse_input_manifest:
     EdgeClamp: true
     EnuMax: 3.0
@@ -13,7 +15,6 @@ SuSAv2ToMartini_MECInterp_q0binned_all:
     Q3ApplyMax: 2.0
     Q3ApplyMin: 0.0
     UseNearestBin: false
-    WeightLimits: [0.1, 1000.0]
     WeightMapFile3D: ${NUSYST_DATA_DIR}/CCMEC_template/ccmec_weight_maps_3d_q0_q3_Enu_all_flavors_valencia_martini.root
   MECResponse_q0bin0_central_value: 0
   MECResponse_q0bin0_variation_descriptor: "[1]"

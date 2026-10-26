@@ -68,13 +68,6 @@ SystMetaData FSILikeEAvailSmearing::BuildSystMetaData(YAML::Node const &cfg,
 
   tool_options["FSILikeEAvailSmearing_input_manifest"] = templateManifest;
 
-  LimitWeights = cfg["LimitWeights"] ?
-    cfg["LimitWeights"].as<std::pair<double, double>>() :
-    std::pair<double, double>{0, std::numeric_limits<double>::max()};
-  tool_options["LimitWeights"] = YAML::Node();
-  tool_options["LimitWeights"].push_back(LimitWeights.first);
-  tool_options["LimitWeights"].push_back(LimitWeights.second);
-
   return smd;
 }
 
@@ -139,9 +132,6 @@ bool FSILikeEAvailSmearing::SetupResponseCalculator(
     ChannelParameterMapping.emplace(ch.channel, std::move(th));
   }
 
-  LimitWeights = tool_options["LimitWeights"] ?
-    std::pair<double, double>{tool_options["LimitWeights"][0].as<double>(), tool_options["LimitWeights"][1].as<double>()} :
-    std::pair<double, double>{0, std::numeric_limits<double>::max()};
 
   genie::Messenger::Instance()->SetPrioritiesFromXmlFile(
       "Messenger_whisper.xml");
@@ -225,9 +215,6 @@ FSILikeEAvailSmearing::GetEventResponse(genie::EventRecord const &ev) {
     } else {
       double wght =
           ChannelParameterMapping[evch].Template->GetVariation(val, kinematics);
-
-      wght = (wght < LimitWeights.first) ? LimitWeights.first : wght;
-      wght = (wght > LimitWeights.second) ? LimitWeights.second : wght;
 
       resp.back().responses.push_back(wght);
     }

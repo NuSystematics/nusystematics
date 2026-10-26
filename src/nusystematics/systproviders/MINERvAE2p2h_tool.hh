@@ -33,7 +33,6 @@ public:
 
 private:
   YAML::Node tool_options;
-  std::pair<double, double> LimitWeights;
 
   bool ignore_parameter_dependence;
 

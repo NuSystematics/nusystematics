@@ -85,6 +85,7 @@ public:
     for (auto &sp : syst_providers) {
       systtools::event_unit_response_t prov_response =
           sp->GetEventResponse(GenieGHep);
+      sp->ClampWeightResponses(prov_response);
       for (auto &&er : prov_response) {
         response.push_back(std::move(er));
       }
@@ -99,6 +100,7 @@ public:
     for (auto &sp : syst_providers) {
       systtools::event_unit_response_t prov_response =
           sp->GetEventResponse(GenieGHep, i);
+      sp->ClampWeightResponses(prov_response);
       for (auto &&er : prov_response) {
         response.push_back(std::move(er));
       }
@@ -123,6 +125,7 @@ public:
 
       systtools::event_unit_response_w_cv_t prov_response =
           sp->GetEventVariationAndCVResponse(GenieGHep);
+      sp->ClampWeightResponses(prov_response);
 
       if (ProfilerRate && prov_response.size()) {
         auto end = std::chrono::high_resolution_clock::now();

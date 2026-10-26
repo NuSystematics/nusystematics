@@ -67,19 +67,14 @@ SystMetaData MINERvAE2p2h::BuildSystMetaData(YAML::Node const &yamlnd,
 
     if (!ignore_parameter_dependence) {
       smd.push_back(responseParam);
-      FinalizeAndValidateDependentParameters(smd, smd.back().prettyName,
+      FinalizeAndValidateDependentParameters(smd, yamlnd,
+                                             smd.back().prettyName,
                                              dependentParamNames);
     }
   }
 
   tool_options["fill_valid_tree"] = yamlnd["fill_valid_tree"] ? yamlnd["fill_valid_tree"].as<bool>() : false;
   tool_options["ignore_parameter_dependence"] = ignore_parameter_dependence;
-
-  LimitWeights = yamlnd["LimitWeights"] ? yamlnd["LimitWeights"].as<std::pair<double, double>>() : std::pair<double, double>{0, std::numeric_limits<double>::max()};
-
-  tool_options["LimitWeights"] = YAML::Node();
-  tool_options["LimitWeights"].push_back(LimitWeights.first);
-  tool_options["LimitWeights"].push_back(LimitWeights.second);
 
   return smd;
 }
@@ -147,9 +142,6 @@ bool MINERvAE2p2h::SetupResponseCalculator(
 
   fill_valid_tree = tool_options["fill_valid_tree"] ? tool_options["fill_valid_tree"].as<bool>() : false;
 
-  LimitWeights = tool_options["LimitWeights"] ? 
-    std::pair<double, double>{tool_options["LimitWeights"][0].as<double>(), tool_options["LimitWeights"][1].as<double>()} :
-    std::pair<double, double>{0, std::numeric_limits<double>::max()};
 
   if (fill_valid_tree) {
     InitValidTree();
@@ -207,8 +199,6 @@ MINERvAE2p2h::GetEventResponse(genie::EventRecord const &ev) {
         double weight = Get_MINERvA2p2h2EnergyDependencyScaling(
             e2i(simb_mode_copy::kMEC), true, Enu, Aval, Bval);
 
-        weight = (weight < LimitWeights.first) ? LimitWeights.first : weight;
-        weight = (weight > LimitWeights.second) ? LimitWeights.second : weight;
 
         resp.back().responses.push_back(weight);
       }
@@ -219,11 +209,6 @@ MINERvAE2p2h::GetEventResponse(genie::EventRecord const &ev) {
       // dial is found, all other dial responses should be /= CVResponse.
       double CVResponse = Get_MINERvA2p2h2EnergyDependencyScaling(
           e2i(simb_mode_copy::kMEC), true, Enu, ACV, BCV);
-
-      CVResponse =
-          (CVResponse < LimitWeights.first) ? LimitWeights.first : CVResponse;
-      CVResponse =
-          (CVResponse > LimitWeights.second) ? LimitWeights.second : CVResponse;
 
 #ifdef MINERVAE2p2h_DEBUG
       std::cout << "[CV Response @ " << Enu << ", " << (ISLep->Pdg()) << ", "
@@ -246,8 +231,6 @@ MINERvAE2p2h::GetEventResponse(genie::EventRecord const &ev) {
           std::cout << "[weight @ " << Enu << ", " << av << ", " << BCV
                     << "] = " << weight << std::endl;
 #endif
-          weight = (weight < LimitWeights.first) ? LimitWeights.first : weight;
-          weight = (weight > LimitWeights.second) ? LimitWeights.second : weight;
 
           resp.back().responses.push_back(weight);
         }
@@ -269,8 +252,6 @@ MINERvAE2p2h::GetEventResponse(genie::EventRecord const &ev) {
                     << "] = " << weight << std::endl;
 #endif
 
-          weight = (weight < LimitWeights.first) ? LimitWeights.first : weight;
-          weight = (weight > LimitWeights.second) ? LimitWeights.second : weight;
 
           if (UsedADial) {
             weight /= CVResponse;

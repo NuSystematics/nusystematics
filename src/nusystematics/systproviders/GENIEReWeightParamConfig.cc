@@ -114,7 +114,7 @@ SystMetaData ConfigureSetOfDependentShapeableParameters(
                    });
 
     MD.push_back(std::move(Response));
-    FinalizeAndValidateDependentParameters(MD, ResponseParameterName,
+    FinalizeAndValidateDependentParameters(MD, cfg, ResponseParameterName,
                                            DialNames);
   }
 
@@ -172,7 +172,7 @@ SystMetaData ConfigureSetOfDependentParameters(
                    [](GSyst_t const &gdial) { return GSyst::AsString(gdial); });
 
     MD.push_back(std::move(Response));
-    FinalizeAndValidateDependentParameters(MD, ResponseParameterName,
+    FinalizeAndValidateDependentParameters(MD, cfg, ResponseParameterName,
                                            DialNames);
   }
 
