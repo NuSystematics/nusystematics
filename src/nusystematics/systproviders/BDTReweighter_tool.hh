@@ -19,13 +19,13 @@
 class BDTReweighter : public nusyst::IGENIESystProvider_tool {
 
 public:
-  explicit BDTReweighter(fhicl::ParameterSet const &);
+  explicit BDTReweighter(YAML::Node const &);
 
-  bool SetupResponseCalculator(fhicl::ParameterSet const &);
+  bool SetupResponseCalculator(YAML::Node const &);
 
   // Extra options are saved in tool_options
-  fhicl::ParameterSet GetExtraToolOptions() { return tool_options; }
-  systtools::SystMetaData BuildSystMetaData(fhicl::ParameterSet const &,
+  YAML::Node GetExtraToolOptions() { return tool_options; }
+  systtools::SystMetaData BuildSystMetaData(YAML::Node const &,
                                             systtools::paramId_t);
 
   systtools::event_unit_response_t GetEventResponse(genie::EventRecord const &);
@@ -50,7 +50,7 @@ private:
     double GetWeight(genie::EventRecord const &ev) const;
   };
 
-  fhicl::ParameterSet tool_options;
+  YAML::Node tool_options;
   std::string dial_name;
   size_t pidx_Dial;
   std::vector<BDTModel> models;

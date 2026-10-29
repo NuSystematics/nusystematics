@@ -2,7 +2,7 @@
 
 #include "nusystematics/systproviders/BDTReweighter_tool.hh"
 #include "nusystematics/utility/exceptions.hh"
-#include "systematicstools/utility/FHiCLSystParamHeaderUtility.hh"
+#include "systematicstools/utility/YAMLSystParamHeaderUtility.hh"
 
 #include <algorithm>
 #include <iostream>
@@ -11,24 +11,24 @@
 
 using namespace systtools;
 using namespace nusyst;
-using namespace fhicl;
 
-BDTReweighter::BDTReweighter(ParameterSet const &params)
+BDTReweighter::BDTReweighter(YAML::Node const &params)
     : IGENIESystProvider_tool(params),
       pidx_Dial(systtools::kParamUnhandled<size_t>) {}
 
-SystMetaData BDTReweighter::BuildSystMetaData(ParameterSet const &cfg,
+SystMetaData BDTReweighter::BuildSystMetaData(YAML::Node const &cfg,
                                               paramId_t firstId) {
 
   std::cout << "[BDTReweighter::BuildSystMetaData] Called" << std::endl;
   SystMetaData smd;
 
   // Name of the dial; must be unique when this tool is used more than once
-  dial_name = cfg.get<std::string>("dial_name", "BDTReweight");
-  tool_options.put("dial_name", dial_name);
+  dial_name = cfg["dial_name"] ? cfg["dial_name"].as<std::string>()
+                               : "BDTReweight";
+  tool_options["dial_name"] = dial_name;
 
   systtools::SystParamHeader phdr;
-  if (ParseFhiclToolConfigurationParameter(cfg, dial_name, phdr, firstId)) {
+  if (ParseYAMLToolConfigurationParameter(cfg, dial_name, phdr, firstId)) {
     printf("[BDTReweighter::BuildSystMetaData] %s is found from ToolConfig\n",
            dial_name.c_str());
     phdr.systParamId = firstId++;
@@ -38,37 +38,38 @@ SystMetaData BDTReweighter::BuildSystMetaData(ParameterSet const &cfg,
               << std::endl;
   }
 
-  if (!cfg.has_key("reweighters")) {
+  if (!cfg["reweighters"] || !cfg["reweighters"].IsSequence()) {
     throw std::runtime_error(
         "BDTReweighter: reweighters must be a list of BDT model configs");
   }
-  tool_options.put("reweighters",
-                   cfg.get<std::vector<ParameterSet>>("reweighters"));
+  tool_options["reweighters"] = cfg["reweighters"];
 
   return smd;
 }
 
-bool BDTReweighter::SetupResponseCalculator(
-    ParameterSet const &tool_options) {
+bool BDTReweighter::SetupResponseCalculator(YAML::Node const &tool_options) {
 
   std::cout << "[BDTReweighter::SetupResponseCalculator] Called" << std::endl;
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  dial_name = tool_options.get<std::string>("dial_name", "BDTReweight");
+  dial_name = tool_options["dial_name"]
+                  ? tool_options["dial_name"].as<std::string>()
+                  : "BDTReweight";
   if (HasParam(md, dial_name)) {
     pidx_Dial = GetParamIndex(md, dial_name);
   }
 
   models.clear();
-  for (ParameterSet const &model_cfg :
-       tool_options.get<std::vector<ParameterSet>>("reweighters")) {
+  for (YAML::Node const &model_cfg : tool_options["reweighters"]) {
     BDTModel model;
-    model.name = model_cfg.get<std::string>(
-        "name", "BDT_" + std::to_string(models.size()));
+    model.name = model_cfg["name"] ? model_cfg["name"].as<std::string>()
+                                   : "BDT_" + std::to_string(models.size());
     std::string const prefix =
         "[BDTReweighter::SetupResponseCalculator][" + model.name + "] ";
 
-    std::string json_path = model_cfg.get<std::string>("json_path", "");
+    std::string json_path = model_cfg["json_path"]
+                                ? model_cfg["json_path"].as<std::string>()
+                                : "";
     if (json_path.empty()) {
       throw std::runtime_error("BDTReweighter: json_path is empty for " +
                                model.name);
@@ -77,12 +78,12 @@ bool BDTReweighter::SetupResponseCalculator(
     model.reweighter = std::make_unique<BDTReweight::JSONReweighter>(json_path);
 
     // Input variables, in the same order as used in the training
-    if (!model_cfg.has_key("variables")) {
+    if (!model_cfg["variables"]) {
       throw std::runtime_error("BDTReweighter: variables is not set for " +
                                model.name);
     }
     model.variable_names =
-        model_cfg.get<std::vector<std::string>>("variables");
+        model_cfg["variables"].as<std::vector<std::string>>();
     if (model.variable_names.size() != model.reweighter->NFeatures()) {
       throw std::runtime_error(
           "BDTReweighter: " + model.name + " has " +
@@ -99,19 +100,26 @@ bool BDTReweighter::SetupResponseCalculator(
 
     // Event selection; all cuts must pass. Events not selected by any model
     // get unit weight.
-    std::vector<std::string> cuts = model_cfg.get<std::vector<std::string>>(
-        "selection", std::vector<std::string>{});
+    std::vector<std::string> cuts =
+        model_cfg["selection"]
+            ? model_cfg["selection"].as<std::vector<std::string>>()
+            : std::vector<std::string>{};
     for (std::string const &cut : cuts) {
       model.selection.push_back(evvar::ParseEventCut(cut));
       std::cout << prefix << "selection: " << cut << std::endl;
     }
 
     // BDT reweight is shape-only; the normalization is set by scale_factor
-    model.scale_factor = model_cfg.get<double>("scale_factor", 1.0);
+    model.scale_factor = model_cfg["scale_factor"]
+                             ? model_cfg["scale_factor"].as<double>()
+                             : 1.0;
     // Optional clipping of the BDT weight, applied before scale_factor
-    model.weight_min = model_cfg.get<double>("weight_min", 0.);
-    model.weight_max = model_cfg.get<double>(
-        "weight_max", std::numeric_limits<double>::infinity());
+    model.weight_min = model_cfg["weight_min"]
+                           ? model_cfg["weight_min"].as<double>()
+                           : 0.;
+    model.weight_max = model_cfg["weight_max"]
+                           ? model_cfg["weight_max"].as<double>()
+                           : std::numeric_limits<double>::infinity();
     std::cout << prefix << "scale_factor: " << model.scale_factor
               << ", weight_min: " << model.weight_min
               << ", weight_max: " << model.weight_max << std::endl;

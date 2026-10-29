@@ -19,34 +19,22 @@
 #
 # This example reproduces ValenciaExc2p2hReweighter.
 
-BDTReweighter_ToolConfig: {
-
-  tool_type: "BDTReweighter"
-  instance_name: "ValenciaExc2p2h"
-
-  dial_name: "DialValencia"
+BDTReweighter_ToolConfig:
+  tool_type: BDTReweighter
+  instance_name: ValenciaExc2p2h
+  dial_name: DialValencia
   DialValencia_central_value: 0
   DialValencia_variation_descriptor: "[0.0, 0.25, 0.5, 0.75, 1.0]"
-
-  reweighters: [
-    {
-      name: "Valencia2p2h_pp"
-      json_path: "$NUSYST_DATA_DIR/ValenciaExc2p2hReweighter/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pp_bdtreweighter.json"
-      variables: [ "MEC_RP_N1_px", "MEC_RP_N1_py", "MEC_RP_N1_pz", "MEC_RP_N2_px", "MEC_RP_N2_py", "MEC_RP_N2_pz", "MEC_RP_Lep_py", "MEC_RP_Lep_pz" ]
-      selection: [ "IsCC == 1", "IsMEC == 1", "ProbePDG == 14", "MECFSClusterPDG == 2000000202" ]
+  reweighters:
+    - name: Valencia2p2h_pp
+      json_path: $NUSYST_DATA_DIR/ValenciaExc2p2hReweighter/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pp_bdtreweighter.json
+      variables: [MEC_RP_N1_px, MEC_RP_N1_py, MEC_RP_N1_pz, MEC_RP_N2_px, MEC_RP_N2_py, MEC_RP_N2_pz, MEC_RP_Lep_py, MEC_RP_Lep_pz]
+      selection: ["IsCC == 1", "IsMEC == 1", "ProbePDG == 14", "MECFSClusterPDG == 2000000202"]
       scale_factor: 2.4642
-    },
-    {
-      name: "Valencia2p2h_pn"
-      json_path: "$NUSYST_DATA_DIR/ValenciaExc2p2hReweighter/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pn_bdtreweighter.json"
-      variables: [ "MEC_RP_N1_px", "MEC_RP_N1_py", "MEC_RP_N1_pz", "MEC_RP_N2_px", "MEC_RP_N2_py", "MEC_RP_N2_pz", "MEC_RP_Lep_py", "MEC_RP_Lep_pz" ]
-      selection: [ "IsCC == 1", "IsMEC == 1", "ProbePDG == 14", "MECFSClusterPDG == 2000000201" ]
+    - name: Valencia2p2h_pn
+      json_path: $NUSYST_DATA_DIR/ValenciaExc2p2hReweighter/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pn_bdtreweighter.json
+      variables: [MEC_RP_N1_px, MEC_RP_N1_py, MEC_RP_N1_pz, MEC_RP_N2_px, MEC_RP_N2_py, MEC_RP_N2_pz, MEC_RP_Lep_py, MEC_RP_Lep_pz]
+      selection: ["IsCC == 1", "IsMEC == 1", "ProbePDG == 14", "MECFSClusterPDG == 2000000201"]
       scale_factor: 1.6863
-    }
-  ]
 
-}
-
-syst_providers: [
-  BDTReweighter_ToolConfig
-]
+syst_providers: [BDTReweighter_ToolConfig]
