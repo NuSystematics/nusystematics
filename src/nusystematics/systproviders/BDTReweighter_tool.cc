@@ -24,8 +24,8 @@ SystMetaData BDTReweighter::BuildSystMetaData(ParameterSet const &cfg,
   SystMetaData smd;
 
   // Name of the dial; must be unique when this tool is used more than once
-  dial_name = cfg.get<std::string>("DIAL_NAME", "BDTReweight");
-  tool_options.put("DIAL_NAME", dial_name);
+  dial_name = cfg.get<std::string>("dial_name", "BDTReweight");
+  tool_options.put("dial_name", dial_name);
 
   systtools::SystParamHeader phdr;
   if (ParseFhiclToolConfigurationParameter(cfg, dial_name, phdr, firstId)) {
@@ -38,12 +38,12 @@ SystMetaData BDTReweighter::BuildSystMetaData(ParameterSet const &cfg,
               << std::endl;
   }
 
-  if (!cfg.has_key("REWEIGHTERS")) {
+  if (!cfg.has_key("reweighters")) {
     throw std::runtime_error(
-        "BDTReweighter: REWEIGHTERS must be a list of BDT model configs");
+        "BDTReweighter: reweighters must be a list of BDT model configs");
   }
-  tool_options.put("REWEIGHTERS",
-                   cfg.get<std::vector<ParameterSet>>("REWEIGHTERS"));
+  tool_options.put("reweighters",
+                   cfg.get<std::vector<ParameterSet>>("reweighters"));
 
   return smd;
 }
@@ -54,43 +54,43 @@ bool BDTReweighter::SetupResponseCalculator(
   std::cout << "[BDTReweighter::SetupResponseCalculator] Called" << std::endl;
   systtools::SystMetaData const &md = GetSystMetaData();
 
-  dial_name = tool_options.get<std::string>("DIAL_NAME", "BDTReweight");
+  dial_name = tool_options.get<std::string>("dial_name", "BDTReweight");
   if (HasParam(md, dial_name)) {
     pidx_Dial = GetParamIndex(md, dial_name);
   }
 
   models.clear();
   for (ParameterSet const &model_cfg :
-       tool_options.get<std::vector<ParameterSet>>("REWEIGHTERS")) {
+       tool_options.get<std::vector<ParameterSet>>("reweighters")) {
     BDTModel model;
     model.name = model_cfg.get<std::string>(
-        "NAME", "BDT_" + std::to_string(models.size()));
+        "name", "BDT_" + std::to_string(models.size()));
     std::string const prefix =
         "[BDTReweighter::SetupResponseCalculator][" + model.name + "] ";
 
-    std::string json_path = model_cfg.get<std::string>("JSON_PATH", "");
+    std::string json_path = model_cfg.get<std::string>("json_path", "");
     if (json_path.empty()) {
-      throw std::runtime_error("BDTReweighter: JSON_PATH is empty for " +
+      throw std::runtime_error("BDTReweighter: json_path is empty for " +
                                model.name);
     }
-    std::cout << prefix << "JSON_PATH: " << json_path << std::endl;
+    std::cout << prefix << "json_path: " << json_path << std::endl;
     model.reweighter = std::make_unique<BDTReweight::JSONReweighter>(json_path);
 
     // Input variables, in the same order as used in the training
-    if (!model_cfg.has_key("VARIABLES")) {
-      throw std::runtime_error("BDTReweighter: VARIABLES is not set for " +
+    if (!model_cfg.has_key("variables")) {
+      throw std::runtime_error("BDTReweighter: variables is not set for " +
                                model.name);
     }
     model.variable_names =
-        model_cfg.get<std::vector<std::string>>("VARIABLES");
+        model_cfg.get<std::vector<std::string>>("variables");
     if (model.variable_names.size() != model.reweighter->NFeatures()) {
       throw std::runtime_error(
           "BDTReweighter: " + model.name + " has " +
           std::to_string(model.variable_names.size()) +
-          " VARIABLES, but the BDT model expects " +
+          " variables, but the BDT model expects " +
           std::to_string(model.reweighter->NFeatures()));
     }
-    std::cout << prefix << "VARIABLES:";
+    std::cout << prefix << "variables:";
     for (std::string const &vname : model.variable_names) {
       model.variables.push_back(evvar::GetEventVariable(vname));
       std::cout << " " << vname;
@@ -100,21 +100,21 @@ bool BDTReweighter::SetupResponseCalculator(
     // Event selection; all cuts must pass. Events not selected by any model
     // get unit weight.
     std::vector<std::string> cuts = model_cfg.get<std::vector<std::string>>(
-        "SELECTION", std::vector<std::string>{});
+        "selection", std::vector<std::string>{});
     for (std::string const &cut : cuts) {
       model.selection.push_back(evvar::ParseEventCut(cut));
-      std::cout << prefix << "SELECTION: " << cut << std::endl;
+      std::cout << prefix << "selection: " << cut << std::endl;
     }
 
-    // BDT reweight is shape-only; the normalization is set by SCALE_FACTOR
-    model.scale_factor = model_cfg.get<double>("SCALE_FACTOR", 1.0);
-    // Optional clipping of the BDT weight, applied before SCALE_FACTOR
-    model.weight_min = model_cfg.get<double>("WEIGHT_MIN", 0.);
+    // BDT reweight is shape-only; the normalization is set by scale_factor
+    model.scale_factor = model_cfg.get<double>("scale_factor", 1.0);
+    // Optional clipping of the BDT weight, applied before scale_factor
+    model.weight_min = model_cfg.get<double>("weight_min", 0.);
     model.weight_max = model_cfg.get<double>(
-        "WEIGHT_MAX", std::numeric_limits<double>::infinity());
-    std::cout << prefix << "SCALE_FACTOR: " << model.scale_factor
-              << ", WEIGHT_MIN: " << model.weight_min
-              << ", WEIGHT_MAX: " << model.weight_max << std::endl;
+        "weight_max", std::numeric_limits<double>::infinity());
+    std::cout << prefix << "scale_factor: " << model.scale_factor
+              << ", weight_min: " << model.weight_min
+              << ", weight_max: " << model.weight_max << std::endl;
 
     models.push_back(std::move(model));
   }
