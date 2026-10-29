@@ -11,6 +11,7 @@ SET(SYSTP_IMPLFILES
   QEInterference_tool.cc
   MECq0q3InterpWeighting_tool.cc
   ValenciaExc2p2hReweighter_tool.cc
+  BDTReweighter_tool.cc
 )
 
 if(nusyst_DUNETDRv1_ENABLED)
@@ -48,6 +49,7 @@ SET(SYSTP_HDRFILES
   QEInterference_tool.hh
   MECq0q3InterpWeighting_tool.hh
   ValenciaExc2p2hReweighter_tool.hh
+  BDTReweighter_tool.hh
 )
 
 if(nusyst_DUNETDRv1_ENABLED)

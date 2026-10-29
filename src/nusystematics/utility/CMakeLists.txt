@@ -13,6 +13,7 @@ SET(UTLY_HDRFILES
   silence_genie.hh
   KinVarUtils.hh
   BDTReweighter_json.hh
+  GENIEEventVariables.hh
 )
 
 
