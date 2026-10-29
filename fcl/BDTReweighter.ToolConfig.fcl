@@ -3,19 +3,19 @@
 # Applies BDT models trained and exported to json with the python module
 # BDTReweight (json_reweighter.export_reweighter_json).
 #
-# DIAL_NAME: name of the dial (default: BDTReweight); must be unique when the
+# dial_name: name of the dial (default: BDTReweight); must be unique when the
 #   tool is used more than once. Dial value 0 = CV (unit weight),
 #   1 = fully reweighted; response = 1 + dial * (weight - 1).
-# REWEIGHTERS: list of BDT models. For each event, the first model whose
-#   SELECTION passes is used; events passing no SELECTION get unit weight.
-#   JSON_PATH:    exported BDT model
-#   VARIABLES:    input variables, in the same order and units as in the
+# reweighters: list of BDT models. For each event, the first model whose
+#   selection passes is used; events passing no selection get unit weight.
+#   json_path:    exported BDT model
+#   variables:    input variables, in the same order and units as in the
 #                 training; names from nusyst::evvar
 #                 (src/nusystematics/utility/GENIEEventVariables.hh)
-#   SELECTION:    list of cuts "<variable> <op> <value>", op in ==, !=, <, <=, >, >=;
+#   selection:    list of cuts "<variable> <op> <value>", op in ==, !=, <, <=, >, >=;
 #                 all must pass
-#   SCALE_FACTOR: normalization applied to the BDT weight (default 1)
-#   WEIGHT_MIN/WEIGHT_MAX: clip the BDT weight before SCALE_FACTOR (optional)
+#   scale_factor: normalization applied to the BDT weight (default 1)
+#   weight_min/weight_max: clip the BDT weight before scale_factor (optional)
 #
 # This example reproduces ValenciaExc2p2hReweighter.
 
@@ -24,24 +24,24 @@ BDTReweighter_ToolConfig: {
   tool_type: "BDTReweighter"
   instance_name: "ValenciaExc2p2h"
 
-  DIAL_NAME: "DialValencia"
+  dial_name: "DialValencia"
   DialValencia_central_value: 0
   DialValencia_variation_descriptor: "[0.0, 0.25, 0.5, 0.75, 1.0]"
 
-  REWEIGHTERS: [
+  reweighters: [
     {
-      NAME: "Valencia2p2h_pp"
-      JSON_PATH: "$NUSYST_DATA_DIR/ValenciaExc2p2hReweighter/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pp_bdtreweighter.json"
-      VARIABLES: [ "MEC_RP_N1_px", "MEC_RP_N1_py", "MEC_RP_N1_pz", "MEC_RP_N2_px", "MEC_RP_N2_py", "MEC_RP_N2_pz", "MEC_RP_Lep_py", "MEC_RP_Lep_pz" ]
-      SELECTION: [ "IsCC == 1", "IsMEC == 1", "ProbePDG == 14", "MECFSClusterPDG == 2000000202" ]
-      SCALE_FACTOR: 2.4642
+      name: "Valencia2p2h_pp"
+      json_path: "$NUSYST_DATA_DIR/ValenciaExc2p2hReweighter/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pp_bdtreweighter.json"
+      variables: [ "MEC_RP_N1_px", "MEC_RP_N1_py", "MEC_RP_N1_pz", "MEC_RP_N2_px", "MEC_RP_N2_py", "MEC_RP_N2_pz", "MEC_RP_Lep_py", "MEC_RP_Lep_pz" ]
+      selection: [ "IsCC == 1", "IsMEC == 1", "ProbePDG == 14", "MECFSClusterPDG == 2000000202" ]
+      scale_factor: 2.4642
     },
     {
-      NAME: "Valencia2p2h_pn"
-      JSON_PATH: "$NUSYST_DATA_DIR/ValenciaExc2p2hReweighter/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pn_bdtreweighter.json"
-      VARIABLES: [ "MEC_RP_N1_px", "MEC_RP_N1_py", "MEC_RP_N1_pz", "MEC_RP_N2_px", "MEC_RP_N2_py", "MEC_RP_N2_pz", "MEC_RP_Lep_py", "MEC_RP_Lep_pz" ]
-      SELECTION: [ "IsCC == 1", "IsMEC == 1", "ProbePDG == 14", "MECFSClusterPDG == 2000000201" ]
-      SCALE_FACTOR: 1.6863
+      name: "Valencia2p2h_pn"
+      json_path: "$NUSYST_DATA_DIR/ValenciaExc2p2hReweighter/ICARUS_BNB_numu_C12_SuSAv2_to_ValenciaExclusive_2p2h_pn_bdtreweighter.json"
+      variables: [ "MEC_RP_N1_px", "MEC_RP_N1_py", "MEC_RP_N1_pz", "MEC_RP_N2_px", "MEC_RP_N2_py", "MEC_RP_N2_pz", "MEC_RP_Lep_py", "MEC_RP_Lep_pz" ]
+      selection: [ "IsCC == 1", "IsMEC == 1", "ProbePDG == 14", "MECFSClusterPDG == 2000000201" ]
+      scale_factor: 1.6863
     }
   ]
 
