@@ -7,7 +7,7 @@
 // To support a new variable, add one entry to BuildEventVariableRegistry().
 //
 // Units: GENIE native, i.e. energies and momenta in GeV.
-// PhiAdler is in degrees, as in NUISANCE.
+// PhiAdler is in degrees, in [-180, 180].
 // A variable that is not defined for the event (e.g. no such particle) returns
 // kUndefined.
 
@@ -151,11 +151,9 @@ inline double PhiAdler(TLorentzVector Pnu, TLorentzVector Pmu,
   double x = Ppi.Vect().Dot(xAxis);
   double y = Ppi.Vect().Dot(yAxis);
 
-  double newphi = std::atan2(y, x) * (180. / M_PI);
-  if (newphi < 0.0) {
-    newphi += 360.0;
-  }
-  return newphi;
+  // In [-180, 180], as in NUISANCE GenericFlux_Tester (FitUtils::PhiAdler
+  // maps to [0, 360) instead)
+  return std::atan2(y, x) * (180. / M_PI);
 }
 
 // Adler angles need exactly one pion (any charge) and one nucleon, as in the
